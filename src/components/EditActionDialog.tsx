@@ -45,17 +45,22 @@ interface EditActionDialogProps {
   onCancel: () => void;
 }
 
-const COMMON_HOTKEYS = [
-  { label: "關閉分頁 (Ctrl+W)", keys: "^w" },
-  { label: "回復分頁 (Ctrl+Shift+T)", keys: "^+t" },
-  { label: "上一頁 (Alt+Left)", keys: "!{Left}" },
-  { label: "下一頁 (Alt+Right)", keys: "!{Right}" },
-  { label: "重新整理 (F5)", keys: "{F5}" },
-  { label: "複製 (Ctrl+C)", keys: "^c" },
-  { label: "貼上 (Ctrl+V)", keys: "^v" },
-  { label: "顯示桌面 (Win+D)", keys: "#d" },
-  { label: "提高音量", keys: "{Volume_Up}" },
-  { label: "降低音量", keys: "{Volume_Down}" },
+interface PresetItem {
+  key: string;
+  keys: string;
+}
+
+const COMMON_HOTKEYS: PresetItem[] = [
+  { key: "presetCloseTab", keys: "^w" },
+  { key: "presetReopenTab", keys: "^+t" },
+  { key: "presetPrevPage", keys: "!{Left}" },
+  { key: "presetNextPage", keys: "!{Right}" },
+  { key: "presetRefresh", keys: "{F5}" },
+  { key: "presetCopy", keys: "^c" },
+  { key: "presetPaste", keys: "^v" },
+  { key: "presetShowDesktop", keys: "#d" },
+  { key: "presetVolUp", keys: "{Volume_Up}" },
+  { key: "presetVolDown", keys: "{Volume_Down}" },
 ];
 
 export const EditActionDialog: React.FC<EditActionDialogProps> = ({
@@ -97,8 +102,9 @@ export const EditActionDialog: React.FC<EditActionDialogProps> = ({
     }
   };
 
-  const handleSelectPreset = (preset: { label: string; keys: string }) => {
-    setName(preset.label.split(" (")[0]);
+  const handleSelectPreset = (preset: PresetItem) => {
+    const localized = t("dialogs." + preset.key);
+    setName(localized.split(" (")[0]);
     setType("keys");
     setValue(preset.keys);
     setFriendlyKeys(fromAhkKey(preset.keys));
@@ -107,7 +113,7 @@ export const EditActionDialog: React.FC<EditActionDialogProps> = ({
   const handleSave = () => {
     onSave({
       ...action,
-      name: name.trim() || "未命名動作",
+      name: name.trim() || t("dialogs.unnamedAction"),
       type,
       value: value.trim(),
     });
@@ -125,7 +131,7 @@ export const EditActionDialog: React.FC<EditActionDialogProps> = ({
               <Input
                 value={name}
                 onChange={(_, data) => setName(data.value)}
-                placeholder="例如：關閉分頁、上一頁"
+                placeholder={t("dialogs.actionNamePlaceholder")}
               />
             </div>
 
@@ -133,28 +139,34 @@ export const EditActionDialog: React.FC<EditActionDialogProps> = ({
             <div className={styles.section}>
               <Subtitle2>{t("dialogs.actionType")}：</Subtitle2>
               <Dropdown
-                value={type === "keys" ? "鍵盤快速鍵 (keys)" : type === "ahk" ? "原生 AHK 腳本 (ahk)" : "啟動程式/網址 (run)"}
+                value={
+                  type === "keys"
+                    ? t("dialogs.typeKeys")
+                    : type === "ahk"
+                    ? t("dialogs.typeAhk")
+                    : t("dialogs.typeRun")
+                }
                 onOptionSelect={(_, data) => setType(data.optionValue as ActionType)}
               >
-                <Option value="keys">鍵盤快速鍵 (keys)</Option>
-                <Option value="ahk">原生 AHK 腳本 (ahk)</Option>
-                <Option value="run">啟動程式 / 網址 (run)</Option>
+                <Option value="keys">{t("dialogs.typeKeys")}</Option>
+                <Option value="ahk">{t("dialogs.typeAhk")}</Option>
+                <Option value="run">{t("dialogs.typeRun")}</Option>
               </Dropdown>
             </div>
 
             {/* Type: Keys */}
             {type === "keys" && (
               <div className={styles.section}>
-                <Subtitle2>按鍵組合 (聚焦後直接在鍵盤按下)：</Subtitle2>
+                <Subtitle2>{t("dialogs.keysTitle")}</Subtitle2>
                 <Input
                   value={friendlyKeys}
                   onKeyDown={handleHotkeyKeyDown}
-                  placeholder="點此直接按下快速鍵 (如 Ctrl+W)"
+                  placeholder={t("dialogs.keysPlaceholder")}
                 />
-                <Caption1>對應 AHK 代碼：{value}</Caption1>
+                <Caption1>{t("dialogs.ahkCodeHint", { value })}</Caption1>
 
                 <div style={{ marginTop: "6px" }}>
-                  <Caption1>常用快速預設：</Caption1>
+                  <Caption1>{t("dialogs.presetsTitle")}</Caption1>
                   <div className={styles.presetRow}>
                     {COMMON_HOTKEYS.map((preset) => (
                       <Button
@@ -163,7 +175,7 @@ export const EditActionDialog: React.FC<EditActionDialogProps> = ({
                         appearance="outline"
                         onClick={() => handleSelectPreset(preset)}
                       >
-                        {preset.label}
+                        {t("dialogs." + preset.key)}
                       </Button>
                     ))}
                   </div>
@@ -174,25 +186,25 @@ export const EditActionDialog: React.FC<EditActionDialogProps> = ({
             {/* Type: AHK Script */}
             {type === "ahk" && (
               <div className={styles.section}>
-                <Subtitle2>AutoHotkey v2 程式碼：</Subtitle2>
+                <Subtitle2>{t("dialogs.ahkSectionTitle")}</Subtitle2>
                 <Textarea
                   value={value}
                   onChange={(_, data) => setValue(data.value)}
                   placeholder="WinMinimize('A')"
                   rows={4}
                 />
-                <Caption1>可使用完整的 AutoHotkey v2 API (例如 WinMinimize, Run, MsgBox)。</Caption1>
+                <Caption1>{t("dialogs.ahkApiHint")}</Caption1>
               </div>
             )}
 
             {/* Type: Run */}
             {type === "run" && (
               <div className={styles.section}>
-                <Subtitle2>執行檔案路徑或 URL：</Subtitle2>
+                <Subtitle2>{t("dialogs.runSectionTitle")}</Subtitle2>
                 <Input
                   value={value}
                   onChange={(_, data) => setValue(data.value)}
-                  placeholder="https://google.com 或 notepad.exe"
+                  placeholder={t("dialogs.runPlaceholder")}
                 />
               </div>
             )}

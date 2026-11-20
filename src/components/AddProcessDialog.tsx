@@ -140,13 +140,13 @@ export const AddProcessDialog: React.FC<AddProcessDialogProps> = ({
           <DialogContent className={styles.content}>
             {/* Manual input */}
             <div className={styles.section}>
-              <Subtitle2>手動輸入執行檔名：</Subtitle2>
+              <Subtitle2>{t("dialogs.manualTitle")}</Subtitle2>
               <div className={styles.manualRow}>
                 <Input
                   style={{ flex: 1 }}
                   value={manualInput}
                   onChange={(_, data) => setManualInput(data.value)}
-                  placeholder="例如：code.exe 或 acad.exe"
+                  placeholder={t("dialogs.manualPlaceholder")}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       handleManualAdd();
@@ -154,7 +154,7 @@ export const AddProcessDialog: React.FC<AddProcessDialogProps> = ({
                   }}
                 />
                 <Button appearance="primary" icon={<Add16Regular />} onClick={handleManualAdd}>
-                  加入
+                  {t("dialogs.add")}
                 </Button>
               </div>
             </div>
@@ -162,14 +162,14 @@ export const AddProcessDialog: React.FC<AddProcessDialogProps> = ({
             {/* Running processes quick picker */}
             <div className={styles.section}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Subtitle2>點擊目前執行的程式快速加入：</Subtitle2>
-                <Caption1>{filtered.length} 個程式</Caption1>
+                <Subtitle2>{t("dialogs.pickerTitle")}</Subtitle2>
+                <Caption1>{t("dialogs.procCount", { count: filtered.length })}</Caption1>
               </div>
               <Input
                 contentBefore={<Search16Regular />}
                 value={filterText}
                 onChange={(_, data) => setFilterText(data.value)}
-                placeholder="搜尋執行檔名..."
+                placeholder={t("dialogs.searchPlaceholder")}
               />
               <div className={styles.procList}>
                 {filtered.map((item) => (
@@ -180,13 +180,13 @@ export const AddProcessDialog: React.FC<AddProcessDialogProps> = ({
                   >
                     <span style={{ fontWeight: 500 }}>{item.exe}</span>
                     <Badge size="small" appearance="outline">
-                      點擊加入
+                      {t("dialogs.clickToAdd")}
                     </Badge>
                   </div>
                 ))}
                 {filtered.length === 0 && (
                   <div style={{ padding: "12px", textAlign: "center", color: tokens.colorNeutralForeground4 }}>
-                    查無相符的程式
+                    {t("dialogs.noMatch")}
                   </div>
                 )}
               </div>

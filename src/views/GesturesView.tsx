@@ -126,12 +126,12 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
             <div className={styles.header}>
               <span style={{ fontWeight: 600 }}>{t("gestureNames." + gesture.id, { defaultValue: gesture.name })}</span>
               <Badge appearance="tint" color="brand">
-                {formatTriggerSymbol(gesture.trigger)}
+                {formatTriggerSymbol(gesture.trigger, t)}
               </Badge>
             </div>
             <div>
               <div className={styles.gestureDisplay}>
-                {formatGestureLabel(gesture.trigger, gesture.steps)}
+                {formatGestureLabel(gesture.trigger, gesture.steps, t)}
               </div>
             </div>
             <div className={styles.cardActions}>

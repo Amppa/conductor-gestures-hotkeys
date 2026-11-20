@@ -288,7 +288,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                 onDoubleClick={() => handleDoubleGesture(target.id, b.id)}
                 title={t("targets.doubleClickGestureTip")}
               >
-                {formatGestureLabel(b.gesture.trigger, b.gesture.steps)}
+                {formatGestureLabel(b.gesture.trigger, b.gesture.steps, t)}
               </td>
               <td
                 className={styles.tdAction}
@@ -325,7 +325,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
       {/* Top clean logic prompt */}
       <div className={styles.ruleHint}>{t("targets.ruleHint")}</div>
 
-      {/* 1. 預設 (Global Default) - Placed at the top */}
+      {/* 1. Global Default */}
       {globalTarget && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
@@ -361,10 +361,15 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
 
       <Divider />
 
-      {/* 2. 特定程式 (Specific app groups) */}
+      {/* 2. Whitelist (App groups) */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
-          <Subtitle2>{t("targets.specificSection")}</Subtitle2>
+          <div>
+            <Subtitle2>{t("targets.specificSection")}</Subtitle2>
+            <Caption1 style={{ display: "block", color: tokens.colorNeutralForeground3 }}>
+              {t("targets.whitelistDesc")}
+            </Caption1>
+          </div>
           <Button size="small" appearance="secondary" icon={<Add16Regular />} onClick={handleAddGroup}>
             {t("targets.addGroup")}
           </Button>
@@ -457,7 +462,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
 
       <Divider />
 
-      {/* 3. 放行名單 (Allowlist / Disabled apps) - Placed at the bottom */}
+      {/* 3. Blocklist (Disabled apps) */}
       {disabledTarget && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
@@ -518,7 +523,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
           open={!!addProcessTargetId}
           targetName={
             t("targets." + addProcessTargetId + "Title", {
-              defaultValue: targets.find((t) => t.id === addProcessTargetId)?.name || "程式清單",
+              defaultValue: targets.find((t) => t.id === addProcessTargetId)?.name || "Target List",
             })
           }
           onAdd={handleAddProcessExe}

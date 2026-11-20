@@ -80,19 +80,19 @@ const DIRECTION_BUTTONS = [
   { key: "DR", label: "↘" },
 ];
 
-const TRIGGER_OPTIONS: { value: GestureTrigger; label: string }[] = [
-  { value: "R", label: "R (右鍵劃手勢)" },
-  { value: "M", label: "M (中鍵劃手勢)" },
-  { value: "X1", label: "X1 (側鍵1劃手勢)" },
-  { value: "X2", label: "X2 (側鍵2劃手勢)" },
-  { value: "CornerTL", label: "左上觸控角 (CornerTL)" },
-  { value: "CornerTR", label: "右上觸控角 (CornerTR)" },
-  { value: "CornerBL", label: "左下觸控角 (CornerBL)" },
-  { value: "CornerBR", label: "右下觸控角 (CornerBR)" },
-  { value: "EdgeTopR", label: "頂部右側邊緣 (EdgeTopR)" },
-  { value: "EdgeTopL", label: "頂部左側邊緣 (EdgeTopL)" },
-  { value: "EdgeLeft", label: "左側邊緣 (EdgeLeft)" },
-  { value: "EdgeRight", label: "右側邊緣 (EdgeRight)" },
+const TRIGGER_OPTIONS: GestureTrigger[] = [
+  "R",
+  "M",
+  "X1",
+  "X2",
+  "CornerTL",
+  "CornerTR",
+  "CornerBL",
+  "CornerBR",
+  "EdgeTopR",
+  "EdgeTopL",
+  "EdgeLeft",
+  "EdgeRight",
 ];
 
 export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
@@ -139,12 +139,12 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
             <div className={styles.section}>
               <Subtitle2>{t("dialogs.triggerButton")}：</Subtitle2>
               <Dropdown
-                value={TRIGGER_OPTIONS.find((o) => o.value === trigger)?.label || trigger}
+                value={t("triggers." + trigger, { defaultValue: trigger })}
                 onOptionSelect={(_, data) => setTrigger(data.optionValue as GestureTrigger)}
               >
                 {TRIGGER_OPTIONS.map((opt) => (
-                  <Option key={opt.value} value={opt.value}>
-                    {opt.label}
+                  <Option key={opt} value={opt}>
+                    {t("triggers." + opt, { defaultValue: opt })}
                   </Option>
                 ))}
               </Dropdown>
@@ -155,10 +155,10 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
               <Subtitle2>{t("dialogs.strokeSequence")}：</Subtitle2>
               <div className={styles.sequenceDisplay}>
                 <div className={styles.sequenceSteps}>
-                  <span>{formatTriggerSymbol(trigger)}</span>
+                  <span>{formatTriggerSymbol(trigger, t)}</span>
                   <span>:</span>
                   {steps.length === 0 ? (
-                    <Caption1 style={{ color: tokens.colorNeutralForeground4 }}>無步驟 (單擊或觸控角)</Caption1>
+                    <Caption1 style={{ color: tokens.colorNeutralForeground4 }}>{t("dialogs.noSteps")}</Caption1>
                   ) : (
                     steps.map((s, i) => (
                       <span key={i}>
@@ -192,7 +192,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
             {/* 8-Direction Button Grid (for stroke gestures) */}
             {!isSpatialTrigger && (
               <div className={styles.section}>
-                <Caption1 style={{ textAlign: "center" }}>點擊方向箭頭串接筆劃：</Caption1>
+                <Caption1 style={{ textAlign: "center" }}>{t("dialogs.clickArrowTip")}</Caption1>
                 <div className={styles.arrowGrid}>
                   {DIRECTION_BUTTONS.map((btn, idx) => (
                     <Button
@@ -210,10 +210,10 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
                 {/* Quick Chord Wheel buttons */}
                 <div style={{ display: "flex", gap: "8px", justifyContent: "center", marginTop: "4px" }}>
                   <Button size="small" appearance="outline" onClick={() => handleAddStep("WU")}>
-                    + 滾輪上 (W↑)
+                    {t("dialogs.wheelUpBtn")}
                   </Button>
                   <Button size="small" appearance="outline" onClick={() => handleAddStep("WD")}>
-                    + 滾輪下 (W↓)
+                    {t("dialogs.wheelDownBtn")}
                   </Button>
                 </div>
               </div>

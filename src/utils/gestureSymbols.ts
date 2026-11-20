@@ -1,6 +1,6 @@
 /**
  * Gesture and Trigger Display Helpers
- * Formats mouse triggers and direction arrows cleanly, e.g. "R(右鍵) ↑←", "R(右鍵) →"
+ * Formats mouse triggers and direction arrows cleanly with i18n support.
  */
 
 export function formatStepSymbol(step: string): string {
@@ -40,55 +40,58 @@ export function formatStepSymbol(step: string): string {
   }
 }
 
-export function formatTriggerSymbol(trigger: string): string {
+export function formatTriggerSymbol(
+  trigger: string,
+  t?: any
+): string {
+  if (t) {
+    return t(`triggers.${trigger}`, { defaultValue: trigger });
+  }
+
   switch (trigger) {
     case "RB":
     case "R":
-      return "R(右鍵)";
+      return "R";
     case "MB":
     case "M":
-      return "M(中鍵)";
+      return "M";
     case "LB":
     case "L":
-      return "L(左鍵)";
+      return "L";
     case "X1":
     case "X1B":
-      return "X1(側鍵1)";
+      return "X1";
     case "X2":
     case "X2B":
-      return "X2(側鍵2)";
-    case "EdgeTopL":
-      return "螢幕頂部左側";
-    case "EdgeTopR":
-      return "螢幕頂部右側";
-    case "EdgeLeft":
-      return "螢幕左側邊緣";
-    case "EdgeRight":
-      return "螢幕右側邊緣";
-    case "CornerTL":
-      return "左上觸控角(TL)";
-    case "CornerTR":
-      return "右上觸控角(TR)";
-    case "CornerBL":
-      return "左下觸控角(BL)";
-    case "CornerBR":
-      return "右下觸控角(BR)";
+      return "X2";
     default:
       return trigger;
   }
 }
 
-export function formatGestureLabel(trigger: string, steps: string[]): string {
-  const trig = formatTriggerSymbol(trigger);
+export function formatGestureLabel(
+  trigger: string,
+  steps: string[],
+  t?: any
+): string {
+  const trig = formatTriggerSymbol(trigger, t);
   if (steps.length === 0) {
-    return `${trig} (單擊)`;
+    const clickText = t ? t("triggers.click") : "Click";
+    return `${trig} (${clickText})`;
   }
-  // If trigger is a Chord Wheel or Edge Wheel (WU / WD)
+  // Chord wheel or edge wheel
   if (steps[0] === "WU" || steps[0] === "WD") {
-    const wheelText = steps[0] === "WU" ? "滾輪上(W↑)" : "滾輪下(W↓)";
+    const wheelText =
+      steps[0] === "WU"
+        ? t
+          ? t("triggers.wheelUp")
+          : "W↑"
+        : t
+        ? t("triggers.wheelDown")
+        : "W↓";
     return `${trig} + ${wheelText}`;
   }
-  // Direction arrows directly adjacent, e.g. "R(右鍵) ↑←"
+  // Direction arrows
   const stepArrows = steps.map(formatStepSymbol).join("");
   return `${trig} ${stepArrows}`;
 }
