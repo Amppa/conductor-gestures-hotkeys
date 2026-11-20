@@ -2,6 +2,7 @@
 #SingleInstance Force
 
 Persistent
+CoordMode("Mouse", "Screen")
 
 ; ==============================================================================
 ; MouseGesture 5Btn - Core Gesture Engine (AutoHotkey v2)
@@ -17,6 +18,8 @@ global gStartX := 0
 global gStartY := 0
 global gLastX := 0
 global gLastY := 0
+global gTrailPrevX := 0
+global gTrailPrevY := 0
 global gStartWin := 0
 global gStartProcess := ""
 global gSteps := []
@@ -25,6 +28,9 @@ global gStepThreshold := 16
 global gIsPaused := false
 global gEdgeScrollEnabled := true
 global gDebugLogEnabled := false
+global gShowTrail := true
+global gTrailColor := 0x0078D4 ; Windows 11 Fluent Blue (BGR: 0xD47800)
+global gTrailWidth := 4
 global gChordWheelTriggered := false
 global gLogFile := A_ScriptDir . "\gesture.log"
 
@@ -127,10 +133,65 @@ FormatTriggerName(trig) {
 }
 
 ; ------------------------------------------------------------------------------
-; OSD (On-Screen Display) Floating Hint
+; Visual Gesture Trail (Screen Overlay Direct Line Drawing)
 ; ------------------------------------------------------------------------------
+DrawTrailSegment(x1, y1, x2, y2) {
+    global gShowTrail, gTrailWidth
+    if (!gShowTrail)
+        return
+    try {
+        ; Draw directly on Screen DC for zero latency
+        hDC := DllCall("GetDC", "Ptr", 0, "Ptr")
+        ; Windows 11 Blue pen: 0xD47800 (RGB: 0, 120, 212)
+        hPen := DllCall("CreatePen", "Int", 0, "Int", gTrailWidth, "UInt", 0xD47800, "Ptr")
+        hOldPen := DllCall("SelectObject", "Ptr", hDC, "Ptr", hPen, "Ptr")
+        DllCall("MoveToEx", "Ptr", hDC, "Int", x1, "Int", y1, "Ptr", 0)
+        DllCall("LineTo", "Ptr", hDC, "Int", x2, "Int", y2)
+        DllCall("SelectObject", "Ptr", hDC, "Ptr", hOldPen)
+        DllCall("DeleteObject", "Ptr", hPen)
+        DllCall("ReleaseDC", "Ptr", 0, "Ptr", hDC)
+    }
+}
+
+ClearTrail() {
+    try {
+        ; Invalidate entire screen to erase drawn trail lines smoothly
+        DllCall("RedrawWindow", "Ptr", 0, "Ptr", 0, "Ptr", 0, "UInt", 0x0085)
+        ; RDW_INVALIDATE (0x1) | RDW_ERASE (0x4) | RDW_ALLCHILDREN (0x80)
+    }
+}
+
+; ------------------------------------------------------------------------------
+; Bottom-Center HUD OSD (Screen X Center, Y at 3/4)
+; ------------------------------------------------------------------------------
+global gHudGui := ""
+global gHudTextMain := ""
+global gHudTextSub := ""
+
+InitHudGui() {
+    global gHudGui, gHudTextMain, gHudTextSub
+    if (gHudGui != "")
+        return
+
+    ; Use ToolWindow without caption, layered for smooth rendering
+    gHudGui := Gui("-Caption +AlwaysOnTop +ToolWindow +Owner +E0x20", "MouseGestureHUD")
+    gHudGui.BackColor := "1E1E1E"
+    gHudGui.MarginX := 24
+    gHudGui.MarginY := 16
+    WinSetTransparent(230, gHudGui)
+
+    ; Generous height & clean line-spacing to avoid text clipping
+    gHudTextMain := gHudGui.Add("Text", "w520 h36 Center cFFFFFF", "")
+    gHudTextMain.SetFont("s16 bold", "微軟正黑體")
+
+    gHudTextSub := gHudGui.Add("Text", "w520 h28 Center c58A6FF", "")
+    gHudTextSub.SetFont("s13", "微軟正黑體")
+}
+
 UpdateGestureOSD(trigger, steps, procName) {
-    global gFnGetGestureActionName
+    global gFnGetGestureActionName, gHudGui, gHudTextMain, gHudTextSub
+    InitHudGui()
+
     trigName := FormatTriggerName(trigger)
     arrows := ""
     stepStr := ""
@@ -140,17 +201,27 @@ UpdateGestureOSD(trigger, steps, procName) {
     }
 
     actionName := gFnGetGestureActionName(trigger, stepStr, procName)
-    text := trigName . " " . arrows
-    if (actionName != "") {
-        text .= "`n» " . actionName
-    }
 
-    MouseGetPos(&mx, &my)
-    ToolTip(text, mx + 24, my + 16)
+    ; Update HUD Window Text
+    mainStr := trigName . (arrows != "" ? " " . arrows : "")
+    subStr := (actionName != "" ? "» " . actionName : (procName != "" ? "[" . procName . "]" : ""))
+
+    gHudTextMain.Text := mainStr
+    gHudTextSub.Text := subStr
+
+    hudW := 568
+    hudH := 96
+    hudX := (A_ScreenWidth - hudW) // 2
+    hudY := (A_ScreenHeight * 3) // 4 - (hudH // 2) ; Exactly at Y 3/4 of screen
+    gHudGui.Show("x" . hudX . " y" . hudY . " w" . hudW . " h" . hudH . " NoActivate")
 }
 
 HideGestureOSD() {
-    ToolTip()
+    global gHudGui
+    if (gHudGui != "") {
+        gHudGui.Hide()
+    }
+    ClearTrail()
 }
 
 ; ------------------------------------------------------------------------------
@@ -231,7 +302,7 @@ SetTimer(PollHotCorner, 50)
 ; Trigger Handlers (RButton, XButton1, XButton2)
 ; ------------------------------------------------------------------------------
 OnTriggerDown(btnName) {
-    global gState, gTrigger, gStartX, gStartY, gLastX, gLastY
+    global gState, gTrigger, gStartX, gStartY, gLastX, gLastY, gTrailPrevX, gTrailPrevY
     global gStartWin, gStartProcess, gSteps, gIsPaused, gFnIsProcessDisabled
     global gChordWheelTriggered
 
@@ -259,6 +330,8 @@ OnTriggerDown(btnName) {
     gStartY := curY
     gLastX := curX
     gLastY := curY
+    gTrailPrevX := curX
+    gTrailPrevY := curY
     gStartWin := winHwnd
     gStartProcess := procName
     gSteps := []
@@ -268,7 +341,7 @@ OnTriggerDown(btnName) {
 }
 
 TrackGesture() {
-    global gState, gTrigger, gStartX, gStartY, gLastX, gLastY, gSteps
+    global gState, gTrigger, gStartX, gStartY, gLastX, gLastY, gTrailPrevX, gTrailPrevY, gSteps
     global gStartProcess, gThreshold, gStepThreshold
 
     if (gState == STATE_IDLE) {
@@ -286,11 +359,21 @@ TrackGesture() {
             gState := STATE_DRAWING
             dir := GetDirection(dxTotal, dyTotal)
             gSteps.Push(dir)
+            DrawTrailSegment(gStartX, gStartY, curX, curY)
             gLastX := curX
             gLastY := curY
+            gTrailPrevX := curX
+            gTrailPrevY := curY
             UpdateGestureOSD(gTrigger, gSteps, gStartProcess)
         }
     } else if (gState == STATE_DRAWING) {
+        ; Continuous visual trail line
+        if (curX != gTrailPrevX || curY != gTrailPrevY) {
+            DrawTrailSegment(gTrailPrevX, gTrailPrevY, curX, curY)
+            gTrailPrevX := curX
+            gTrailPrevY := curY
+        }
+
         dxStep := curX - gLastX
         dyStep := curY - gLastY
         stepDist := Sqrt(dxStep * dxStep + dyStep * dyStep)

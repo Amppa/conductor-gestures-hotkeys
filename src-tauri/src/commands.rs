@@ -70,6 +70,12 @@ pub fn save_config(app: tauri::AppHandle, config: AppConfig) -> Result<(), Strin
 
 #[tauri::command]
 pub fn apply_config(app: tauri::AppHandle, config: AppConfig) -> Result<ApplyResult, String> {
+    // 0. Pre-flight check: ensure AutoHotkey executable exists
+    let ahk_exe = autohotkey_exe_path(&app)?;
+    if !ahk_exe.exists() {
+        return Err(format!("找不到 AutoHotkey 執行檔: {}", ahk_exe.display()));
+    }
+
     // 1. Save config to disk
     save_config(app.clone(), config.clone())?;
 
@@ -83,13 +89,12 @@ pub fn apply_config(app: tauri::AppHandle, config: AppConfig) -> Result<ApplyRes
     let script_path = runtime_dir.join("ActiveGestures.ahk");
     let target_engine_path = runtime_dir.join("GestureEngine.ahk");
     let source_engine_path = gesture_engine_template_path();
-    let ahk_exe = autohotkey_exe_path(&app)?;
 
     // Ensure GestureEngine.ahk is copied right next to ActiveGestures.ahk in runtime dir
     if source_engine_path.exists() {
         fs::copy(&source_engine_path, &target_engine_path).map_err(|e| e.to_string())?;
     } else {
-        return Err("找不到核心 engine/GestureEngine.ahk 檔案".into());
+        return Err(format!("找不到核心 engine/GestureEngine.ahk 檔案 (路徑: {})", source_engine_path.display()));
     }
 
     // 3. Generate script

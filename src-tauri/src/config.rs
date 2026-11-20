@@ -40,14 +40,17 @@ pub struct GestureTemplate {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ActionTemplate {
     pub id: String,
     pub name: String,
+    #[serde(alias = "type", rename = "type")]
     pub action_type: String,
     pub value: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Target {
     pub id: String,
     pub name: String,
@@ -58,6 +61,7 @@ pub struct Target {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Binding {
     pub id: String,
     pub enabled: bool,
@@ -66,6 +70,7 @@ pub struct Binding {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Gesture {
     pub id: String,
     pub name: String,
@@ -74,9 +79,11 @@ pub struct Gesture {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Action {
     pub id: String,
     pub name: String,
+    #[serde(alias = "type", rename = "type")]
     pub action_type: String,
     pub value: String,
 }
