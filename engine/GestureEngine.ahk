@@ -188,6 +188,37 @@ InitHudGui() {
     gHudTextSub.SetFont("s13", "微軟正黑體")
 }
 
+; ------------------------------------------------------------------------------
+; Multi-Monitor Resolution & Geometry Helper (Win32 MonitorFromPoint API)
+; ------------------------------------------------------------------------------
+GetMonitorRectAt(x, y, &mL, &mT, &mR, &mB, &mW, &mH) {
+    static sizeofMONITORINFO := 40
+    static rcMonitor := 4
+
+    pt := (y << 32) | (x & 0xFFFFFFFF)
+    ; MONITOR_DEFAULTTONEAREST = 2
+    hMon := DllCall("MonitorFromPoint", "Int64", pt, "UInt", 2, "Ptr")
+    minf := Buffer(sizeofMONITORINFO, 0)
+    NumPut("UInt", sizeofMONITORINFO, minf)
+
+    if (DllCall("GetMonitorInfo", "Ptr", hMon, "Ptr", minf.Ptr)) {
+        mL := NumGet(minf, rcMonitor + 0, "Int")
+        mT := NumGet(minf, rcMonitor + 4, "Int")
+        mR := NumGet(minf, rcMonitor + 8, "Int")
+        mB := NumGet(minf, rcMonitor + 12, "Int")
+        mW := mR - mL
+        mH := mB - mT
+    } else {
+        ; Fallback to virtual primary screen
+        mL := 0
+        mT := 0
+        mW := A_ScreenWidth
+        mH := A_ScreenHeight
+        mR := mW
+        mB := mH
+    }
+}
+
 UpdateGestureOSD(trigger, steps, procName) {
     global gFnGetGestureActionName, gHudGui, gHudTextMain, gHudTextSub
     InitHudGui()
@@ -209,10 +240,14 @@ UpdateGestureOSD(trigger, steps, procName) {
     gHudTextMain.Text := mainStr
     gHudTextSub.Text := subStr
 
+    ; Multi-Monitor HUD Positioning: find current monitor under cursor
+    MouseGetPos(&curX, &curY)
+    GetMonitorRectAt(curX, curY, &mL, &mT, &mR, &mB, &mW, &mH)
+
     hudW := 568
     hudH := 96
-    hudX := (A_ScreenWidth - hudW) // 2
-    hudY := (A_ScreenHeight * 3) // 4 - (hudH // 2) ; Exactly at Y 3/4 of screen
+    hudX := mL + (mW - hudW) // 2
+    hudY := mT + (mH * 3) // 4 - (hudH // 2) ; Exactly at Y 3/4 of current monitor
     gHudGui.Show("x" . hudX . " y" . hudY . " w" . hudW . " h" . hudH . " NoActivate")
 }
 
@@ -225,40 +260,39 @@ HideGestureOSD() {
 }
 
 ; ------------------------------------------------------------------------------
-; Spatial Screen Context (Hot Corners & Edges)
+; Spatial Screen Context (Hot Corners & Edges) - Multi-Monitor Aware
 ; Corner tolerance: 4 pixels. Priority: Hot Corner > Edge Split
 ; ------------------------------------------------------------------------------
 GetSpatialContext(x, y) {
-    w := A_ScreenWidth
-    h := A_ScreenHeight
+    GetMonitorRectAt(x, y, &mL, &mT, &mR, &mB, &mW, &mH)
     cTol := 4
 
-    ; 1. Hot Corners (Highest Priority)
-    if (x <= cTol && y <= cTol)
+    ; 1. Hot Corners of current active monitor (Highest Priority)
+    if (x <= mL + cTol && y <= mT + cTol)
         return "CornerTL"
-    if (x >= w - cTol && y <= cTol)
+    if (x >= mR - cTol && y <= mT + cTol)
         return "CornerTR"
-    if (x <= cTol && y >= h - cTol)
+    if (x <= mL + cTol && y >= mB - cTol)
         return "CornerBL"
-    if (x >= w - cTol && y >= h - cTol)
+    if (x >= mR - cTol && y >= mB - cTol)
         return "CornerBR"
 
-    ; 2. Screen Edges with Split
-    if (y <= 1) {
-        if (x < w / 2)
+    ; 2. Screen Edges with Split of current monitor
+    if (y <= mT + 1) {
+        if (x < mL + mW / 2)
             return "EdgeTopL"
         else
             return "EdgeTopR"
     }
-    if (y >= h - 2) {
-        if (x < w / 2)
+    if (y >= mB - 2) {
+        if (x < mL + mW / 2)
             return "EdgeBottomL"
         else
             return "EdgeBottomR"
     }
-    if (x <= 1)
+    if (x <= mL + 1)
         return "EdgeLeft"
-    if (x >= w - 2)
+    if (x >= mR - 2)
         return "EdgeRight"
 
     return ""
