@@ -40,32 +40,51 @@ export function formatStepSymbol(step: string): string {
   }
 }
 
+/**
+ * Normalizes legacy trigger aliases (e.g. RB, MB, LB, EdgeTopR) to canonical trigger names.
+ */
+export function normalizeTrigger(trigger: string): string {
+  switch (trigger) {
+    case "RB":
+      return "R";
+    case "MB":
+      return "M";
+    case "LB":
+      return "L";
+    case "X1B":
+      return "X1";
+    case "X2B":
+      return "X2";
+    case "EdgeTopL":
+    case "EdgeTopR":
+      return "EdgeTop";
+    default:
+      return trigger;
+  }
+}
+
 export function formatTriggerSymbol(
   trigger: string,
   t?: any
 ): string {
+  const trig = normalizeTrigger(trigger);
   if (t) {
-    return t(`triggers.${trigger}`, { defaultValue: trigger });
+    return t(`triggers.${trig}`, { defaultValue: trig });
   }
 
-  switch (trigger) {
-    case "RB":
+  switch (trig) {
     case "R":
       return "R";
-    case "MB":
     case "M":
       return "M";
-    case "LB":
     case "L":
       return "L";
     case "X1":
-    case "X1B":
       return "X1";
     case "X2":
-    case "X2B":
       return "X2";
     default:
-      return trigger;
+      return trig;
   }
 }
 
@@ -74,24 +93,25 @@ export function formatGestureLabel(
   steps: string[],
   t?: any
 ): string {
-  const trig = formatTriggerSymbol(trigger, t);
+  const normTrig = normalizeTrigger(trigger);
+  const isMouse = ["R", "M", "L", "X1", "X2"].includes(normTrig);
+  const trig = isMouse ? normTrig : formatTriggerSymbol(normTrig, t);
+
   if (steps.length === 0) {
-    const clickText = t ? t("triggers.click") : "Click";
-    return `${trig} (${clickText})`;
+    if (isMouse) {
+      const clickText = t ? t("triggers.click") : "Click";
+      return `${trig} (${clickText})`;
+    }
+    return trig;
   }
+
   // Chord wheel or edge wheel
   if (steps[0] === "WU" || steps[0] === "WD") {
-    const wheelText =
-      steps[0] === "WU"
-        ? t
-          ? t("triggers.wheelUp")
-          : "W↑"
-        : t
-        ? t("triggers.wheelDown")
-        : "W↓";
+    const wheelText = steps[0] === "WU" ? "W↑" : "W↓";
     return `${trig} + ${wheelText}`;
   }
-  // Direction arrows
+
+  // Direction arrows without space for mouse triggers (e.g. R←, R↓→)
   const stepArrows = steps.map(formatStepSymbol).join("");
-  return `${trig} ${stepArrows}`;
+  return isMouse ? `${trig}${stepArrows}` : `${trig} ${stepArrows}`;
 }

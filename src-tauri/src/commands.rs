@@ -48,6 +48,18 @@ pub fn gesture_engine_template_path() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../engine/GestureEngine.ahk")
 }
 
+fn normalize_trigger(t: &str) -> String {
+    match t {
+        "RB" => "R".into(),
+        "MB" => "M".into(),
+        "LB" => "L".into(),
+        "X1B" => "X1".into(),
+        "X2B" => "X2".into(),
+        "EdgeTopL" | "EdgeTopR" => "EdgeTop".into(),
+        other => other.to_string(),
+    }
+}
+
 // -----------------------------------------------------------------------------
 // IPC Commands
 // -----------------------------------------------------------------------------
@@ -58,7 +70,18 @@ pub fn load_config(app: tauri::AppHandle) -> Result<AppConfig, String> {
         return Ok(default_app_config());
     }
     let content = fs::read_to_string(path).map_err(|e| e.to_string())?;
-    serde_json::from_str(&content).map_err(|e| format!("解析設定檔失敗: {e}"))
+    let mut config: AppConfig = serde_json::from_str(&content).map_err(|e| format!("解析設定檔失敗: {e}"))?;
+
+    for gt in &mut config.gesture_templates {
+        gt.trigger = normalize_trigger(&gt.trigger);
+    }
+    for t in &mut config.targets {
+        for b in &mut t.bindings {
+            b.gesture.trigger = normalize_trigger(&b.gesture.trigger);
+        }
+    }
+
+    Ok(config)
 }
 
 #[tauri::command]

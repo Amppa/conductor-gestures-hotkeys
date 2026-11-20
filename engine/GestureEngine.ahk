@@ -115,13 +115,13 @@ FormatStepArrow(step) {
 
 FormatTriggerName(trig) {
     switch trig {
-        case "RButton", "RB", "R": return "R(右鍵)"
-        case "MButton", "MB", "M": return "M(中鍵)"
-        case "LButton", "LB", "L": return "L(左鍵)"
-        case "XButton1", "X1", "X1B": return "X1(側鍵1)"
-        case "XButton2", "X2", "X2B": return "X2(側鍵2)"
-        case "EdgeTopL": return "螢幕頂部左側"
-        case "EdgeTopR": return "螢幕頂部右側"
+        case "RButton", "R": return "R(右鍵)"
+        case "MButton", "M": return "M(中鍵)"
+        case "LButton", "L": return "L(左鍵)"
+        case "XButton1", "X1": return "X1(側鍵1)"
+        case "XButton2", "X2": return "X2(側鍵2)"
+        case "EdgeTop": return "螢幕頂部邊緣"
+        case "EdgeBottom": return "螢幕底部邊緣"
         case "EdgeLeft": return "螢幕左側邊緣"
         case "EdgeRight": return "螢幕右側邊緣"
         case "CornerTL": return "左上觸控角(TL)"
@@ -277,19 +277,11 @@ GetSpatialContext(x, y) {
     if (x >= mR - cTol && y >= mB - cTol)
         return "CornerBR"
 
-    ; 2. Screen Edges with Split of current monitor
-    if (y <= mT + 1) {
-        if (x < mL + mW / 2)
-            return "EdgeTopL"
-        else
-            return "EdgeTopR"
-    }
-    if (y >= mB - 2) {
-        if (x < mL + mW / 2)
-            return "EdgeBottomL"
-        else
-            return "EdgeBottomR"
-    }
+    ; 2. Screen Edges of current monitor
+    if (y <= mT + 1)
+        return "EdgeTop"
+    if (y >= mB - 2)
+        return "EdgeBottom"
     if (x <= mL + 1)
         return "EdgeLeft"
     if (x >= mR - 2)
@@ -494,8 +486,8 @@ HandleSpatialWheel(wheelDir) {
     if (dispatched)
         return true
 
-    ; Built-in fallback: EdgeTopR/EdgeTopL volume control if no custom binding matched
-    if (spatial == "EdgeTopR" || spatial == "EdgeTopL" || spatial == "EdgeTop") {
+    ; Built-in fallback: EdgeTop volume control if no custom binding matched
+    if (spatial == "EdgeTop") {
         if (wheelDir == "WU")
             SoundSetVolume("+2")
         else if (wheelDir == "WD")

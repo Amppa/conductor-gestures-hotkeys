@@ -9,6 +9,27 @@ import { ActionsView } from "./views/ActionsView";
 import { SettingsView } from "./views/SettingsView";
 import { DEFAULT_CONFIG } from "./defaults";
 import { AppConfig, Target, Gesture, Action } from "./types";
+import { normalizeTrigger } from "./utils/gestureSymbols";
+
+function migrateConfigTriggers(rawConfig: AppConfig): AppConfig {
+  return {
+    ...rawConfig,
+    gestureTemplates: (rawConfig.gestureTemplates || []).map((g) => ({
+      ...g,
+      trigger: normalizeTrigger(g.trigger) as any,
+    })),
+    targets: (rawConfig.targets || []).map((t) => ({
+      ...t,
+      bindings: (t.bindings || []).map((b) => ({
+        ...b,
+        gesture: {
+          ...b.gesture,
+          trigger: normalizeTrigger(b.gesture.trigger) as any,
+        },
+      })),
+    })),
+  };
+}
 
 const useStyles = makeStyles({
   root: {
@@ -48,7 +69,8 @@ export const App: React.FC = () => {
     const initApp = async () => {
       try {
         const { invoke } = await import("@tauri-apps/api/core");
-        const loaded = await invoke<AppConfig>("load_config");
+        const rawLoaded = await invoke<AppConfig>("load_config");
+        const loaded = rawLoaded ? migrateConfigTriggers(rawLoaded) : null;
         const activeConfig = loaded || config;
         if (loaded) {
           setConfig(loaded);

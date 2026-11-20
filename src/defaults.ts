@@ -109,9 +109,9 @@ export const DEFAULT_TARGETS: Target[] = [
         id: "g-edge-vol-up",
         enabled: true,
         gesture: {
-          id: "edge-top-r-wu",
-          name: "Top-Right Edge Wheel Up",
-          trigger: "EdgeTopR",
+          id: "edge-top-wu",
+          name: "Top Edge Wheel Up",
+          trigger: "EdgeTop",
           steps: ["WU"],
         },
         action: {
@@ -125,9 +125,9 @@ export const DEFAULT_TARGETS: Target[] = [
         id: "g-edge-vol-down",
         enabled: true,
         gesture: {
-          id: "edge-top-r-wd",
-          name: "Top-Right Edge Wheel Down",
-          trigger: "EdgeTopR",
+          id: "edge-top-wd",
+          name: "Top Edge Wheel Down",
+          trigger: "EdgeTop",
           steps: ["WD"],
         },
         action: {

@@ -9,14 +9,12 @@ export type GestureTrigger =
   | "L"
   | "X1"
   | "X2"
-  | "RB"
-  | "MB"
   | "CornerTL"
   | "CornerTR"
   | "CornerBL"
   | "CornerBR"
-  | "EdgeTopL"
-  | "EdgeTopR"
+  | "EdgeTop"
+  | "EdgeBottom"
   | "EdgeLeft"
   | "EdgeRight";
 

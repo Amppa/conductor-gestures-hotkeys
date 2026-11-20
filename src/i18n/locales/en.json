@@ -71,15 +71,18 @@
     "addGroupGesture": "Add Group Gesture"
   },
   "gestures": {
-    "title": "Gesture Templates",
+    "title": "Gestures",
     "subtitle": "Define reusable gesture triggers and stroke directions across targets.",
-    "add": "New Gesture Template",
+    "add": "Add Gesture",
     "newGestureName": "New Custom Gesture",
     "trigger": "Trigger Button",
     "stroke": "Strokes",
     "name": "Gesture Name",
     "edit": "Edit Gesture",
-    "delete": "Delete Gesture"
+    "delete": "Delete Gesture",
+    "tableName": "Name",
+    "tableTrigger": "Trigger",
+    "tableStroke": "Stroke"
   },
   "actions": {
     "title": "Actions",
@@ -91,7 +94,7 @@
     "executionContent": "Command:",
     "tableName": "Name",
     "tableType": "Type",
-    "tableAction": "Action",
+    "tableAction": "Action / Behavior",
     "addAction": "Add Action",
     "newActionName": "New Action",
     "deleteTip": "Delete action"
@@ -101,6 +104,7 @@
     "cancel": "Cancel",
     "close": "Close",
     "editGesture": "Edit Gesture",
+    "gestureNamePlaceholder": "Enter gesture name",
     "editAction": "Edit Action",
     "addProcess": "Add Executable Process",
     "processNamePlaceholder": "e.g. chrome.exe or code.exe",
@@ -148,17 +152,12 @@
   },
   "triggers": {
     "R": "R (Right Click)",
-    "RB": "R (Right Click)",
     "M": "M (Middle Click)",
-    "MB": "M (Middle Click)",
     "L": "L (Left Click)",
-    "LB": "L (Left Click)",
     "X1": "X1 (Side 1)",
-    "X1B": "X1 (Side 1)",
     "X2": "X2 (Side 2)",
-    "X2B": "X2 (Side 2)",
-    "EdgeTopL": "Top-Left Edge",
-    "EdgeTopR": "Top-Right Edge",
+    "EdgeTop": "Top Edge",
+    "EdgeBottom": "Bottom Edge",
     "EdgeLeft": "Left Edge",
     "EdgeRight": "Right Edge",
     "CornerTL": "Top-Left Corner (TL)",

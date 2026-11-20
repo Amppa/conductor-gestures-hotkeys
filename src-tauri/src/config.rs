@@ -127,33 +127,33 @@ pub fn default_app_config() -> AppConfig {
         },
         gesture_templates: vec![
             GestureTemplate {
-                id: "rb-left".into(),
+                id: "r-left".into(),
                 name: "Left".into(),
-                trigger: "RB".into(),
+                trigger: "R".into(),
                 steps: vec!["L".into()],
             },
             GestureTemplate {
-                id: "rb-right".into(),
+                id: "r-right".into(),
                 name: "Right".into(),
-                trigger: "RB".into(),
+                trigger: "R".into(),
                 steps: vec!["R".into()],
             },
             GestureTemplate {
-                id: "rb-down".into(),
+                id: "r-down".into(),
                 name: "Down".into(),
-                trigger: "RB".into(),
+                trigger: "R".into(),
                 steps: vec!["D".into()],
             },
             GestureTemplate {
-                id: "rb-down-right".into(),
+                id: "r-down-right".into(),
                 name: "Down-Right".into(),
-                trigger: "RB".into(),
+                trigger: "R".into(),
                 steps: vec!["D".into(), "R".into()],
             },
             GestureTemplate {
-                id: "rb-up-left".into(),
+                id: "r-up-left".into(),
                 name: "Up-Left".into(),
-                trigger: "RB".into(),
+                trigger: "R".into(),
                 steps: vec!["U".into(), "L".into()],
             },
         ],
@@ -214,9 +214,9 @@ pub fn default_app_config() -> AppConfig {
                         id: "b-close-tab".into(),
                         enabled: true,
                         gesture: Gesture {
-                            id: "rb-down-right".into(),
+                            id: "r-down-right".into(),
                             name: "Down-Right".into(),
-                            trigger: "RB".into(),
+                            trigger: "R".into(),
                             steps: vec!["D".into(), "R".into()],
                         },
                         action: Action {
@@ -230,9 +230,9 @@ pub fn default_app_config() -> AppConfig {
                         id: "b-reopen-tab".into(),
                         enabled: true,
                         gesture: Gesture {
-                            id: "rb-up-left".into(),
+                            id: "r-up-left".into(),
                             name: "Up-Left".into(),
-                            trigger: "RB".into(),
+                            trigger: "R".into(),
                             steps: vec!["U".into(), "L".into()],
                         },
                         action: Action {
@@ -255,9 +255,9 @@ pub fn default_app_config() -> AppConfig {
                         id: "g-back".into(),
                         enabled: true,
                         gesture: Gesture {
-                            id: "rb-left".into(),
+                            id: "r-left".into(),
                             name: "Left".into(),
-                            trigger: "RB".into(),
+                            trigger: "R".into(),
                             steps: vec!["L".into()],
                         },
                         action: Action {
@@ -287,9 +287,9 @@ pub fn default_app_config() -> AppConfig {
                         id: "g-minimize".into(),
                         enabled: true,
                         gesture: Gesture {
-                            id: "rb-down".into(),
+                            id: "r-down".into(),
                             name: "Down".into(),
-                            trigger: "RB".into(),
+                            trigger: "R".into(),
                             steps: vec!["D".into()],
                         },
                         action: Action {
