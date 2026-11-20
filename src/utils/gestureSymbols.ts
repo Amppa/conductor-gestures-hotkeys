@@ -115,3 +115,121 @@ export function formatGestureLabel(
   const stepArrows = steps.map(formatStepSymbol).join("");
   return isMouse ? `${trig}${stepArrows}` : `${trig} ${stepArrows}`;
 }
+
+/**
+ * Parses user-input gesture text (e.g. "R→↘", "→↘", "DR", "R↓→", "R + W↑")
+ * into normalized trigger and step array.
+ */
+export function parseStrokeInput(
+  rawInput: string,
+  fallbackTrigger: string = "R"
+): { trigger: string; steps: string[] } {
+  let text = rawInput.trim();
+  let trigger = fallbackTrigger;
+
+  // 1. Check for leading trigger (e.g. "X1:", "X2 ", "R→", "M", etc.)
+  const knownTriggers = [
+    "CornerTL",
+    "CornerTR",
+    "CornerBL",
+    "CornerBR",
+    "EdgeTop",
+    "EdgeBottom",
+    "EdgeLeft",
+    "EdgeRight",
+    "X1",
+    "X2",
+    "R",
+    "M",
+    "L",
+  ];
+  for (const kt of knownTriggers) {
+    if (text.startsWith(kt)) {
+      trigger = kt;
+      text = text.slice(kt.length).replace(/^[:\s+]+/, "");
+      break;
+    }
+  }
+
+  // 2. Parse remaining steps
+  const steps: string[] = [];
+  let i = 0;
+  while (i < text.length) {
+    // Skip whitespace, colons, plus, commas
+    if (/[\s,:+]/.test(text[i])) {
+      i++;
+      continue;
+    }
+
+    // Check two-character tokens first: UL, UR, DL, DR, WU, WD, W↑, W↓
+    const twoChars = text.slice(i, i + 2).toUpperCase();
+    if (twoChars === "W↑" || twoChars === "WU") {
+      steps.push("WU");
+      i += 2;
+      continue;
+    }
+    if (twoChars === "W↓" || twoChars === "WD") {
+      steps.push("WD");
+      i += 2;
+      continue;
+    }
+    if (
+      twoChars === "UL" ||
+      twoChars === "UR" ||
+      twoChars === "DL" ||
+      twoChars === "DR"
+    ) {
+      steps.push(twoChars);
+      i += 2;
+      continue;
+    }
+
+    // Single character tokens: arrows and letters
+    const ch = text[i];
+    switch (ch) {
+      case "↑":
+        steps.push("U");
+        break;
+      case "↓":
+        steps.push("D");
+        break;
+      case "←":
+        steps.push("L");
+        break;
+      case "→":
+        steps.push("R");
+        break;
+      case "↖":
+        steps.push("UL");
+        break;
+      case "↗":
+        steps.push("UR");
+        break;
+      case "↙":
+        steps.push("DL");
+        break;
+      case "↘":
+        steps.push("DR");
+        break;
+      case "U":
+      case "u":
+        steps.push("U");
+        break;
+      case "D":
+      case "d":
+        steps.push("D");
+        break;
+      case "L":
+      case "l":
+        steps.push("L");
+        break;
+      case "R":
+      case "r":
+        steps.push("R");
+        break;
+    }
+    i++;
+  }
+
+  return { trigger, steps };
+}

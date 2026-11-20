@@ -88,6 +88,10 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
             }
         }
     }
+    // Always include app itself in blacklist so it never intercepts gestures during config/recording
+    if !exes.contains(&"mouse-gesture-5btn.exe".to_string()) {
+        exes.push("mouse-gesture-5btn.exe".to_string());
+    }
     if !exes.is_empty() {
         s.push_str("    switch StrLower(procName) {\n");
         let case_items = exes

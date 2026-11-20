@@ -13,10 +13,10 @@
     "windows": [
       {
         "title": "MouseGesture 5Btn",
-        "width": 1180,
-        "height": 760,
-        "minWidth": 900,
-        "minHeight": 640,
+        "width": 960,
+        "height": 620,
+        "minWidth": 800,
+        "minHeight": 520,
         "resizable": true
       }
     ],
