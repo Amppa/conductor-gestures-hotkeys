@@ -9,58 +9,89 @@ import {
   DialogContent,
   Button,
   Input,
-  Dropdown,
-  Option,
+  TabList,
+  Tab,
   Subtitle2,
-  Caption1,
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
-import { Delete16Regular, ArrowUndo16Regular } from "@fluentui/react-icons";
 import { Gesture, GestureTrigger } from "../types";
-import { formatStepSymbol, formatTriggerSymbol } from "../utils/gestureSymbols";
+import {
+  formatStepSymbol,
+  parseStrokeInput,
+} from "../utils/gestureSymbols";
+import { MousePreview } from "./MousePreview";
+import { GestureRecorderCanvas } from "./GestureRecorderCanvas";
 
 const useStyles = makeStyles({
+  surface: {
+    maxWidth: "480px",
+    width: "100%",
+  },
   content: {
     display: "flex",
     flexDirection: "column",
-    gap: "16px",
+    gap: "12px",
+    paddingTop: "4px",
   },
-  section: {
+  formRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+  rowLabel: {
+    minWidth: "46px",
+    whiteSpace: "nowrap",
+    fontWeight: 600,
+  },
+  rowInput: {
+    flex: 1,
+    fontSize: tokens.fontSizeBase400,
+    fontWeight: 600,
+  },
+  tabList: {
+    marginTop: "2px",
+    marginBottom: "4px",
+  },
+  standardContentRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "28px",
+    padding: "8px 0",
+  },
+  mouseCol: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  gridCol: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  arrowGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 40px)",
+    gap: "6px",
+  },
+  arrowBtn: {
+    height: "40px",
+    width: "40px",
+    minWidth: "40px",
+    paddingLeft: "0",
+    paddingRight: "0",
+    fontSize: tokens.fontSizeBase400,
+    fontWeight: 700,
+  },
+  recordContent: {
     display: "flex",
     flexDirection: "column",
     gap: "8px",
   },
-  arrowGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "8px",
-    maxWidth: "240px",
-    margin: "8px auto",
-  },
-  arrowBtn: {
-    height: "44px",
-    fontSize: tokens.fontSizeBase500,
-    fontWeight: 600,
-  },
-  sequenceDisplay: {
-    minHeight: "44px",
-    padding: "8px 12px",
-    backgroundColor: tokens.colorNeutralBackground3,
-    borderRadius: tokens.borderRadiusMedium,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  sequenceSteps: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    fontSize: tokens.fontSizeBase400,
-    fontWeight: 600,
-    color: tokens.colorBrandForeground1,
-  },
 });
+
+export type GestureDialogTab = "standard" | "record";
 
 interface EditGestureDialogProps {
   open: boolean;
@@ -74,28 +105,17 @@ const DIRECTION_BUTTONS = [
   { key: "U", label: "↑" },
   { key: "UR", label: "↗" },
   { key: "L", label: "←" },
-  { key: "", label: "•" }, // Center empty placeholder
+  { key: "", label: "•" },
   { key: "R", label: "→" },
   { key: "DL", label: "↙" },
   { key: "D", label: "↓" },
   { key: "DR", label: "↘" },
 ];
 
-const TRIGGER_OPTIONS: GestureTrigger[] = [
-  "R",
-  "M",
-  "L",
-  "X1",
-  "X2",
-  "CornerTL",
-  "CornerTR",
-  "CornerBL",
-  "CornerBR",
-  "EdgeTop",
-  "EdgeBottom",
-  "EdgeLeft",
-  "EdgeRight",
-];
+function buildCommandString(trig: GestureTrigger, steps: string[]): string {
+  const arrowStr = steps.map(formatStepSymbol).join("");
+  return `${trig}${arrowStr}`;
+}
 
 export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
   open,
@@ -105,141 +125,155 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
 }) => {
   const styles = useStyles();
   const { t } = useTranslation();
+
+  const [activeTab, setActiveTab] = useState<GestureDialogTab>("standard");
+
+  // Gesture state
   const [name, setName] = useState(
     t("gestureNames." + gesture.id, { defaultValue: gesture.name })
   );
   const [trigger, setTrigger] = useState<GestureTrigger>(gesture.trigger);
   const [steps, setSteps] = useState<string[]>([...gesture.steps]);
+  const [commandText, setCommandText] = useState<string>(
+    buildCommandString(gesture.trigger, gesture.steps)
+  );
 
-  const isSpatialTrigger = trigger.startsWith("Corner") || trigger.startsWith("Edge");
-
-  const handleAddStep = (dir: string) => {
-    if (!dir) return;
-    setSteps((prev) => [...prev, dir]);
+  // Directly edit command string
+  const handleCommandTextChange = (raw: string) => {
+    setCommandText(raw);
+    const parsed = parseStrokeInput(raw, trigger);
+    if (parsed.trigger) {
+      setTrigger(parsed.trigger as GestureTrigger);
+    }
+    setSteps(parsed.steps);
   };
 
-  const handleUndo = () => {
-    setSteps((prev) => prev.slice(0, -1));
+  // Click mouse SVG button to change trigger
+  const handleSelectTrigger = (newTrigger: GestureTrigger) => {
+    setTrigger(newTrigger);
+    const updatedCmd = `${newTrigger}${steps.map(formatStepSymbol).join("")}`;
+    setCommandText(updatedCmd);
   };
 
-  const handleClear = () => {
-    setSteps([]);
+  // Click 3x3 arrow grid button to append stroke
+  const handleAddArrow = (dirKey: string, dirLabel: string) => {
+    if (!dirKey) return;
+    const nextSteps = [...steps, dirKey];
+    setSteps(nextSteps);
+    setCommandText((prev) => prev + dirLabel);
+  };
+
+  // Recording mode finished
+  const handleRecordFinished = (recTrigger: GestureTrigger, recSteps: string[]) => {
+    setTrigger(recTrigger);
+    setSteps(recSteps);
+    setCommandText(buildCommandString(recTrigger, recSteps));
   };
 
   const handleSave = () => {
+    // Parse final text in command input box to guarantee 100% sync
+    const parsed = parseStrokeInput(commandText, trigger);
     onSave({
       ...gesture,
-      name: name.trim() || gesture.name || t("gestures.newGestureName"),
-      trigger,
-      steps,
+      name: name.trim() || gesture.name || t("gestures.newGestureName", { defaultValue: "新手勢" }),
+      trigger: (parsed.trigger as GestureTrigger) || trigger,
+      steps: parsed.steps,
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={(_, data) => !data.open && onCancel()}>
-      <DialogSurface>
+      <DialogSurface className={styles.surface}>
         <DialogBody>
-          <DialogTitle>{t("dialogs.editGesture")}</DialogTitle>
+          <DialogTitle>{gesture.id ? t("dialogs.editGesture") : t("gestures.add")}</DialogTitle>
+
           <DialogContent className={styles.content}>
-            {/* Gesture Name */}
-            <div className={styles.section}>
-              <Subtitle2>{t("gestures.name")}：</Subtitle2>
+            {/* Row 1: Name */}
+            <div className={styles.formRow}>
+              <Subtitle2 className={styles.rowLabel}>{t("gestures.name")}：</Subtitle2>
               <Input
+                className={styles.rowInput}
                 value={name}
                 onChange={(_, data) => setName(data.value)}
                 placeholder={t("dialogs.gestureNamePlaceholder", { defaultValue: "請輸入手勢名稱" })}
               />
             </div>
 
-            {/* Trigger Selection */}
-            <div className={styles.section}>
-              <Subtitle2>{t("dialogs.triggerButton")}：</Subtitle2>
-              <Dropdown
-                value={t("triggers." + trigger, { defaultValue: trigger })}
-                onOptionSelect={(_, data) => setTrigger(data.optionValue as GestureTrigger)}
-              >
-                {TRIGGER_OPTIONS.map((opt) => (
-                  <Option key={opt} value={opt}>
-                    {t("triggers." + opt, { defaultValue: opt })}
-                  </Option>
-                ))}
-              </Dropdown>
+            {/* Row 2: Command */}
+            <div className={styles.formRow}>
+              <Subtitle2 className={styles.rowLabel}>{t("dialogs.command", { defaultValue: "指令" })}：</Subtitle2>
+              <Input
+                className={styles.rowInput}
+                value={commandText}
+                onChange={(_, data) => handleCommandTextChange(data.value)}
+                placeholder="例如 R→↘"
+              />
             </div>
 
-            {/* Sequence display & controls */}
-            <div className={styles.section}>
-              <Subtitle2>{t("dialogs.strokeSequence")}：</Subtitle2>
-              <div className={styles.sequenceDisplay}>
-                <div className={styles.sequenceSteps}>
-                  <span>{formatTriggerSymbol(trigger, t)}</span>
-                  <span>:</span>
-                  {steps.length === 0 ? (
-                    <Caption1 style={{ color: tokens.colorNeutralForeground4 }}>{t("dialogs.noSteps")}</Caption1>
-                  ) : (
-                    steps.map((s, i) => (
-                      <span key={i}>
-                        {formatStepSymbol(s)}
-                        {i < steps.length - 1 && " "}
-                      </span>
-                    ))
-                  )}
-                </div>
-                <div style={{ display: "flex", gap: "4px" }}>
-                  <Button
-                    size="small"
-                    appearance="subtle"
-                    icon={<ArrowUndo16Regular />}
-                    onClick={handleUndo}
-                    title={t("dialogs.undo")}
-                    disabled={steps.length === 0}
-                  />
-                  <Button
-                    size="small"
-                    appearance="subtle"
-                    icon={<Delete16Regular />}
-                    onClick={handleClear}
-                    title={t("dialogs.clear")}
-                    disabled={steps.length === 0}
+            {/* Row 3: Tabs */}
+            <TabList
+              selectedValue={activeTab}
+              onTabSelect={(_, data) => setActiveTab(data.value as GestureDialogTab)}
+              className={styles.tabList}
+            >
+              <Tab value="standard">
+                {t("dialogs.tabStandard", { defaultValue: "標準模式" })}
+              </Tab>
+              <Tab value="record">
+                {t("dialogs.tabRecord", { defaultValue: "錄製模式" })}
+              </Tab>
+            </TabList>
+
+            {/* Row 4: Mode Content */}
+
+            {/* Standard Mode: Mouse SVG on the left, 3x3 Arrow Grid on the right */}
+            {activeTab === "standard" && (
+              <div className={styles.standardContentRow}>
+                <div className={styles.mouseCol}>
+                  <MousePreview
+                    selectedTrigger={trigger}
+                    onSelectTrigger={handleSelectTrigger}
                   />
                 </div>
-              </div>
-            </div>
 
-            {/* 8-Direction Button Grid (for stroke gestures) */}
-            {!isSpatialTrigger && (
-              <div className={styles.section}>
-                <Caption1 style={{ textAlign: "center" }}>{t("dialogs.clickArrowTip")}</Caption1>
-                <div className={styles.arrowGrid}>
-                  {DIRECTION_BUTTONS.map((btn, idx) => (
-                    <Button
-                      key={idx}
-                      className={styles.arrowBtn}
-                      appearance={btn.key ? "secondary" : "subtle"}
-                      disabled={!btn.key}
-                      onClick={() => handleAddStep(btn.key)}
-                    >
-                      {btn.label}
-                    </Button>
-                  ))}
-                </div>
-
-                {/* Quick Chord Wheel buttons */}
-                <div style={{ display: "flex", gap: "8px", justifyContent: "center", marginTop: "4px" }}>
-                  <Button size="small" appearance="outline" onClick={() => handleAddStep("WU")}>
-                    {t("dialogs.wheelUpBtn")}
-                  </Button>
-                  <Button size="small" appearance="outline" onClick={() => handleAddStep("WD")}>
-                    {t("dialogs.wheelDownBtn")}
-                  </Button>
+                <div className={styles.gridCol}>
+                  <div className={styles.arrowGrid}>
+                    {DIRECTION_BUTTONS.map((btn, idx) => (
+                      <Button
+                        key={idx}
+                        appearance={btn.key ? "secondary" : "subtle"}
+                        disabled={!btn.key}
+                        className={styles.arrowBtn}
+                        onClick={() => handleAddArrow(btn.key, btn.label)}
+                      >
+                        {btn.label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
+
+            {/* Record Mode: Interactive Canvas */}
+            {activeTab === "record" && (
+              <div className={styles.recordContent}>
+                <GestureRecorderCanvas
+                  initialTrigger={trigger}
+                  onRecordFinished={handleRecordFinished}
+                />
+              </div>
+            )}
           </DialogContent>
+
           <DialogActions>
             <Button appearance="secondary" onClick={onCancel}>
               {t("dialogs.cancel")}
             </Button>
-            <Button appearance="primary" onClick={handleSave}>
+            <Button
+              appearance="primary"
+              onClick={handleSave}
+              disabled={activeTab === "record"}
+            >
               {t("dialogs.save")}
             </Button>
           </DialogActions>
