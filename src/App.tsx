@@ -4,8 +4,11 @@ import { useTranslation } from "react-i18next";
 import { Sidebar, NavTabId } from "./components/Sidebar";
 import { Header } from "./components/Header";
 import { TargetsView } from "./views/TargetsView";
+import { ExcludedView } from "./views/ExcludedView";
 import { GesturesView } from "./views/GesturesView";
+import { HotkeysView } from "./views/HotkeysView";
 import { ActionsView } from "./views/ActionsView";
+import { BackupView } from "./views/BackupView";
 import { SettingsView } from "./views/SettingsView";
 import { DEFAULT_CONFIG } from "./defaults";
 import { AppConfig, Target, Gesture, Action } from "./types";
@@ -150,6 +153,20 @@ export const App: React.FC = () => {
     }));
   };
 
+  const handleAddGestureTemplate = (newTemplate: Gesture) => {
+    setConfig((prev) => ({
+      ...prev,
+      gestureTemplates: [...prev.gestureTemplates, newTemplate],
+    }));
+  };
+
+  const handleAddActionTemplate = (newAction: Action) => {
+    setConfig((prev) => ({
+      ...prev,
+      actionTemplates: [...prev.actionTemplates, newAction],
+    }));
+  };
+
   const handleUpdateActions = (newActions: Action[]) => {
     setConfig((prev) => ({
       ...prev,
@@ -160,13 +177,19 @@ export const App: React.FC = () => {
   const getTabTitle = (tab: NavTabId): string => {
     switch (tab) {
       case "targets":
-        return t("nav.targets");
+        return t("nav.targets", { defaultValue: "應用目標" });
+      case "excluded":
+        return t("nav.excluded", { defaultValue: "排除目標" });
       case "gestures":
-        return t("nav.gestures");
+        return t("nav.gestures", { defaultValue: "手勢" });
+      case "hotkeys":
+        return t("nav.hotkeys", { defaultValue: "熱鍵" });
       case "actions":
-        return t("nav.actions");
+        return t("nav.actions", { defaultValue: "行為" });
+      case "backup":
+        return t("nav.backup", { defaultValue: "匯入匯出" });
       case "settings":
-        return t("nav.settings");
+        return t("nav.settings", { defaultValue: "設定" });
     }
   };
 
@@ -186,6 +209,16 @@ export const App: React.FC = () => {
           {selectedTab === "targets" && (
             <TargetsView
               targets={config.targets}
+              gestureTemplates={config.gestureTemplates}
+              actionTemplates={config.actionTemplates}
+              onUpdateTargets={handleUpdateTargets}
+              onAddGestureTemplate={handleAddGestureTemplate}
+              onAddActionTemplate={handleAddActionTemplate}
+            />
+          )}
+          {selectedTab === "excluded" && (
+            <ExcludedView
+              targets={config.targets}
               onUpdateTargets={handleUpdateTargets}
             />
           )}
@@ -195,10 +228,17 @@ export const App: React.FC = () => {
               onUpdateGestures={handleUpdateGestures}
             />
           )}
+          {selectedTab === "hotkeys" && <HotkeysView />}
           {selectedTab === "actions" && (
             <ActionsView
               actions={config.actionTemplates}
               onUpdateActions={handleUpdateActions}
+            />
+          )}
+          {selectedTab === "backup" && (
+            <BackupView
+              config={config}
+              onUpdateConfig={setConfig}
             />
           )}
           {selectedTab === "settings" && (

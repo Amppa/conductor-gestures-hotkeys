@@ -8,10 +8,13 @@
     "applyFailed": "套用失敗: {{err}}"
   },
   "nav": {
-    "targets": "目標清單",
-    "gestures": "手勢清單",
-    "actions": "動作清單",
-    "settings": "系統設定"
+    "targets": "應用目標",
+    "excluded": "排除目標",
+    "gestures": "手勢",
+    "hotkeys": "熱鍵",
+    "actions": "行為",
+    "backup": "匯入匯出",
+    "settings": "設定"
   },
   "header": {
     "pause": "暫停手勢",
@@ -34,6 +37,27 @@
     "autostartDesc": "登入 Windows 時自動在背景啟動手勢服務並縮小至系統匣。",
     "debugTitle": "手勢偵錯日誌模式 (Debug Log Mode)",
     "debugDesc": "在 runtime 目錄記錄詳細手勢軌跡、命中的應用程式與動作分派，方便排查問題。"
+  },
+  "backup": {
+    "title": "設定匯入與匯出",
+    "subtitle": "備份目前所有手勢與目標設定、匯入既有設定檔，或將設定恢復至原廠預設狀態。",
+    "exportTitle": "匯出目前設定 (Export)",
+    "exportDesc": "將目前的應用目標、手勢與行為範本打包儲存為 JSON 檔案。",
+    "exportBtn": "匯出設定檔",
+    "importTitle": "匯入設定 (Import)",
+    "importDesc": "從本機讀取既有的 JSON 設定檔並載入至目前編輯狀態。",
+    "importBtn": "選擇檔案並匯入",
+    "importWarningTitle": "確認覆蓋現有設定？",
+    "importWarningContent": "匯入新的設定檔將會完全取代目前的應用目標、手勢與行為設定。確定要繼續嗎？",
+    "importSuccess": "設定檔載入成功，請確認無誤後點擊右上角「套用」生效。",
+    "importInvalidFormat": "匯入失敗：設定檔格式不正確或缺少必要結構。",
+    "resetTitle": "恢復原廠預設 (Restore Defaults)",
+    "resetDesc": "將所有設定還原為初始安裝時的預設狀態（清除自訂手勢與自訂群組）。",
+    "resetBtn": "恢復原廠預設值",
+    "resetWarningTitle": "確認還原預設設定？",
+    "resetWarningContent": "此操作將清除所有自訂手勢、分組與行為範本，並恢復為出廠預設值。確定要重設嗎？",
+    "confirm": "確定",
+    "cancel": "取消"
   },
   "targets": {
     "ruleHint": "優先度：黑名單 > 白名單 > 全域預設",
@@ -68,10 +92,12 @@
     "whitelistDesc": "為特定應用程式自訂專屬手勢，優先於全域預設。例如瀏覽器。",
     "addDisabledApp": "新增黑名單程式",
     "groupGestures": "群組手勢：",
-    "addGroupGesture": "新增群組手勢"
+    "addGroupGesture": "新增群組手勢",
+    "addNewGesture": "新增手勢...",
+    "addNewAction": "新增動作..."
   },
   "gestures": {
-    "title": "手勢清單",
+    "title": "手勢",
     "subtitle": "手勢範本庫。備註：修改手勢範本，並不會改變已綁定的手勢動作。",
     "add": "新增手勢",
     "newGestureName": "新自訂手勢",
@@ -84,8 +110,14 @@
     "tableTrigger": "觸發按鍵",
     "tableStroke": "手勢筆畫"
   },
+  "hotkeys": {
+    "subtitle": "鍵盤按鍵與組合快捷鍵對應設定。",
+    "inDevBadge": "開發中 (Coming Soon)",
+    "inDevTitle": "熱鍵對應功能開發中",
+    "inDevDesc": "鍵盤按鍵與全域/群組快捷鍵對應功能將於下一版本正式推出，敬請期待。"
+  },
   "actions": {
-    "title": "動作清單",
+    "title": "行為",
     "subtitle": "執行的行為清單，例如鍵盤快速鍵發送、系統操作、執行命令與 AHK 腳本。",
     "add": "新增動作",
     "type": "類型",
@@ -148,7 +180,15 @@
     "noSteps": "無步驟 (單擊或觸控角)",
     "clickArrowTip": "點擊方向箭頭串接筆劃：",
     "wheelUpBtn": "+ 滾輪上 (W↑)",
-    "wheelDownBtn": "+ 滾輪下 (W↓)"
+    "wheelDownBtn": "+ 滾輪下 (W↓)",
+    "tabStandard": "標準模式",
+    "tabRecord": "錄製模式",
+    "command": "指令",
+    "tabTemplates": "使用既有手勢",
+    "tabManual": "手動文字編輯",
+    "selectTemplateTip": "請選擇手勢範本（套用後將複製為獨立副本）：",
+    "applyTemplate": "套用",
+    "emptyTemplates": "目前沒有任何手勢範本"
   },
   "triggers": {
     "R": "R (右鍵)",

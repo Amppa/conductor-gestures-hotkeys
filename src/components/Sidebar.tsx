@@ -11,27 +11,38 @@ import {
 } from "@fluentui/react-components";
 import {
   Apps24Regular,
+  Prohibited24Regular,
   HandDraw24Regular,
+  Keyboard24Regular,
   Flash24Regular,
   Settings24Regular,
+  ArrowDownload24Regular,
 } from "@fluentui/react-icons";
 
-export type NavTabId = "targets" | "gestures" | "actions" | "settings";
+export type NavTabId =
+  | "targets"
+  | "excluded"
+  | "gestures"
+  | "hotkeys"
+  | "actions"
+  | "backup"
+  | "settings";
 
 const useStyles = makeStyles({
   container: {
-    width: "250px",
-    minWidth: "250px",
+    width: "170px",
+    minWidth: "170px",
     height: "100%",
     backgroundColor: tokens.colorNeutralBackground2,
     borderRight: `1px solid ${tokens.colorNeutralStroke2}`,
     display: "flex",
     flexDirection: "column",
-    padding: "16px 12px",
+    padding: "16px 8px",
     userSelect: "none",
+    boxSizing: "border-box",
   },
   header: {
-    padding: "8px 12px 16px 12px",
+    padding: "4px 8px 12px 8px",
   },
   title: {
     color: tokens.colorNeutralForeground1,
@@ -41,19 +52,24 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground3,
     marginTop: "2px",
   },
+  navSection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+  },
   tabList: {
     display: "flex",
     flexDirection: "column",
-    gap: "6px",
+    gap: "2px",
   },
   bottomSection: {
     marginTop: "auto",
     display: "flex",
     flexDirection: "column",
-    gap: "6px",
+    gap: "2px",
   },
   divider: {
-    margin: "12px 0",
+    margin: "8px 0",
   },
 });
 
@@ -78,25 +94,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* Main navigation list */}
-      <TabList
-        vertical
-        selectedValue={selectedTab}
-        onTabSelect={(_, data) => onTabSelect(data.value as NavTabId)}
-        className={styles.tabList}
-      >
-        <Tab value="targets" icon={<Apps24Regular />}>
-          {t("nav.targets")}
-        </Tab>
-        <Tab value="gestures" icon={<HandDraw24Regular />}>
-          {t("nav.gestures")}
-        </Tab>
-        <Tab value="actions" icon={<Flash24Regular />}>
-          {t("nav.actions")}
-        </Tab>
-      </TabList>
+      <div className={styles.navSection}>
+        {/* 1. Targets & Excluded */}
+        <TabList
+          vertical
+          selectedValue={selectedTab}
+          onTabSelect={(_, data) => onTabSelect(data.value as NavTabId)}
+          className={styles.tabList}
+        >
+          <Tab value="targets" icon={<Apps24Regular />}>
+            {t("nav.targets", { defaultValue: "應用目標" })}
+          </Tab>
+          <Tab value="excluded" icon={<Prohibited24Regular />}>
+            {t("nav.excluded", { defaultValue: "排除目標" })}
+          </Tab>
+        </TabList>
 
-      {/* Bottom settings section */}
+        <Divider className={styles.divider} />
+
+        {/* 2. Gestures & Hotkeys */}
+        <TabList
+          vertical
+          selectedValue={selectedTab}
+          onTabSelect={(_, data) => onTabSelect(data.value as NavTabId)}
+          className={styles.tabList}
+        >
+          <Tab value="gestures" icon={<HandDraw24Regular />}>
+            {t("nav.gestures", { defaultValue: "手勢" })}
+          </Tab>
+          <Tab value="hotkeys" icon={<Keyboard24Regular />}>
+            {t("nav.hotkeys", { defaultValue: "熱鍵" })}
+          </Tab>
+        </TabList>
+
+        <Divider className={styles.divider} />
+
+        {/* 3. Actions / Behaviors */}
+        <TabList
+          vertical
+          selectedValue={selectedTab}
+          onTabSelect={(_, data) => onTabSelect(data.value as NavTabId)}
+          className={styles.tabList}
+        >
+          <Tab value="actions" icon={<Flash24Regular />}>
+            {t("nav.actions", { defaultValue: "行為" })}
+          </Tab>
+        </TabList>
+      </div>
+
+      {/* 4. Bottom settings section */}
       <div className={styles.bottomSection}>
         <Divider className={styles.divider} />
         <TabList
@@ -105,8 +151,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onTabSelect={(_, data) => onTabSelect(data.value as NavTabId)}
           className={styles.tabList}
         >
+          <Tab value="backup" icon={<ArrowDownload24Regular />}>
+            {t("nav.backup", { defaultValue: "匯入匯出" })}
+          </Tab>
           <Tab value="settings" icon={<Settings24Regular />}>
-            {t("nav.settings")}
+            {t("nav.settings", { defaultValue: "設定" })}
           </Tab>
         </TabList>
       </div>

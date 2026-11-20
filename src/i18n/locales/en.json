@@ -8,9 +8,12 @@
     "applyFailed": "Apply failed: {{err}}"
   },
   "nav": {
-    "targets": "Targets",
+    "targets": "Application Targets",
+    "excluded": "Excluded Targets",
     "gestures": "Gestures",
-    "actions": "Actions",
+    "hotkeys": "Hotkeys",
+    "actions": "Behaviors",
+    "backup": "Import/Export",
     "settings": "Settings"
   },
   "header": {
@@ -34,6 +37,27 @@
     "autostartDesc": "Automatically start MouseGesture 5Btn in the background upon Windows login.",
     "debugTitle": "Debug Logging",
     "debugDesc": "Output detailed gesture trajectory and state logs in runtime directory."
+  },
+  "backup": {
+    "title": "Import & Export",
+    "subtitle": "Backup your gestures and targets, import configuration files, or reset to factory defaults.",
+    "exportTitle": "Export Current Configuration",
+    "exportDesc": "Save your current targets, gesture templates, and actions to a JSON file.",
+    "exportBtn": "Export Configuration",
+    "importTitle": "Import Configuration",
+    "importDesc": "Load a previously saved JSON configuration file into draft state.",
+    "importBtn": "Select File & Import",
+    "importWarningTitle": "Overwrite Current Configuration?",
+    "importWarningContent": "Importing a new configuration will completely replace your current targets, gestures, and actions. Do you want to proceed?",
+    "importSuccess": "Configuration loaded successfully. Review changes and click 'Apply' to take effect.",
+    "importInvalidFormat": "Import failed: Invalid configuration format or missing required structure.",
+    "resetTitle": "Restore Defaults",
+    "resetDesc": "Reset all configuration back to factory default values (clears custom gestures and groups).",
+    "resetBtn": "Reset to Defaults",
+    "resetWarningTitle": "Confirm Restore Defaults?",
+    "resetWarningContent": "This action will discard all custom gestures and targets and restore factory defaults. Are you sure?",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
   },
   "targets": {
     "ruleHint": "Priority: Blocklist > Whitelist > Global Default",
@@ -68,7 +92,9 @@
     "whitelistDesc": "Define custom gestures for specific application groups, taking priority over global defaults. e.g. Browsers.",
     "addDisabledApp": "Add Bypass App",
     "groupGestures": "Group Gestures:",
-    "addGroupGesture": "Add Group Gesture"
+    "addGroupGesture": "Add Group Gesture",
+    "addNewGesture": "New Gesture...",
+    "addNewAction": "New Action..."
   },
   "gestures": {
     "title": "Gestures",
@@ -84,8 +110,14 @@
     "tableTrigger": "Trigger",
     "tableStroke": "Stroke"
   },
+  "hotkeys": {
+    "subtitle": "Keyboard hotkey and chord mappings.",
+    "inDevBadge": "Coming Soon",
+    "inDevTitle": "Hotkeys Feature in Development",
+    "inDevDesc": "Keyboard hotkey and application-specific shortcut mappings will be officially released in the next update."
+  },
   "actions": {
-    "title": "Actions",
+    "title": "Behaviors",
     "subtitle": "Define keystrokes, wheel chords, programs, or AHK scripts triggered by gestures.",
     "add": "Add Action",
     "type": "Type",
@@ -148,7 +180,16 @@
     "noSteps": "No steps (Single click or hot corner)",
     "clickArrowTip": "Click direction arrows to chain strokes:",
     "wheelUpBtn": "+ Wheel Up (W↑)",
-    "wheelDownBtn": "+ Wheel Down (W↓)"
+    "wheelDownBtn": "+ Wheel Down (W↓)",
+    "tabStandard": "Standard Mode",
+    "tabRecord": "Record Mode",
+    "command": "Command",
+    "tabTemplates": "Existing Gestures",
+    "tabManual": "Manual Edit",
+    "tabRecord": "Record Mode",
+    "selectTemplateTip": "Select a gesture template to apply (cloned as an independent copy):",
+    "applyTemplate": "Apply",
+    "emptyTemplates": "No gesture templates available"
   },
   "triggers": {
     "R": "R (Right Click)",
