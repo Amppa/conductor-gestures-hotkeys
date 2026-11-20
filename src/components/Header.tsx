@@ -39,7 +39,8 @@ const useStyles = makeStyles({
 interface HeaderProps {
   title: string;
   isPaused: boolean;
-  statusMsg?: string;
+  isDirty: boolean;
+  feedbackMsg: string | null;
   onTogglePause: () => void;
   onReload: () => void;
 }
@@ -47,7 +48,8 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   title,
   isPaused,
-  statusMsg,
+  isDirty,
+  feedbackMsg,
   onTogglePause,
   onReload,
 }) => {
@@ -58,16 +60,29 @@ export const Header: React.FC<HeaderProps> = ({
     <header className={styles.container}>
       <div className={styles.left}>
         <Subtitle1>{title}</Subtitle1>
-        <Badge
-          appearance="tint"
-          color={isPaused ? "warning" : "success"}
-          shape="rounded"
-        >
-          {isPaused ? t("app.enginePaused") : statusMsg || t("app.engineRunning")}
-        </Badge>
       </div>
 
       <div className={styles.right}>
+        <Badge
+          appearance="tint"
+          color={
+            feedbackMsg
+              ? "success"
+              : isPaused
+              ? "warning"
+              : isDirty
+              ? "important"
+              : "success"
+          }
+          shape="rounded"
+        >
+          {feedbackMsg ||
+            (isPaused
+              ? t("app.enginePaused")
+              : isDirty
+              ? t("header.unsavedChanges")
+              : t("header.engineActive"))}
+        </Badge>
         <Button
           size="small"
           appearance="secondary"
@@ -78,7 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
         </Button>
         <Button
           size="small"
-          appearance="primary"
+          appearance={isDirty ? "primary" : "secondary"}
           icon={<ArrowClockwise16Regular />}
           onClick={onReload}
         >

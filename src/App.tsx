@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { makeStyles } from "@fluentui/react-components";
 import { useTranslation } from "react-i18next";
 import { Sidebar, NavTabId } from "./components/Sidebar";
@@ -35,9 +35,13 @@ export const App: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [selectedTab, setSelectedTab] = useState<NavTabId>("targets");
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
+  const [savedConfig, setSavedConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [isPaused, setIsPaused] = useState(false);
   const [autostartEnabled, setAutostartEnabled] = useState(false);
-  const [statusMsg, setStatusMsg] = useState("");
+  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+  const feedbackTimerRef = useRef<number | null>(null);
+
+  const isDirty = JSON.stringify(config) !== JSON.stringify(savedConfig);
 
   // Load config and sync runtime state on startup
   useEffect(() => {
@@ -48,20 +52,16 @@ export const App: React.FC = () => {
         const activeConfig = loaded || config;
         if (loaded) {
           setConfig(loaded);
+          setSavedConfig(loaded);
           if (loaded.language) {
             i18n.changeLanguage(loaded.language);
           }
         }
         // Auto-apply gesture engine on startup to guarantee active status
         try {
-          const res = await invoke<{ success: boolean; msg: string }>("apply_config", {
+          await invoke<{ success: boolean; msg: string }>("apply_config", {
             config: activeConfig,
           });
-          if (res?.msg) {
-            setStatusMsg(res.msg);
-          } else {
-            setStatusMsg(t("app.engineRunning"));
-          }
         } catch (e) {
           console.warn("Auto-apply engine on startup warning:", e);
         }
@@ -71,7 +71,6 @@ export const App: React.FC = () => {
         setIsPaused(paused);
       } catch {
         // Fallback in browser dev mode
-        setStatusMsg(t("app.engineRunning"));
       }
     };
     initApp();
@@ -102,7 +101,14 @@ export const App: React.FC = () => {
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       const res = await invoke<{ success: boolean; msg: string }>("apply_config", { config });
-      setStatusMsg(res.msg);
+      setSavedConfig(config);
+      setFeedbackMsg(res?.msg || t("header.appliedSuccess"));
+      if (feedbackTimerRef.current) {
+        window.clearTimeout(feedbackTimerRef.current);
+      }
+      feedbackTimerRef.current = window.setTimeout(() => {
+        setFeedbackMsg(null);
+      }, 3000);
     } catch (err) {
       alert(t("app.applyFailed", { err }));
     }
@@ -142,7 +148,8 @@ export const App: React.FC = () => {
         <Header
           title={getTabTitle(selectedTab)}
           isPaused={isPaused}
-          statusMsg={statusMsg}
+          isDirty={isDirty}
+          feedbackMsg={feedbackMsg}
           onTogglePause={handleTogglePause}
           onReload={handleReload}
         />

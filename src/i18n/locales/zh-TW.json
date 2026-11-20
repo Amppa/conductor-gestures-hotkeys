@@ -16,7 +16,10 @@
   "header": {
     "pause": "暫停手勢",
     "resume": "繼續手勢",
-    "apply": "套用並重載"
+    "apply": "套用",
+    "engineActive": "引擎已啟動",
+    "unsavedChanges": "有修改，尚未儲存套用",
+    "appliedSuccess": "手勢引擎已成功校驗並套用"
   },
   "settings": {
     "title": "系統與引擎設定",

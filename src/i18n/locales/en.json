@@ -16,7 +16,10 @@
   "header": {
     "pause": "Pause",
     "resume": "Resume",
-    "apply": "Apply & Reload"
+    "apply": "Apply",
+    "engineActive": "Engine Active",
+    "unsavedChanges": "Unsaved changes",
+    "appliedSuccess": "Gesture engine verified & applied"
   },
   "settings": {
     "title": "System & Engine Settings",
