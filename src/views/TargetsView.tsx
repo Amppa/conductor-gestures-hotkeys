@@ -415,14 +415,14 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                 <td
                   className={styles.tdAction}
                   onClick={() => handleDoubleAction(target.id, b.id)}
-                  title={t("targets.doubleClickActionTip")}
+                  title={b.action.value ? `${t("targets.doubleClickActionTip")} (${b.action.value})` : t("targets.doubleClickActionTip")}
                 >
                   {emptyAction ? (
                     <span style={{ color: tokens.colorNeutralForeground4, fontStyle: "italic" }}>
                       {t("targets.noAction")}
                     </span>
                   ) : (
-                    `${t("actionNames." + b.action.id, { defaultValue: b.action.name })} (${b.action.value})`
+                    t("actionNames." + b.action.id, { defaultValue: b.action.name }) || b.action.value
                   )}
                 </td>
                 <td className={styles.tdOps}>

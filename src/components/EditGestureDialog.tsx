@@ -8,6 +8,7 @@ import {
   DialogActions,
   DialogContent,
   Button,
+  Input,
   Dropdown,
   Option,
   Subtitle2,
@@ -83,14 +84,15 @@ const DIRECTION_BUTTONS = [
 const TRIGGER_OPTIONS: GestureTrigger[] = [
   "R",
   "M",
+  "L",
   "X1",
   "X2",
   "CornerTL",
   "CornerTR",
   "CornerBL",
   "CornerBR",
-  "EdgeTopR",
-  "EdgeTopL",
+  "EdgeTop",
+  "EdgeBottom",
   "EdgeLeft",
   "EdgeRight",
 ];
@@ -103,6 +105,9 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
 }) => {
   const styles = useStyles();
   const { t } = useTranslation();
+  const [name, setName] = useState(
+    t("gestureNames." + gesture.id, { defaultValue: gesture.name })
+  );
   const [trigger, setTrigger] = useState<GestureTrigger>(gesture.trigger);
   const [steps, setSteps] = useState<string[]>([...gesture.steps]);
 
@@ -124,6 +129,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
   const handleSave = () => {
     onSave({
       ...gesture,
+      name: name.trim() || gesture.name || t("gestures.newGestureName"),
       trigger,
       steps,
     });
@@ -135,6 +141,16 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
         <DialogBody>
           <DialogTitle>{t("dialogs.editGesture")}</DialogTitle>
           <DialogContent className={styles.content}>
+            {/* Gesture Name */}
+            <div className={styles.section}>
+              <Subtitle2>{t("gestures.name")}：</Subtitle2>
+              <Input
+                value={name}
+                onChange={(_, data) => setName(data.value)}
+                placeholder={t("dialogs.gestureNamePlaceholder", { defaultValue: "請輸入手勢名稱" })}
+              />
+            </div>
+
             {/* Trigger Selection */}
             <div className={styles.section}>
               <Subtitle2>{t("dialogs.triggerButton")}：</Subtitle2>
