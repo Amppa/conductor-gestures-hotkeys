@@ -1,0 +1,121 @@
+{
+  "app": {
+    "title": "MouseGesture 5Btn",
+    "subtitle": "5-Button Mouse & Gesture Manager",
+    "engineRunning": "Gesture engine is active",
+    "enginePaused": "Gestures paused",
+    "applySuccess": "Configuration applied & reloaded",
+    "applyFailed": "Apply failed: {{err}}"
+  },
+  "nav": {
+    "targets": "Targets",
+    "gestures": "Gestures",
+    "actions": "Actions",
+    "settings": "Settings"
+  },
+  "header": {
+    "pause": "Pause",
+    "resume": "Resume",
+    "apply": "Apply & Reload"
+  },
+  "settings": {
+    "title": "System & Engine Settings",
+    "subtitle": "Configure system language, stroke threshold, edge scrolling, and startup options.",
+    "languageTitle": "Display Language",
+    "languageDesc": "Select the language used across the application interface.",
+    "edgeScrollTitle": "Top Edge Scrolling",
+    "edgeScrollDesc": "Scroll wheel at the top edge of the screen to adjust system volume.",
+    "thresholdTitle": "Gesture Recognition Threshold",
+    "thresholdDesc": "Cursor distance (in pixels) required to recognize a stroke, avoiding accidental triggers.",
+    "autostartTitle": "Start with Windows",
+    "autostartDesc": "Automatically start MouseGesture 5Btn in the background upon Windows login.",
+    "debugTitle": "Debug Logging",
+    "debugDesc": "Output detailed gesture trajectory and state logs in runtime directory."
+  },
+  "targets": {
+    "ruleHint": "Rule priority: Blocklist (Bypass) > Whitelist > Global Default",
+    "globalTitle": "Global Default",
+    "disabledTitle": "Disabled List (Bypass Apps)",
+    "browsersTitle": "Browsers",
+    "globalBadge": "Global Default",
+    "specificSection": "Whitelist",
+    "addGroup": "New Whitelist Group",
+    "newGroupName": "New Whitelist Group",
+    "deleteGroup": "Delete Group",
+    "appCount": "{{count}} apps",
+    "includedApps": "Included Apps:",
+    "addApp": "Add App",
+    "addGesture": "Add Gesture",
+    "tableGesture": "Gesture (Double click to edit)",
+    "tableAction": "Action (Double click to edit)",
+    "doubleClickGestureTip": "Double click to edit gesture",
+    "doubleClickActionTip": "Double click to edit action",
+    "deleteGestureTip": "Delete gesture",
+    "emptyBindings": "No gestures yet. Click button above to add.",
+    "newGestureName": "New Gesture",
+    "newActionName": "New Action",
+    "disabledDesc": "Applications in this list bypass mouse gesture hooks completely, preserving native mouse input.",
+    "addDisabledApp": "Add Bypass App",
+    "groupGestures": "Group Gestures:",
+    "addGroupGesture": "Add Group Gesture"
+  },
+  "gestures": {
+    "title": "Gesture Templates",
+    "subtitle": "Define reusable gesture triggers and stroke directions across targets.",
+    "add": "New Gesture Template",
+    "newGestureName": "New Custom Gesture",
+    "trigger": "Trigger Button",
+    "stroke": "Strokes",
+    "name": "Gesture Name",
+    "edit": "Edit Gesture",
+    "delete": "Delete Gesture"
+  },
+  "actions": {
+    "title": "Action Templates",
+    "subtitle": "Define keystrokes, wheel chords, programs, or AHK scripts triggered by gestures.",
+    "add": "New Action Template",
+    "type": "Action Type",
+    "value": "Command / Value",
+    "name": "Action Name",
+    "executionContent": "Command:"
+  },
+  "dialogs": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "editGesture": "Edit Gesture",
+    "editAction": "Edit Action",
+    "addProcess": "Add Executable Process",
+    "processNamePlaceholder": "e.g. chrome.exe or code.exe",
+    "triggerButton": "Trigger Button",
+    "strokeSequence": "Stroke Sequence",
+    "clear": "Clear",
+    "undo": "Undo",
+    "actionType": "Action Type",
+    "actionValue": "Command / Value"
+  },
+  "actionNames": {
+    "act-back": "Back",
+    "act-forward": "Forward",
+    "act-close-tab": "Close Tab",
+    "act-reopen-tab": "Reopen Closed Tab",
+    "act-prev-tab": "Previous Tab",
+    "act-next-tab": "Next Tab",
+    "act-minimize": "Minimize Window",
+    "act-show-desktop": "Show Desktop",
+    "act-vol-up": "Volume Up",
+    "act-vol-down": "Volume Down"
+  },
+  "gestureNames": {
+    "r-left": "Left",
+    "r-right": "Right",
+    "r-up": "Up",
+    "r-down": "Down",
+    "r-down-right": "Down-Right",
+    "r-up-left": "Up-Left",
+    "x1-click": "X1 Click",
+    "x2-click": "X2 Click",
+    "r-wu": "R + Wheel Up",
+    "r-wd": "R + Wheel Down"
+  }
+}

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   makeStyles,
   tokens,
@@ -51,6 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
   onReload,
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
 
   return (
     <header className={styles.container}>
@@ -61,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({
           color={isPaused ? "warning" : "success"}
           shape="rounded"
         >
-          {isPaused ? "手勢已暫停" : statusMsg || "手勢引擎運作中"}
+          {isPaused ? t("app.enginePaused") : statusMsg || t("app.engineRunning")}
         </Badge>
       </div>
 
@@ -72,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
           icon={isPaused ? <Play16Regular /> : <Pause16Regular />}
           onClick={onTogglePause}
         >
-          {isPaused ? "繼續手勢" : "暫停手勢"}
+          {isPaused ? t("header.resume") : t("header.pause")}
         </Button>
         <Button
           size="small"
@@ -80,7 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
           icon={<ArrowClockwise16Regular />}
           onClick={onReload}
         >
-          套用並重載
+          {t("header.apply")}
         </Button>
       </div>
     </header>

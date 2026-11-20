@@ -10,3 +10,6 @@ vendor/autohotkey/*
 !vendor/autohotkey/AutoHotkey64.exe
 !vendor/autohotkey/license.txt
 !vendor/autohotkey/README.md
+
+# VS Code Local History
+.history/

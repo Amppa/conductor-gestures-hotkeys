@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   TabList,
   Tab,
@@ -66,13 +67,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTabSelect,
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
 
   return (
     <aside className={styles.container}>
       <div className={styles.header}>
-        <Subtitle2 className={styles.title}>MouseGesture 5Btn</Subtitle2>
+        <Subtitle2 className={styles.title}>{t("app.title")}</Subtitle2>
         <div className={styles.subtitle}>
-          <Caption1>滑鼠五鍵與手勢管理系統</Caption1>
+          <Caption1>{t("app.subtitle")}</Caption1>
         </div>
       </div>
 
@@ -84,13 +86,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className={styles.tabList}
       >
         <Tab value="targets" icon={<Apps24Regular />}>
-          目標清單
+          {t("nav.targets")}
         </Tab>
         <Tab value="gestures" icon={<HandDraw24Regular />}>
-          手勢清單
+          {t("nav.gestures")}
         </Tab>
         <Tab value="actions" icon={<Flash24Regular />}>
-          動作清單
+          {t("nav.actions")}
         </Tab>
       </TabList>
 
@@ -104,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={styles.tabList}
         >
           <Tab value="settings" icon={<Settings24Regular />}>
-            設定
+            {t("nav.settings")}
           </Tab>
         </TabList>
       </div>

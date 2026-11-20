@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogSurface,
@@ -89,6 +90,7 @@ export const AddProcessDialog: React.FC<AddProcessDialogProps> = ({
   onCancel,
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
   const [manualInput, setManualInput] = useState("");
   const [filterText, setFilterText] = useState("");
   const [runningProcesses, setRunningProcesses] = useState<ProcessItem[]>([]);
@@ -134,7 +136,7 @@ export const AddProcessDialog: React.FC<AddProcessDialogProps> = ({
     <Dialog open={open} onOpenChange={(_, data) => !data.open && onCancel()}>
       <DialogSurface>
         <DialogBody>
-          <DialogTitle>新增程式至：{targetName}</DialogTitle>
+          <DialogTitle>{t("dialogs.addProcess")}：{targetName}</DialogTitle>
           <DialogContent className={styles.content}>
             {/* Manual input */}
             <div className={styles.section}>
@@ -192,7 +194,7 @@ export const AddProcessDialog: React.FC<AddProcessDialogProps> = ({
           </DialogContent>
           <DialogActions>
             <Button appearance="secondary" onClick={onCancel}>
-              完成 / 關閉
+              {t("dialogs.close")}
             </Button>
           </DialogActions>
         </DialogBody>

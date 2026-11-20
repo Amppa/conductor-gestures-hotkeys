@@ -8,8 +8,10 @@ import {
   Switch,
   Slider,
   Divider,
+  Select,
 } from "@fluentui/react-components";
-import { AppConfig } from "../types";
+import { useTranslation } from "react-i18next";
+import { AppConfig, Language } from "../types";
 
 const useStyles = makeStyles({
   container: {
@@ -48,6 +50,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onToggleAutostart,
 }) => {
   const styles = useStyles();
+  const { t, i18n } = useTranslation();
+
+  const handleLanguageChange = (lang: Language) => {
+    i18n.changeLanguage(lang);
+    onUpdateConfig({
+      ...config,
+      language: lang,
+    });
+  };
 
   const handleEdgeScrollChange = (enabled: boolean) => {
     onUpdateConfig({
@@ -82,20 +93,36 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   return (
     <div className={styles.container}>
       <div>
-        <Subtitle2>系統與引擎設定 (System &amp; Engine Settings)</Subtitle2>
+        <Subtitle2>{t("settings.title")}</Subtitle2>
         <div>
-          <Caption1>配置滑鼠手勢閥值、螢幕邊緣滾動與開機常駐選項。</Caption1>
+          <Caption1>{t("settings.subtitle")}</Caption1>
         </div>
       </div>
+
+      {/* Language Selector */}
+      <Card className={styles.card}>
+        <div className={styles.row}>
+          <div>
+            <div style={{ fontWeight: 600 }}>{t("settings.languageTitle")}</div>
+            <Caption1>{t("settings.languageDesc")}</Caption1>
+          </div>
+          <Select
+            value={config.language}
+            onChange={(_, data) => handleLanguageChange(data.value as Language)}
+            style={{ minWidth: "160px" }}
+          >
+            <option value="zh-TW">繁體中文 (Traditional Chinese)</option>
+            <option value="en">English (US)</option>
+          </Select>
+        </div>
+      </Card>
 
       {/* Screen edge scrolling */}
       <Card className={styles.card}>
         <div className={styles.row}>
           <div>
-            <div style={{ fontWeight: 600 }}>螢幕頂部邊緣滾輪 (Edge Scrolling)</div>
-            <Caption1>
-              當游標移動到螢幕最上方邊界時滾動滑鼠滾輪，自動調節系統音量。
-            </Caption1>
+            <div style={{ fontWeight: 600 }}>{t("settings.edgeScrollTitle")}</div>
+            <Caption1>{t("settings.edgeScrollDesc")}</Caption1>
           </div>
           <Switch
             checked={config.edgeScroll.enabled}
@@ -107,9 +134,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* Gesture distance threshold */}
       <Card className={styles.card}>
         <div>
-          <div style={{ fontWeight: 600 }}>手勢啟動位移閥值 (Distance Threshold)</div>
+          <div style={{ fontWeight: 600 }}>{t("settings.thresholdTitle")}</div>
           <Caption1>
-            滑鼠右鍵按下後，需移動超過此像素距離才判定為手勢，避免一般點擊誤觸（目前：{config.engine.thresholdPx} px）。
+            {t("settings.thresholdDesc")} ({config.engine.thresholdPx} px)
           </Caption1>
         </div>
         <Slider
@@ -125,10 +152,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <Card className={styles.card}>
         <div className={styles.row}>
           <div>
-            <div style={{ fontWeight: 600 }}>手勢偵錯日誌模式 (Debug Log Mode)</div>
-            <Caption1>
-              在 runtime 目錄記錄詳細手勢軌跡、命中的應用程式與動作分派，方便排查問題。
-            </Caption1>
+            <div style={{ fontWeight: 600 }}>{t("settings.debugTitle")}</div>
+            <Caption1>{t("settings.debugDesc")}</Caption1>
           </div>
           <Switch
             checked={config.engine.debug}
@@ -143,8 +168,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       <Card className={styles.card}>
         <div className={styles.row}>
           <div>
-            <div style={{ fontWeight: 600 }}>開機自動啟動 (Start with Windows)</div>
-            <Caption1>登入 Windows 時自動在背景啟動手勢服務並縮小至系統匣。</Caption1>
+            <div style={{ fontWeight: 600 }}>{t("settings.autostartTitle")}</div>
+            <Caption1>{t("settings.autostartDesc")}</Caption1>
           </div>
           <Switch
             checked={autostartEnabled}

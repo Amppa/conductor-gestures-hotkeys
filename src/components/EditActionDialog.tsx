@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogSurface,
@@ -64,6 +65,7 @@ export const EditActionDialog: React.FC<EditActionDialogProps> = ({
   onCancel,
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
   const [name, setName] = useState(action.name);
   const [type, setType] = useState<ActionType>(action.type);
   const [value, setValue] = useState(action.value);
@@ -115,11 +117,11 @@ export const EditActionDialog: React.FC<EditActionDialogProps> = ({
     <Dialog open={open} onOpenChange={(_, data) => !data.open && onCancel()}>
       <DialogSurface>
         <DialogBody>
-          <DialogTitle>修改動作</DialogTitle>
+          <DialogTitle>{t("dialogs.editAction")}</DialogTitle>
           <DialogContent className={styles.content}>
             {/* Action Name */}
             <div className={styles.section}>
-              <Subtitle2>動作名稱：</Subtitle2>
+              <Subtitle2>{t("actions.name")}：</Subtitle2>
               <Input
                 value={name}
                 onChange={(_, data) => setName(data.value)}
@@ -129,7 +131,7 @@ export const EditActionDialog: React.FC<EditActionDialogProps> = ({
 
             {/* Action Type */}
             <div className={styles.section}>
-              <Subtitle2>動作類型：</Subtitle2>
+              <Subtitle2>{t("dialogs.actionType")}：</Subtitle2>
               <Dropdown
                 value={type === "keys" ? "鍵盤快速鍵 (keys)" : type === "ahk" ? "原生 AHK 腳本 (ahk)" : "啟動程式/網址 (run)"}
                 onOptionSelect={(_, data) => setType(data.optionValue as ActionType)}
@@ -197,10 +199,10 @@ export const EditActionDialog: React.FC<EditActionDialogProps> = ({
           </DialogContent>
           <DialogActions>
             <Button appearance="secondary" onClick={onCancel}>
-              取消
+              {t("dialogs.cancel")}
             </Button>
             <Button appearance="primary" onClick={handleSave}>
-              儲存
+              {t("dialogs.save")}
             </Button>
           </DialogActions>
         </DialogBody>

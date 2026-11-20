@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogSurface,
@@ -101,6 +102,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
   onCancel,
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
   const [trigger, setTrigger] = useState<GestureTrigger>(gesture.trigger);
   const [steps, setSteps] = useState<string[]>([...gesture.steps]);
 
@@ -131,11 +133,11 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
     <Dialog open={open} onOpenChange={(_, data) => !data.open && onCancel()}>
       <DialogSurface>
         <DialogBody>
-          <DialogTitle>修改手勢</DialogTitle>
+          <DialogTitle>{t("dialogs.editGesture")}</DialogTitle>
           <DialogContent className={styles.content}>
             {/* Trigger Selection */}
             <div className={styles.section}>
-              <Subtitle2>觸發按鍵 / 空間區域：</Subtitle2>
+              <Subtitle2>{t("dialogs.triggerButton")}：</Subtitle2>
               <Dropdown
                 value={TRIGGER_OPTIONS.find((o) => o.value === trigger)?.label || trigger}
                 onOptionSelect={(_, data) => setTrigger(data.optionValue as GestureTrigger)}
@@ -150,7 +152,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
 
             {/* Sequence display & controls */}
             <div className={styles.section}>
-              <Subtitle2>手勢軌跡序列：</Subtitle2>
+              <Subtitle2>{t("dialogs.strokeSequence")}：</Subtitle2>
               <div className={styles.sequenceDisplay}>
                 <div className={styles.sequenceSteps}>
                   <span>{formatTriggerSymbol(trigger)}</span>
@@ -172,7 +174,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
                     appearance="subtle"
                     icon={<ArrowUndo16Regular />}
                     onClick={handleUndo}
-                    title="復原一步"
+                    title={t("dialogs.undo")}
                     disabled={steps.length === 0}
                   />
                   <Button
@@ -180,7 +182,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
                     appearance="subtle"
                     icon={<Delete16Regular />}
                     onClick={handleClear}
-                    title="全部清除"
+                    title={t("dialogs.clear")}
                     disabled={steps.length === 0}
                   />
                 </div>
@@ -219,10 +221,10 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
           </DialogContent>
           <DialogActions>
             <Button appearance="secondary" onClick={onCancel}>
-              取消
+              {t("dialogs.cancel")}
             </Button>
             <Button appearance="primary" onClick={handleSave}>
-              儲存
+              {t("dialogs.save")}
             </Button>
           </DialogActions>
         </DialogBody>

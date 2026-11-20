@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   makeStyles,
   tokens,
@@ -51,15 +52,14 @@ interface ActionsViewProps {
 
 export const ActionsView: React.FC<ActionsViewProps> = ({ actions }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
 
   return (
     <div className={styles.container}>
       <div>
-        <Subtitle2>動作清單 (Action Templates)</Subtitle2>
+        <Subtitle2>{t("actions.title")}</Subtitle2>
         <div>
-          <Caption1>
-            定義手勢辨識完成後執行的行為，包含鍵盤快速鍵發送、視窗操作、執行命令與原生 AHK 腳本。
-          </Caption1>
+          <Caption1>{t("actions.subtitle")}</Caption1>
         </div>
       </div>
 
@@ -67,13 +67,13 @@ export const ActionsView: React.FC<ActionsViewProps> = ({ actions }) => {
         {actions.map((act) => (
           <Card key={act.id} className={styles.card}>
             <div className={styles.header}>
-              <span style={{ fontWeight: 600 }}>{act.name}</span>
+              <span style={{ fontWeight: 600 }}>{t("actionNames." + act.id, { defaultValue: act.name })}</span>
               <Badge appearance="tint" color="informative">
                 {act.type}
               </Badge>
             </div>
             <div>
-              <Caption1>執行內容：</Caption1>
+              <Caption1>{t("actions.executionContent")}</Caption1>
               <div className={styles.codeValue}>{act.value}</div>
             </div>
           </Card>

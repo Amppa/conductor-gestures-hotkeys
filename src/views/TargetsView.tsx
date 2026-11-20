@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   makeStyles,
   tokens,
@@ -131,6 +132,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
   onOpenAddProcessDialog,
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   // Dialog states for inline double-click editing
@@ -246,7 +248,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
     const newGroupId = `group-${Date.now()}`;
     const newGroup: Target = {
       id: newGroupId,
-      name: "新程式群組",
+      name: t("targets.newGroupName"),
       enabled: true,
       kind: "group",
       executables: ["example.exe"],
@@ -267,8 +269,8 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
         <thead>
           <tr>
             <th className={styles.th}></th>
-            <th className={styles.th}>手勢 (雙擊編輯)</th>
-            <th className={styles.th}>動作 (雙擊編輯)</th>
+            <th className={styles.th}>{t("targets.tableGesture")}</th>
+            <th className={styles.th}>{t("targets.tableAction")}</th>
             <th className={styles.th}></th>
           </tr>
         </thead>
@@ -284,16 +286,16 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
               <td
                 className={styles.tdGesture}
                 onDoubleClick={() => handleDoubleGesture(target.id, b.id)}
-                title="雙擊以修改手勢"
+                title={t("targets.doubleClickGestureTip")}
               >
                 {formatGestureLabel(b.gesture.trigger, b.gesture.steps)}
               </td>
               <td
                 className={styles.tdAction}
                 onDoubleClick={() => handleDoubleAction(target.id, b.id)}
-                title="雙擊以修改動作"
+                title={t("targets.doubleClickActionTip")}
               >
-                {b.action.name} ({b.action.value})
+                {t("actionNames." + b.action.id, { defaultValue: b.action.name })} ({b.action.value})
               </td>
               <td className={styles.tdOps}>
                 <Button
@@ -301,7 +303,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                   appearance="subtle"
                   icon={<Delete16Regular />}
                   onClick={() => handleDeleteBinding(target.id, b.id)}
-                  title="刪除手勢"
+                  title={t("targets.deleteGestureTip")}
                 />
               </td>
             </tr>
@@ -309,7 +311,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
           {target.bindings.length === 0 && (
             <tr>
               <td colSpan={4} style={{ padding: "16px", textAlign: "center", color: tokens.colorNeutralForeground4 }}>
-                尚未建立手勢，點擊下方按鈕新增
+                {t("targets.emptyBindings")}
               </td>
             </tr>
           )}
@@ -321,16 +323,16 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
   return (
     <div className={styles.container}>
       {/* Top clean logic prompt */}
-      <div className={styles.ruleHint}>規則邏輯：放行名單 &gt; 特定程式 &gt; 預設</div>
+      <div className={styles.ruleHint}>{t("targets.ruleHint")}</div>
 
       {/* 1. 預設 (Global Default) - Placed at the top */}
       {globalTarget && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Subtitle2>{globalTarget.name}</Subtitle2>
+              <Subtitle2>{t("targets.globalTitle", { defaultValue: globalTarget.name })}</Subtitle2>
               <Badge appearance="tint" color="brand">
-                全域通用
+                {t("targets.globalBadge")}
               </Badge>
             </div>
             <Button
@@ -341,8 +343,8 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                 const newBinding: Binding = {
                   id: `b-${Date.now()}`,
                   enabled: true,
-                  gesture: { id: `g-${Date.now()}`, name: "新手勢", trigger: "R", steps: ["R"] },
-                  action: { id: `a-${Date.now()}`, name: "新動作", type: "keys", value: "^c" },
+                  gesture: { id: `g-${Date.now()}`, name: t("targets.newGestureName"), trigger: "R", steps: ["R"] },
+                  action: { id: `a-${Date.now()}`, name: t("targets.newActionName"), type: "keys", value: "^c" },
                 };
                 const updated = targets.map((t) =>
                   t.id === globalTarget.id ? { ...t, bindings: [...t.bindings, newBinding] } : t
@@ -350,7 +352,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                 onUpdateTargets(updated);
               }}
             >
-              新增手勢
+              {t("targets.addGesture")}
             </Button>
           </div>
           <Card className={styles.card}>{renderBindingsTable(globalTarget)}</Card>
@@ -362,9 +364,9 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
       {/* 2. 特定程式 (Specific app groups) */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
-          <Subtitle2>特定程式</Subtitle2>
+          <Subtitle2>{t("targets.specificSection")}</Subtitle2>
           <Button size="small" appearance="secondary" icon={<Add16Regular />} onClick={handleAddGroup}>
-            新增程式群組
+            {t("targets.addGroup")}
           </Button>
         </div>
 
@@ -375,9 +377,9 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
               <div className={styles.groupHeader}>
                 <div className={styles.groupTitleArea} onClick={() => toggleGroupCollapse(group.id)}>
                   {isCollapsed ? <ChevronRight16Regular /> : <ChevronDown16Regular />}
-                  <span style={{ fontWeight: 600 }}>{group.name}</span>
+                  <span style={{ fontWeight: 600 }}>{t("targets." + group.id + "Title", { defaultValue: group.name })}</span>
                   <Badge appearance="tint" color="informative">
-                    {group.executables.length} 個程式
+                    {t("targets.appCount", { count: group.executables.length })}
                   </Badge>
                 </div>
                 <div style={{ display: "flex", gap: "8px" }}>
@@ -387,7 +389,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                     icon={<Delete16Regular />}
                     onClick={() => handleDeleteGroup(group.id)}
                   >
-                    刪除群組
+                    {t("targets.deleteGroup")}
                   </Button>
                 </div>
               </div>
@@ -395,7 +397,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
               {!isCollapsed && (
                 <>
                   <div>
-                    <Caption1 style={{ marginBottom: "6px", display: "block" }}>包含之程式：</Caption1>
+                    <Caption1 style={{ marginBottom: "6px", display: "block" }}>{t("targets.includedApps")}</Caption1>
                     <div className={styles.tagList}>
                       {group.executables.map((exe) => (
                         <Tag
@@ -414,7 +416,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                         icon={<Add16Regular />}
                         onClick={() => setAddProcessTargetId(group.id)}
                       >
-                        新增程式
+                        {t("targets.addApp")}
                       </Button>
                     </div>
                   </div>
@@ -423,7 +425,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
 
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                      <Caption1 style={{ fontWeight: 600 }}>群組手勢：</Caption1>
+                      <Caption1 style={{ fontWeight: 600 }}>{t("targets.groupGestures")}</Caption1>
                       <Button
                         size="small"
                         appearance="subtle"
@@ -432,8 +434,8 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                           const newBinding: Binding = {
                             id: `b-${Date.now()}`,
                             enabled: true,
-                            gesture: { id: `g-${Date.now()}`, name: "新手勢", trigger: "R", steps: ["D"] },
-                            action: { id: `a-${Date.now()}`, name: "新動作", type: "keys", value: "^w" },
+                            gesture: { id: `g-${Date.now()}`, name: t("targets.newGestureName"), trigger: "R", steps: ["D"] },
+                            action: { id: `a-${Date.now()}`, name: t("targets.newActionName"), type: "keys", value: "^w" },
                           };
                           const updated = targets.map((t) =>
                             t.id === group.id ? { ...t, bindings: [...t.bindings, newBinding] } : t
@@ -441,7 +443,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                           onUpdateTargets(updated);
                         }}
                       >
-                        新增群組手勢
+                        {t("targets.addGroupGesture")}
                       </Button>
                     </div>
                     {renderBindingsTable(group)}
@@ -460,9 +462,9 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
             <div>
-              <Subtitle2>{disabledTarget.name}</Subtitle2>
+              <Subtitle2>{t("targets.disabledTitle", { defaultValue: disabledTarget.name })}</Subtitle2>
               <Caption1 style={{ display: "block", color: tokens.colorNeutralForeground3 }}>
-                名單內的程式將完全放行滑鼠原生點擊，手勢引擎不進行任何攔截。
+                {t("targets.disabledDesc")}
               </Caption1>
             </div>
             <Button
@@ -471,7 +473,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
               icon={<Add16Regular />}
               onClick={() => setAddProcessTargetId(disabledTarget.id)}
             >
-              新增放行程式
+              {t("targets.addDisabledApp")}
             </Button>
           </div>
           <Card className={styles.card}>
@@ -514,7 +516,11 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
       {addProcessTargetId && (
         <AddProcessDialog
           open={!!addProcessTargetId}
-          targetName={targets.find((t) => t.id === addProcessTargetId)?.name || "程式清單"}
+          targetName={
+            t("targets." + addProcessTargetId + "Title", {
+              defaultValue: targets.find((t) => t.id === addProcessTargetId)?.name || "程式清單",
+            })
+          }
           onAdd={handleAddProcessExe}
           onCancel={() => setAddProcessTargetId(null)}
         />

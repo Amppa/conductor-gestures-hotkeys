@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   makeStyles,
   tokens,
@@ -71,6 +72,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
   onUpdateGestures,
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
   const [editingGesture, setEditingGesture] = useState<Gesture | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -78,7 +80,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
     setIsCreating(true);
     setEditingGesture({
       id: `gesture-${Date.now()}`,
-      name: "新自訂手勢",
+      name: t("gestures.newGestureName"),
       trigger: "R",
       steps: ["R"],
     });
@@ -104,11 +106,9 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
     <div className={styles.container}>
       <div className={styles.topBar}>
         <div>
-          <Subtitle2>手勢樣板 (Gesture Templates)</Subtitle2>
+          <Subtitle2>{t("gestures.title")}</Subtitle2>
           <div>
-            <Caption1>
-              定義可在各應用程式與預設中綁定的手勢方向軌跡與觸發按鍵（支援右鍵 R、中鍵 M 與側鍵 X1/X2 及螢幕邊緣/觸控角）。
-            </Caption1>
+            <Caption1>{t("gestures.subtitle")}</Caption1>
           </div>
         </div>
         <Button
@@ -116,7 +116,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
           icon={<Add16Regular />}
           onClick={handleOpenAddDialog}
         >
-          ＋新增手勢樣板
+          {t("gestures.add")}
         </Button>
       </div>
 
@@ -124,7 +124,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
         {gestures.map((gesture) => (
           <Card key={gesture.id} className={styles.card}>
             <div className={styles.header}>
-              <span style={{ fontWeight: 600 }}>{gesture.name}</span>
+              <span style={{ fontWeight: 600 }}>{t("gestureNames." + gesture.id, { defaultValue: gesture.name })}</span>
               <Badge appearance="tint" color="brand">
                 {formatTriggerSymbol(gesture.trigger)}
               </Badge>
@@ -140,7 +140,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
                 appearance="subtle"
                 icon={<Delete16Regular />}
                 onClick={() => handleDeleteGesture(gesture.id)}
-                title="刪除此手勢樣板"
+                title={t("gestures.delete")}
               />
             </div>
           </Card>

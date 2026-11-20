@@ -1,0 +1,121 @@
+{
+  "app": {
+    "title": "MouseGesture 5Btn",
+    "subtitle": "滑鼠五鍵手勢",
+    "engineRunning": "手勢引擎運作中",
+    "enginePaused": "手勢已暫停",
+    "applySuccess": "設定已套用並重載",
+    "applyFailed": "套用失敗: {{err}}"
+  },
+  "nav": {
+    "targets": "目標清單(程式)",
+    "gestures": "手勢清單",
+    "actions": "動作清單(行為)",
+    "settings": "設定"
+  },
+  "header": {
+    "pause": "暫停手勢",
+    "resume": "繼續手勢",
+    "apply": "套用並重載"
+  },
+  "settings": {
+    "title": "系統與引擎設定",
+    "subtitle": "配置系統語言、滑鼠手勢閥值、螢幕邊緣滾動與開機常駐選項。",
+    "languageTitle": "系統語言 (Display Language)",
+    "languageDesc": "選擇介面與提示訊息所使用的顯示語言。",
+    "edgeScrollTitle": "螢幕頂部邊緣滾輪 (Edge Scrolling)",
+    "edgeScrollDesc": "當游標移動到螢幕最上方邊界時滾動滑鼠滾輪，自動調節系統音量。",
+    "thresholdTitle": "手勢啟動位移閥值 (Distance Threshold)",
+    "thresholdDesc": "滑鼠按下後，需移動超過此像素距離才判定為手勢，避免一般點擊誤觸。",
+    "autostartTitle": "開機自動啟動 (Start with Windows)",
+    "autostartDesc": "登入 Windows 時自動在背景啟動手勢服務並縮小至系統匣。",
+    "debugTitle": "手勢偵錯日誌模式 (Debug Log Mode)",
+    "debugDesc": "在 runtime 目錄記錄詳細手勢軌跡、命中的應用程式與動作分派，方便排查問題。"
+  },
+  "targets": {
+    "ruleHint": "規則邏輯：黑名單 (不套用) > 白名單 > 全域預設",
+    "globalTitle": "全域預設 (Global Default)",
+    "disabledTitle": "黑名單 (不套用程式)",
+    "browsersTitle": "瀏覽器群組 (Browsers)",
+    "globalBadge": "全域通用",
+    "specificSection": "白名單",
+    "addGroup": "新增白名單群組",
+    "newGroupName": "新白名單群組",
+    "deleteGroup": "刪除群組",
+    "appCount": "{{count}} 個程式",
+    "includedApps": "包含之程式：",
+    "addApp": "新增程式",
+    "addGesture": "新增手勢",
+    "tableGesture": "手勢 (雙擊編輯)",
+    "tableAction": "動作 (雙擊編輯)",
+    "doubleClickGestureTip": "雙擊以修改手勢",
+    "doubleClickActionTip": "雙擊以修改動作",
+    "deleteGestureTip": "刪除手勢",
+    "emptyBindings": "尚未建立手勢，點擊上方按鈕新增",
+    "newGestureName": "新手勢",
+    "newActionName": "新動作",
+    "disabledDesc": "黑名單內的程式將完全放行滑鼠原生點擊，手勢引擎不進行任何攔截。",
+    "addDisabledApp": "新增黑名單程式",
+    "groupGestures": "群組手勢：",
+    "addGroupGesture": "新增群組手勢"
+  },
+  "gestures": {
+    "title": "手勢清單",
+    "subtitle": "手勢範本庫。備註：修改手勢範本，並不會改變已綁定的手勢動作。",
+    "add": "新增手勢範本",
+    "newGestureName": "新自訂手勢",
+    "trigger": "觸發按鍵",
+    "stroke": "手勢筆畫",
+    "name": "手勢名稱",
+    "edit": "編輯手勢",
+    "delete": "刪除手勢"
+  },
+  "actions": {
+    "title": "動作清單 (Action Templates)",
+    "subtitle": "執行的行為清單，例如鍵盤快速鍵發送、系統操作、執行命令與 AHK 腳本。",
+    "add": "新增動作範本",
+    "type": "動作類型",
+    "value": "指令內容",
+    "name": "動作名稱",
+    "executionContent": "執行內容："
+  },
+  "dialogs": {
+    "save": "儲存",
+    "cancel": "取消",
+    "close": "關閉",
+    "editGesture": "編輯手勢",
+    "editAction": "編輯動作",
+    "addProcess": "新增目標程式執行檔",
+    "processNamePlaceholder": "例如 chrome.exe 或 code.exe",
+    "triggerButton": "觸發按鍵",
+    "strokeSequence": "滑動筆畫序列",
+    "clear": "清除",
+    "undo": "復原",
+    "actionType": "動作類型",
+    "actionValue": "指令內容"
+  },
+  "actionNames": {
+    "act-back": "上一頁",
+    "act-forward": "下一頁",
+    "act-close-tab": "關閉分頁",
+    "act-reopen-tab": "回復關閉分頁",
+    "act-prev-tab": "切換上一分頁",
+    "act-next-tab": "切換下一分頁",
+    "act-minimize": "最小化視窗",
+    "act-show-desktop": "顯示桌面",
+    "act-vol-up": "提高音量",
+    "act-vol-down": "降低音量"
+  },
+  "gestureNames": {
+    "r-left": "向左",
+    "r-right": "向右",
+    "r-up": "向上",
+    "r-down": "向下",
+    "r-down-right": "向右下",
+    "r-up-left": "向左上",
+    "x1-click": "側鍵 X1 單擊",
+    "x2-click": "側鍵 X2 單擊",
+    "r-wu": "右鍵滾輪上",
+    "r-wd": "右鍵滾輪下"
+  }
+}

@@ -128,31 +128,31 @@ pub fn default_app_config() -> AppConfig {
         gesture_templates: vec![
             GestureTemplate {
                 id: "rb-left".into(),
-                name: "向左".into(),
+                name: "Left".into(),
                 trigger: "RB".into(),
                 steps: vec!["L".into()],
             },
             GestureTemplate {
                 id: "rb-right".into(),
-                name: "向右".into(),
+                name: "Right".into(),
                 trigger: "RB".into(),
                 steps: vec!["R".into()],
             },
             GestureTemplate {
                 id: "rb-down".into(),
-                name: "向下".into(),
+                name: "Down".into(),
                 trigger: "RB".into(),
                 steps: vec!["D".into()],
             },
             GestureTemplate {
                 id: "rb-down-right".into(),
-                name: "向右下".into(),
+                name: "Down-Right".into(),
                 trigger: "RB".into(),
                 steps: vec!["D".into(), "R".into()],
             },
             GestureTemplate {
                 id: "rb-up-left".into(),
-                name: "向左上".into(),
+                name: "Up-Left".into(),
                 trigger: "RB".into(),
                 steps: vec!["U".into(), "L".into()],
             },
@@ -160,31 +160,31 @@ pub fn default_app_config() -> AppConfig {
         action_templates: vec![
             ActionTemplate {
                 id: "act-back".into(),
-                name: "上一頁".into(),
+                name: "Back".into(),
                 action_type: "keys".into(),
                 value: "!{Left}".into(),
             },
             ActionTemplate {
                 id: "act-forward".into(),
-                name: "下一頁".into(),
+                name: "Forward".into(),
                 action_type: "keys".into(),
                 value: "!{Right}".into(),
             },
             ActionTemplate {
                 id: "act-close-tab".into(),
-                name: "關閉分頁".into(),
+                name: "Close Tab".into(),
                 action_type: "keys".into(),
                 value: "^w".into(),
             },
             ActionTemplate {
                 id: "act-reopen-tab".into(),
-                name: "回復關閉分頁".into(),
+                name: "Reopen Closed Tab".into(),
                 action_type: "keys".into(),
                 value: "^+t".into(),
             },
             ActionTemplate {
                 id: "act-minimize".into(),
-                name: "最小化視窗".into(),
+                name: "Minimize Window".into(),
                 action_type: "ahk".into(),
                 value: "WinMinimize('A')".into(),
             },
@@ -192,7 +192,7 @@ pub fn default_app_config() -> AppConfig {
         targets: vec![
             Target {
                 id: "disabled".into(),
-                name: "黑名單 (不套用程式)".into(),
+                name: "Disabled List (Bypass)".into(),
                 enabled: true,
                 kind: "disabled".into(),
                 executables: vec!["photoshop.exe".into(), "games.exe".into()],
@@ -200,7 +200,7 @@ pub fn default_app_config() -> AppConfig {
             },
             Target {
                 id: "browsers".into(),
-                name: "瀏覽器群組".into(),
+                name: "Browsers".into(),
                 enabled: true,
                 kind: "group".into(),
                 executables: vec![
@@ -215,13 +215,13 @@ pub fn default_app_config() -> AppConfig {
                         enabled: true,
                         gesture: Gesture {
                             id: "rb-down-right".into(),
-                            name: "右鍵向右下".into(),
+                            name: "Down-Right".into(),
                             trigger: "RB".into(),
                             steps: vec!["D".into(), "R".into()],
                         },
                         action: Action {
                             id: "act-close-tab".into(),
-                            name: "關閉分頁".into(),
+                            name: "Close Tab".into(),
                             action_type: "keys".into(),
                             value: "^w".into(),
                         },
@@ -231,13 +231,13 @@ pub fn default_app_config() -> AppConfig {
                         enabled: true,
                         gesture: Gesture {
                             id: "rb-up-left".into(),
-                            name: "右鍵向左上".into(),
+                            name: "Up-Left".into(),
                             trigger: "RB".into(),
                             steps: vec!["U".into(), "L".into()],
                         },
                         action: Action {
                             id: "act-reopen-tab".into(),
-                            name: "回復已關閉分頁".into(),
+                            name: "Reopen Closed Tab".into(),
                             action_type: "keys".into(),
                             value: "^+t".into(),
                         },
@@ -246,7 +246,7 @@ pub fn default_app_config() -> AppConfig {
             },
             Target {
                 id: "global".into(),
-                name: "全域 (Global)".into(),
+                name: "Global Default".into(),
                 enabled: true,
                 kind: "global".into(),
                 executables: vec![],
@@ -256,13 +256,13 @@ pub fn default_app_config() -> AppConfig {
                         enabled: true,
                         gesture: Gesture {
                             id: "rb-left".into(),
-                            name: "右鍵向左".into(),
+                            name: "Left".into(),
                             trigger: "RB".into(),
                             steps: vec!["L".into()],
                         },
                         action: Action {
                             id: "act-back".into(),
-                            name: "上一頁 (Alt+Left)".into(),
+                            name: "Back".into(),
                             action_type: "keys".into(),
                             value: "!{Left}".into(),
                         },
@@ -272,15 +272,15 @@ pub fn default_app_config() -> AppConfig {
                         enabled: true,
                         gesture: Gesture {
                             id: "r-right".into(),
-                            name: "向右測試".into(),
+                            name: "Right".into(),
                             trigger: "R".into(),
                             steps: vec!["R".into()],
                         },
                         action: Action {
-                            id: "act-hello".into(),
-                            name: "彈出 Hello World (測試)".into(),
-                            action_type: "ahk".into(),
-                            value: "MsgBox(\"Hello World!\", \"MouseGesture 5Btn\")".into(),
+                            id: "act-forward".into(),
+                            name: "Forward".into(),
+                            action_type: "keys".into(),
+                            value: "!{Right}".into(),
                         },
                     },
                     Binding {
@@ -288,13 +288,13 @@ pub fn default_app_config() -> AppConfig {
                         enabled: true,
                         gesture: Gesture {
                             id: "rb-down".into(),
-                            name: "右鍵向下".into(),
+                            name: "Down".into(),
                             trigger: "RB".into(),
                             steps: vec!["D".into()],
                         },
                         action: Action {
                             id: "act-minimize".into(),
-                            name: "最小化視窗".into(),
+                            name: "Minimize Window".into(),
                             action_type: "ahk".into(),
                             value: "WinMinimize('A')".into(),
                         },

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { makeStyles } from "@fluentui/react-components";
+import { useTranslation } from "react-i18next";
 import { Sidebar, NavTabId } from "./components/Sidebar";
 import { Header } from "./components/Header";
 import { TargetsView } from "./views/TargetsView";
@@ -31,11 +32,12 @@ const useStyles = makeStyles({
 
 export const App: React.FC = () => {
   const styles = useStyles();
+  const { t, i18n } = useTranslation();
   const [selectedTab, setSelectedTab] = useState<NavTabId>("targets");
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [isPaused, setIsPaused] = useState(false);
   const [autostartEnabled, setAutostartEnabled] = useState(false);
-  const [statusMsg, setStatusMsg] = useState("手勢引擎運作中");
+  const [statusMsg, setStatusMsg] = useState("");
 
   // Load config and sync runtime state on startup
   useEffect(() => {
@@ -46,6 +48,9 @@ export const App: React.FC = () => {
         const activeConfig = loaded || config;
         if (loaded) {
           setConfig(loaded);
+          if (loaded.language) {
+            i18n.changeLanguage(loaded.language);
+          }
         }
         // Auto-apply gesture engine on startup to guarantee active status
         try {
@@ -54,6 +59,8 @@ export const App: React.FC = () => {
           });
           if (res?.msg) {
             setStatusMsg(res.msg);
+          } else {
+            setStatusMsg(t("app.engineRunning"));
           }
         } catch (e) {
           console.warn("Auto-apply engine on startup warning:", e);
@@ -64,6 +71,7 @@ export const App: React.FC = () => {
         setIsPaused(paused);
       } catch {
         // Fallback in browser dev mode
+        setStatusMsg(t("app.engineRunning"));
       }
     };
     initApp();
@@ -96,7 +104,7 @@ export const App: React.FC = () => {
       const res = await invoke<{ success: boolean; msg: string }>("apply_config", { config });
       setStatusMsg(res.msg);
     } catch (err) {
-      alert(`套用失敗: ${err}`);
+      alert(t("app.applyFailed", { err }));
     }
   };
 
@@ -117,13 +125,13 @@ export const App: React.FC = () => {
   const getTabTitle = (tab: NavTabId): string => {
     switch (tab) {
       case "targets":
-        return "目標清單 (Targets)";
+        return t("nav.targets");
       case "gestures":
-        return "手勢清單 (Gestures)";
+        return t("nav.gestures");
       case "actions":
-        return "動作清單 (Actions)";
+        return t("nav.actions");
       case "settings":
-        return "系統設定 (Settings)";
+        return t("nav.settings");
     }
   };
 

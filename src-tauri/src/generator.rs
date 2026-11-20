@@ -15,6 +15,38 @@ pub fn ahk_quote(s: &str) -> String {
     s.replace('"', "\"\"")
 }
 
+pub fn resolve_action_display_name(action_id: &str, fallback_name: &str, lang: &str) -> String {
+    if lang == "zh-TW" {
+        match action_id {
+            "act-back" => "上一頁".to_string(),
+            "act-forward" => "下一頁".to_string(),
+            "act-close-tab" => "關閉分頁".to_string(),
+            "act-reopen-tab" => "回復關閉分頁".to_string(),
+            "act-prev-tab" => "切換上一分頁".to_string(),
+            "act-next-tab" => "切換下一分頁".to_string(),
+            "act-minimize" => "最小化視窗".to_string(),
+            "act-show-desktop" => "顯示桌面".to_string(),
+            "act-vol-up" => "提高音量".to_string(),
+            "act-vol-down" => "降低音量".to_string(),
+            _ => fallback_name.to_string(),
+        }
+    } else {
+        match action_id {
+            "act-back" => "Back".to_string(),
+            "act-forward" => "Forward".to_string(),
+            "act-close-tab" => "Close Tab".to_string(),
+            "act-reopen-tab" => "Reopen Closed Tab".to_string(),
+            "act-prev-tab" => "Previous Tab".to_string(),
+            "act-next-tab" => "Next Tab".to_string(),
+            "act-minimize" => "Minimize Window".to_string(),
+            "act-show-desktop" => "Show Desktop".to_string(),
+            "act-vol-up" => "Volume Up".to_string(),
+            "act-vol-down" => "Volume Down".to_string(),
+            _ => fallback_name.to_string(),
+        }
+    }
+}
+
 pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
     let mut s = String::new();
     s.push_str("#Requires AutoHotkey v2.0\n");
@@ -191,11 +223,12 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
                 }
                 let trig = trigger_to_ahk_name(&b.gesture.trigger);
                 let steps = b.gesture.steps.join(",");
+                let act_name = resolve_action_display_name(&b.action.id, &b.action.name, &config.language);
                 s.push_str(&format!(
                     "        if (trigger = \"{}\" && stepStr = \"{}\")\n",
                     trig, steps
                 ));
-                s.push_str(&format!("            return \"{}\"\n", ahk_quote(&b.action.name)));
+                s.push_str(&format!("            return \"{}\"\n", ahk_quote(&act_name)));
             }
             s.push_str("    }\n\n");
         }
@@ -208,11 +241,12 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
             }
             let trig = trigger_to_ahk_name(&b.gesture.trigger);
             let steps = b.gesture.steps.join(",");
+            let act_name = resolve_action_display_name(&b.action.id, &b.action.name, &config.language);
             s.push_str(&format!(
                 "    if (trigger = \"{}\" && stepStr = \"{}\")\n",
                 trig, steps
             ));
-            s.push_str(&format!("        return \"{}\"\n", ahk_quote(&b.action.name)));
+            s.push_str(&format!("        return \"{}\"\n", ahk_quote(&act_name)));
         }
     }
 
