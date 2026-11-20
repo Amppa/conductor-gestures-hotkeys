@@ -43,20 +43,16 @@ const useStyles = makeStyles({
   },
   tr: {
     borderBottom: `1px solid ${tokens.colorNeutralStroke3}`,
+    cursor: "pointer",
+    transition: "background-color 0.15s ease",
     ":hover": {
-      backgroundColor: tokens.colorNeutralBackground2,
+      backgroundColor: tokens.colorNeutralBackground3Hover,
     },
   },
   tdName: {
     padding: "8px 12px",
     fontWeight: 600,
-    cursor: "pointer",
     userSelect: "none",
-    borderRadius: tokens.borderRadiusSmall,
-    transition: "background-color 0.15s ease",
-    ":hover": {
-      backgroundColor: tokens.colorNeutralBackground3,
-    },
   },
   tdType: {
     width: "120px",
@@ -64,14 +60,8 @@ const useStyles = makeStyles({
   },
   tdAction: {
     padding: "8px 12px",
-    cursor: "pointer",
     userSelect: "none",
     color: tokens.colorBrandForeground1,
-    borderRadius: tokens.borderRadiusSmall,
-    transition: "background-color 0.15s ease",
-    ":hover": {
-      backgroundColor: tokens.colorNeutralBackground3,
-    },
   },
   codeValue: {
     fontFamily: "Consolas, 'Cascadia Code', monospace",
@@ -136,10 +126,7 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
   return (
     <div className={styles.container}>
       <div>
-        <Subtitle2>{t("actions.title")}</Subtitle2>
-        <div>
-          <Caption1>{t("actions.subtitle")}</Caption1>
-        </div>
+        <Caption1>{t("actions.subtitle")}</Caption1>
       </div>
 
       <Card className={styles.card}>
@@ -154,12 +141,13 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
           </thead>
           <tbody>
             {actions.map((act) => (
-              <tr key={act.id} className={styles.tr}>
-                <td
-                  className={styles.tdName}
-                  onClick={() => handleEditAction(act)}
-                  title={t("targets.doubleClickActionTip")}
-                >
+              <tr
+                key={act.id}
+                className={styles.tr}
+                onClick={() => handleEditAction(act)}
+                title={t("targets.doubleClickActionTip")}
+              >
+                <td className={styles.tdName}>
                   {t("actionNames." + act.id, { defaultValue: act.name })}
                 </td>
                 <td className={styles.tdType}>
@@ -167,11 +155,7 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
                     {act.type}
                   </Badge>
                 </td>
-                <td
-                  className={styles.tdAction}
-                  onClick={() => handleEditAction(act)}
-                  title={t("targets.doubleClickActionTip")}
-                >
+                <td className={styles.tdAction}>
                   <span className={styles.codeValue}>{act.value || "(空白)"}</span>
                 </td>
                 <td className={styles.tdOps}>
@@ -179,7 +163,10 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
                     size="small"
                     appearance="subtle"
                     icon={<Delete16Regular />}
-                    onClick={() => handleDeleteAction(act.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteAction(act.id);
+                    }}
                     title={t("actions.deleteTip", { defaultValue: "刪除動作" })}
                   />
                 </td>

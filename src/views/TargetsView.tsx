@@ -12,6 +12,12 @@ import {
   Tag,
   Divider,
   Input,
+  Menu,
+  MenuTrigger,
+  MenuPopover,
+  MenuList,
+  MenuItem,
+  MenuDivider,
 } from "@fluentui/react-components";
 import {
   Add16Regular,
@@ -98,25 +104,26 @@ const useStyles = makeStyles({
     padding: "6px 8px",
   },
   tdGesture: {
-    padding: "8px 12px",
+    padding: "2px 4px",
     fontWeight: 600,
-    cursor: "pointer",
     userSelect: "none",
-    borderRadius: tokens.borderRadiusSmall,
-    transition: "background-color 0.15s ease",
-    ":hover": {
-      backgroundColor: tokens.colorNeutralBackground3,
-    },
   },
   tdAction: {
-    padding: "8px 12px",
-    cursor: "pointer",
+    padding: "2px 4px",
     userSelect: "none",
     color: tokens.colorBrandForeground1,
+  },
+  cellTriggerArea: {
+    padding: "6px 8px",
+    cursor: "pointer",
     borderRadius: tokens.borderRadiusSmall,
     transition: "background-color 0.15s ease",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "6px",
     ":hover": {
-      backgroundColor: tokens.colorNeutralBackground3,
+      backgroundColor: tokens.colorNeutralBackground3Hover,
     },
   },
   tdOps: {
@@ -134,7 +141,11 @@ const useStyles = makeStyles({
 
 interface TargetsViewProps {
   targets: Target[];
+  gestureTemplates?: Gesture[];
+  actionTemplates?: Action[];
   onUpdateTargets: (updated: Target[]) => void;
+  onAddGestureTemplate?: (newTemplate: Gesture) => void;
+  onAddActionTemplate?: (newAction: Action) => void;
   onDoubleGestureClick?: (targetId: string, bindingId: string) => void;
   onDoubleActionClick?: (targetId: string, bindingId: string) => void;
   onOpenAddProcessDialog?: (targetId: string) => void;
@@ -142,7 +153,11 @@ interface TargetsViewProps {
 
 export const TargetsView: React.FC<TargetsViewProps> = ({
   targets,
+  gestureTemplates = [],
+  actionTemplates = [],
   onUpdateTargets,
+  onAddGestureTemplate,
+  onAddActionTemplate,
   onOpenAddProcessDialog,
 }) => {
   const styles = useStyles();
@@ -196,6 +211,98 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
     setEditingAction({ targetId, binding: b });
   };
 
+  const handleOpenAddGesture = (targetId: string, bindingId: string) => {
+    const t = targets.find((item) => item.id === targetId);
+    if (!t) return;
+    const b = t.bindings.find((item) => item.id === bindingId);
+    if (!b) return;
+    setEditingGesture({ targetId, binding: b });
+  };
+
+  const handleOpenAddAction = (targetId: string, bindingId: string) => {
+    const t = targets.find((item) => item.id === targetId);
+    if (!t) return;
+    const b = t.bindings.find((item) => item.id === bindingId);
+    if (!b) return;
+    setEditingAction({ targetId, binding: b });
+  };
+
+  const handleSelectPresetGesture = (targetId: string, bindingId: string, template: Gesture) => {
+    const decoupled: Gesture = {
+      ...template,
+      id: `gesture-${Date.now()}`,
+      name: t("gestureNames." + template.id, { defaultValue: template.name }),
+    };
+    handleSaveGestureDirect(targetId, bindingId, decoupled);
+  };
+
+  const handleSelectPresetAction = (targetId: string, bindingId: string, template: Action) => {
+    const decoupled: Action = {
+      ...template,
+      id: `action-${Date.now()}`,
+      name: t("actionNames." + template.id, { defaultValue: template.name }),
+    };
+    handleSaveActionDirect(targetId, bindingId, decoupled);
+  };
+
+  const handleSaveGestureDirect = (targetId: string, bindingId: string, updatedGesture: Gesture) => {
+    const updated = targets.map((t) => {
+      if (t.id !== targetId) return t;
+      return {
+        ...t,
+        bindings: t.bindings.map((b) => {
+          if (b.id !== bindingId) return b;
+          const candidate = { ...b, gesture: updatedGesture };
+          const emptyG = !updatedGesture.steps || updatedGesture.steps.length === 0;
+          const emptyA = !b.action || !b.action.value || !b.action.value.trim();
+          const isDup = t.bindings.some(
+            (o) =>
+              o.id !== b.id &&
+              o.gesture.steps &&
+              o.gesture.steps.length > 0 &&
+              `${o.gesture.trigger}:${o.gesture.steps.join(",")}` ===
+                `${updatedGesture.trigger}:${updatedGesture.steps.join(",")}`
+          );
+          const shouldEnable = !emptyG && !emptyA && !isDup;
+          return {
+            ...candidate,
+            enabled: shouldEnable ? true : false,
+          };
+        }),
+      };
+    });
+    onUpdateTargets(updated);
+  };
+
+  const handleSaveActionDirect = (targetId: string, bindingId: string, updatedAction: Action) => {
+    const updated = targets.map((t) => {
+      if (t.id !== targetId) return t;
+      return {
+        ...t,
+        bindings: t.bindings.map((b) => {
+          if (b.id !== bindingId) return b;
+          const candidate = { ...b, action: updatedAction };
+          const emptyG = !b.gesture.steps || b.gesture.steps.length === 0;
+          const emptyA = !updatedAction.value || !updatedAction.value.trim();
+          const isDup = t.bindings.some(
+            (o) =>
+              o.id !== b.id &&
+              o.gesture.steps &&
+              o.gesture.steps.length > 0 &&
+              `${o.gesture.trigger}:${o.gesture.steps.join(",")}` ===
+                `${b.gesture.trigger}:${b.gesture.steps.join(",")}`
+          );
+          const shouldEnable = !emptyG && !emptyA && !isDup;
+          return {
+            ...candidate,
+            enabled: shouldEnable ? true : false,
+          };
+        }),
+      };
+    });
+    onUpdateTargets(updated);
+  };
+
   const isGestureEmpty = (b: Binding): boolean => {
     return !b.gesture || !b.gesture.steps || b.gesture.steps.length === 0;
   };
@@ -219,7 +326,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
     return isGestureEmpty(b) || isActionEmpty(b) || isDuplicateGesture(target, b);
   };
 
-  const handleSaveGesture = (updatedGesture: Gesture) => {
+  const handleSaveGesture = (updatedGesture: Gesture, addToTemplates?: boolean) => {
     if (!editingGesture) return;
     const { targetId, binding } = editingGesture;
     const updated = targets.map((t) => {
@@ -248,6 +355,15 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
       };
     });
     onUpdateTargets(updated);
+
+    if (addToTemplates && onAddGestureTemplate) {
+      onAddGestureTemplate({
+        ...updatedGesture,
+        id: `gesture-${Date.now()}`,
+        name: updatedGesture.name || "新自訂手勢",
+      });
+    }
+
     setEditingGesture(null);
   };
 
@@ -285,7 +401,6 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
 
   const globalTarget = targets.find((t) => t.kind === "global");
   const specificGroups = targets.filter((t) => t.kind === "group");
-  const disabledTarget = targets.find((t) => t.kind === "disabled");
 
   // Toggle binding enable/disable checkbox
   const handleToggleBinding = (targetId: string, bindingId: string, checked: boolean) => {
@@ -392,38 +507,90 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                     }
                   />
                 </td>
-                <td
-                  className={styles.tdGesture}
-                  onClick={() => handleDoubleGesture(target.id, b.id)}
-                  title={t("targets.doubleClickGestureTip")}
-                >
-                  {emptyGesture ? (
-                    <span style={{ color: tokens.colorNeutralForeground4, fontStyle: "italic" }}>
-                      {t("targets.noGesture")}
-                    </span>
-                  ) : (
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span>{formatGestureLabel(b.gesture.trigger, b.gesture.steps, t)}</span>
-                      {duplicate && (
-                        <Badge appearance="tint" color="danger" size="small">
-                          {t("targets.duplicateGesture")}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
+                <td className={styles.tdGesture}>
+                  <Menu>
+                    <MenuTrigger disableButtonEnhancement>
+                      <div
+                        className={styles.cellTriggerArea}
+                        title={t("targets.doubleClickGestureTip")}
+                      >
+                        {emptyGesture ? (
+                          <span style={{ color: tokens.colorNeutralForeground4, fontStyle: "italic" }}>
+                            {t("targets.noGesture")}
+                          </span>
+                        ) : (
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span>{formatGestureLabel(b.gesture.trigger, b.gesture.steps, t)}</span>
+                            {duplicate && (
+                              <Badge appearance="tint" color="danger" size="small">
+                                {t("targets.duplicateGesture")}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                        <ChevronDown16Regular style={{ color: tokens.colorNeutralForeground4, flexShrink: 0 }} />
+                      </div>
+                    </MenuTrigger>
+                    <MenuPopover>
+                      <MenuList style={{ maxHeight: "260px", overflowY: "auto" }}>
+                        {gestureTemplates.map((gt) => (
+                          <MenuItem
+                            key={gt.id}
+                            onClick={() => handleSelectPresetGesture(target.id, b.id, gt)}
+                          >
+                            {t("gestureNames." + gt.id, { defaultValue: gt.name })} ({formatGestureLabel(gt.trigger, gt.steps, t)})
+                          </MenuItem>
+                        ))}
+                        <MenuDivider />
+                        <MenuItem
+                          icon={<Add16Regular />}
+                          onClick={() => handleOpenAddGesture(target.id, b.id)}
+                        >
+                          {t("targets.addNewGesture", { defaultValue: "新增手勢..." })}
+                        </MenuItem>
+                      </MenuList>
+                    </MenuPopover>
+                  </Menu>
                 </td>
-                <td
-                  className={styles.tdAction}
-                  onClick={() => handleDoubleAction(target.id, b.id)}
-                  title={b.action.value ? `${t("targets.doubleClickActionTip")} (${b.action.value})` : t("targets.doubleClickActionTip")}
-                >
-                  {emptyAction ? (
-                    <span style={{ color: tokens.colorNeutralForeground4, fontStyle: "italic" }}>
-                      {t("targets.noAction")}
-                    </span>
-                  ) : (
-                    t("actionNames." + b.action.id, { defaultValue: b.action.name }) || b.action.value
-                  )}
+                <td className={styles.tdAction}>
+                  <Menu>
+                    <MenuTrigger disableButtonEnhancement>
+                      <div
+                        className={styles.cellTriggerArea}
+                        title={b.action.value ? `${t("targets.doubleClickActionTip")} (${b.action.value})` : t("targets.doubleClickActionTip")}
+                      >
+                        {emptyAction ? (
+                          <span style={{ color: tokens.colorNeutralForeground4, fontStyle: "italic" }}>
+                            {t("targets.noAction")}
+                          </span>
+                        ) : (
+                          <span>
+                            {t("actionNames." + b.action.id, { defaultValue: b.action.name }) || b.action.value}
+                          </span>
+                        )}
+                        <ChevronDown16Regular style={{ color: tokens.colorNeutralForeground4, flexShrink: 0 }} />
+                      </div>
+                    </MenuTrigger>
+                    <MenuPopover>
+                      <MenuList style={{ maxHeight: "260px", overflowY: "auto" }}>
+                        {actionTemplates.map((at) => (
+                          <MenuItem
+                            key={at.id}
+                            onClick={() => handleSelectPresetAction(target.id, b.id, at)}
+                          >
+                            {t("actionNames." + at.id, { defaultValue: at.name })} ({at.value})
+                          </MenuItem>
+                        ))}
+                        <MenuDivider />
+                        <MenuItem
+                          icon={<Add16Regular />}
+                          onClick={() => handleOpenAddAction(target.id, b.id)}
+                        >
+                          {t("targets.addNewAction", { defaultValue: "新增動作..." })}
+                        </MenuItem>
+                      </MenuList>
+                    </MenuPopover>
+                  </Menu>
                 </td>
                 <td className={styles.tdOps}>
                   <Button
@@ -646,48 +813,6 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
           );
         })}
       </div>
-
-      <Divider />
-
-      {/* 3. Blocklist (Disabled apps) */}
-      {disabledTarget && (
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div>
-              <Subtitle2>{t("targets.disabledTitle", { defaultValue: disabledTarget.name })}</Subtitle2>
-              <Caption1 style={{ display: "block", color: tokens.colorNeutralForeground3 }}>
-                {t("targets.disabledDesc")}
-              </Caption1>
-            </div>
-          </div>
-          <Card className={styles.card}>
-            <div className={styles.tagList}>
-              <Caption1 style={{ color: tokens.colorNeutralForeground3, fontWeight: 600 }}>
-                {t("targets.includedApps")}
-              </Caption1>
-              {disabledTarget.executables.map((exe) => (
-                <Tag
-                  key={exe}
-                  size="small"
-                  dismissible
-                  dismissIcon={{ "aria-label": "remove" }}
-                  onClick={() => handleDeleteExe(disabledTarget.id, exe)}
-                >
-                  {exe}
-                </Tag>
-              ))}
-              <Button
-                size="small"
-                appearance="subtle"
-                icon={<Add16Regular />}
-                onClick={() => setAddProcessTargetId(disabledTarget.id)}
-              >
-                {t("targets.addApp")}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
 
       {/* Inline Double-Click Edit Dialogs */}
       {editingGesture && (

@@ -44,41 +44,25 @@ const useStyles = makeStyles({
   },
   tr: {
     borderBottom: `1px solid ${tokens.colorNeutralStroke3}`,
+    cursor: "pointer",
+    transition: "background-color 0.15s ease",
     ":hover": {
-      backgroundColor: tokens.colorNeutralBackground2,
+      backgroundColor: tokens.colorNeutralBackground3Hover,
     },
   },
   tdName: {
     padding: "8px 12px",
     fontWeight: 600,
-    cursor: "pointer",
     userSelect: "none",
-    borderRadius: tokens.borderRadiusSmall,
-    transition: "background-color 0.15s ease",
-    ":hover": {
-      backgroundColor: tokens.colorNeutralBackground3,
-    },
   },
   tdTrigger: {
     width: "120px",
     padding: "8px 12px",
-    cursor: "pointer",
-    borderRadius: tokens.borderRadiusSmall,
-    transition: "background-color 0.15s ease",
-    ":hover": {
-      backgroundColor: tokens.colorNeutralBackground3,
-    },
   },
   tdStroke: {
     padding: "8px 12px",
-    cursor: "pointer",
     userSelect: "none",
     color: tokens.colorBrandForeground1,
-    borderRadius: tokens.borderRadiusSmall,
-    transition: "background-color 0.15s ease",
-    ":hover": {
-      backgroundColor: tokens.colorNeutralBackground3,
-    },
   },
   tdOps: {
     width: "48px",
@@ -135,10 +119,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
   return (
     <div className={styles.container}>
       <div>
-        <Subtitle2>{t("gestures.title")}</Subtitle2>
-        <div>
-          <Caption1>{t("gestures.subtitle")}</Caption1>
-        </div>
+        <Caption1>{t("gestures.subtitle")}</Caption1>
       </div>
 
       <Card className={styles.card}>
@@ -153,28 +134,21 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
           </thead>
           <tbody>
             {gestures.map((gesture) => (
-              <tr key={gesture.id} className={styles.tr}>
-                <td
-                  className={styles.tdName}
-                  onClick={() => handleEditGesture(gesture)}
-                  title={t("targets.doubleClickGestureTip")}
-                >
+              <tr
+                key={gesture.id}
+                className={styles.tr}
+                onClick={() => handleEditGesture(gesture)}
+                title={t("targets.doubleClickGestureTip")}
+              >
+                <td className={styles.tdName}>
                   {t("gestureNames." + gesture.id, { defaultValue: gesture.name })}
                 </td>
-                <td
-                  className={styles.tdTrigger}
-                  onClick={() => handleEditGesture(gesture)}
-                  title={t("targets.doubleClickGestureTip")}
-                >
+                <td className={styles.tdTrigger}>
                   <Badge appearance="tint" color="brand">
                     {formatTriggerSymbol(gesture.trigger, t)}
                   </Badge>
                 </td>
-                <td
-                  className={styles.tdStroke}
-                  onClick={() => handleEditGesture(gesture)}
-                  title={t("targets.doubleClickGestureTip")}
-                >
+                <td className={styles.tdStroke}>
                   {gesture.steps.length > 0 ? (
                     formatGestureLabel(gesture.trigger, gesture.steps, t)
                   ) : (
@@ -188,7 +162,10 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
                     size="small"
                     appearance="subtle"
                     icon={<Delete16Regular />}
-                    onClick={() => handleDeleteGesture(gesture.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteGesture(gesture.id);
+                    }}
                     title={t("gestures.delete")}
                   />
                 </td>
