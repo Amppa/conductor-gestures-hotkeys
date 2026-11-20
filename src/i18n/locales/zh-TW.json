@@ -82,13 +82,19 @@
     "delete": "刪除手勢"
   },
   "actions": {
-    "title": "動作清單 (Action Templates)",
+    "title": "動作清單",
     "subtitle": "執行的行為清單，例如鍵盤快速鍵發送、系統操作、執行命令與 AHK 腳本。",
-    "add": "新增動作範本",
-    "type": "動作類型",
-    "value": "指令內容",
-    "name": "動作名稱",
-    "executionContent": "執行內容："
+    "add": "新增動作",
+    "type": "類型",
+    "value": "動作",
+    "name": "名稱",
+    "executionContent": "執行內容：",
+    "tableName": "名稱",
+    "tableType": "類型",
+    "tableAction": "動作",
+    "addAction": "新增動作",
+    "newActionName": "新自訂動作",
+    "deleteTip": "刪除動作"
   },
   "dialogs": {
     "save": "儲存",

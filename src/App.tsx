@@ -8,7 +8,7 @@ import { GesturesView } from "./views/GesturesView";
 import { ActionsView } from "./views/ActionsView";
 import { SettingsView } from "./views/SettingsView";
 import { DEFAULT_CONFIG } from "./defaults";
-import { AppConfig, Target, Gesture } from "./types";
+import { AppConfig, Target, Gesture, Action } from "./types";
 
 const useStyles = makeStyles({
   root: {
@@ -128,6 +128,13 @@ export const App: React.FC = () => {
     }));
   };
 
+  const handleUpdateActions = (newActions: Action[]) => {
+    setConfig((prev) => ({
+      ...prev,
+      actionTemplates: newActions,
+    }));
+  };
+
   const getTabTitle = (tab: NavTabId): string => {
     switch (tab) {
       case "targets":
@@ -167,7 +174,10 @@ export const App: React.FC = () => {
             />
           )}
           {selectedTab === "actions" && (
-            <ActionsView actions={config.actionTemplates} />
+            <ActionsView
+              actions={config.actionTemplates}
+              onUpdateActions={handleUpdateActions}
+            />
           )}
           {selectedTab === "settings" && (
             <SettingsView

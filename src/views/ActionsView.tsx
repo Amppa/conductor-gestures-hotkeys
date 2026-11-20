@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   makeStyles,
@@ -7,8 +7,11 @@ import {
   Subtitle2,
   Caption1,
   Badge,
+  Button,
 } from "@fluentui/react-components";
+import { Add16Regular, Delete16Regular } from "@fluentui/react-icons";
 import { Action } from "../types";
+import { EditActionDialog } from "../components/EditActionDialog";
 
 const useStyles = makeStyles({
   container: {
@@ -19,40 +22,116 @@ const useStyles = makeStyles({
     overflowY: "auto",
     height: "calc(100% - 48px)",
   },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-    gap: "16px",
-  },
   card: {
     padding: "16px",
     display: "flex",
     flexDirection: "column",
-    gap: "8px",
+    gap: "14px",
     backgroundColor: tokens.colorNeutralBackground1,
   },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    fontSize: tokens.fontSizeBase200,
+  },
+  th: {
+    textAlign: "left",
+    padding: "8px 12px",
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    color: tokens.colorNeutralForeground3,
+    fontWeight: 600,
+  },
+  tr: {
+    borderBottom: `1px solid ${tokens.colorNeutralStroke3}`,
+    ":hover": {
+      backgroundColor: tokens.colorNeutralBackground2,
+    },
+  },
+  tdName: {
+    padding: "8px 12px",
+    fontWeight: 600,
+    cursor: "pointer",
+    userSelect: "none",
+    borderRadius: tokens.borderRadiusSmall,
+    transition: "background-color 0.15s ease",
+    ":hover": {
+      backgroundColor: tokens.colorNeutralBackground3,
+    },
+  },
+  tdType: {
+    width: "120px",
+    padding: "8px 12px",
+  },
+  tdAction: {
+    padding: "8px 12px",
+    cursor: "pointer",
+    userSelect: "none",
+    color: tokens.colorBrandForeground1,
+    borderRadius: tokens.borderRadiusSmall,
+    transition: "background-color 0.15s ease",
+    ":hover": {
+      backgroundColor: tokens.colorNeutralBackground3,
+    },
   },
   codeValue: {
     fontFamily: "Consolas, 'Cascadia Code', monospace",
     fontSize: tokens.fontSizeBase200,
-    padding: "4px 8px",
+    padding: "2px 6px",
     backgroundColor: tokens.colorNeutralBackground3,
     borderRadius: tokens.borderRadiusSmall,
     wordBreak: "break-all",
+  },
+  tdOps: {
+    width: "48px",
+    textAlign: "right",
+    padding: "6px 8px",
   },
 });
 
 interface ActionsViewProps {
   actions: Action[];
+  onUpdateActions?: (updated: Action[]) => void;
 }
 
-export const ActionsView: React.FC<ActionsViewProps> = ({ actions }) => {
+export const ActionsView: React.FC<ActionsViewProps> = ({
+  actions,
+  onUpdateActions,
+}) => {
   const styles = useStyles();
   const { t } = useTranslation();
+  const [editingAction, setEditingAction] = useState<Action | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleOpenAddDialog = () => {
+    setIsCreating(true);
+    setEditingAction({
+      id: `action-${Date.now()}`,
+      name: t("actions.newActionName", { defaultValue: "新動作" }),
+      type: "keys",
+      value: "",
+    });
+  };
+
+  const handleEditAction = (action: Action) => {
+    setIsCreating(false);
+    setEditingAction(action);
+  };
+
+  const handleSaveAction = (saved: Action) => {
+    if (!onUpdateActions) return;
+    if (isCreating) {
+      onUpdateActions([...actions, saved]);
+    } else {
+      onUpdateActions(actions.map((a) => (a.id === saved.id ? saved : a)));
+    }
+    setEditingAction(null);
+    setIsCreating(false);
+  };
+
+  const handleDeleteAction = (id: string) => {
+    if (!onUpdateActions) return;
+    onUpdateActions(actions.filter((a) => a.id !== id));
+  };
 
   return (
     <div className={styles.container}>
@@ -63,22 +142,82 @@ export const ActionsView: React.FC<ActionsViewProps> = ({ actions }) => {
         </div>
       </div>
 
-      <div className={styles.grid}>
-        {actions.map((act) => (
-          <Card key={act.id} className={styles.card}>
-            <div className={styles.header}>
-              <span style={{ fontWeight: 600 }}>{t("actionNames." + act.id, { defaultValue: act.name })}</span>
-              <Badge appearance="tint" color="informative">
-                {act.type}
-              </Badge>
-            </div>
-            <div>
-              <Caption1>{t("actions.executionContent")}</Caption1>
-              <div className={styles.codeValue}>{act.value}</div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      <Card className={styles.card}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th className={styles.th}>{t("actions.tableName", { defaultValue: "名稱" })}</th>
+              <th className={styles.th} style={{ width: "120px" }}>{t("actions.tableType", { defaultValue: "類型" })}</th>
+              <th className={styles.th}>{t("actions.tableAction", { defaultValue: "動作內容" })}</th>
+              <th className={styles.th} style={{ width: "48px" }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {actions.map((act) => (
+              <tr key={act.id} className={styles.tr}>
+                <td
+                  className={styles.tdName}
+                  onClick={() => handleEditAction(act)}
+                  title={t("targets.doubleClickActionTip")}
+                >
+                  {t("actionNames." + act.id, { defaultValue: act.name })}
+                </td>
+                <td className={styles.tdType}>
+                  <Badge appearance="tint" color="informative">
+                    {act.type}
+                  </Badge>
+                </td>
+                <td
+                  className={styles.tdAction}
+                  onClick={() => handleEditAction(act)}
+                  title={t("targets.doubleClickActionTip")}
+                >
+                  <span className={styles.codeValue}>{act.value || "(空白)"}</span>
+                </td>
+                <td className={styles.tdOps}>
+                  <Button
+                    size="small"
+                    appearance="subtle"
+                    icon={<Delete16Regular />}
+                    onClick={() => handleDeleteAction(act.id)}
+                    title={t("actions.deleteTip", { defaultValue: "刪除動作" })}
+                  />
+                </td>
+              </tr>
+            ))}
+            {actions.length === 0 && (
+              <tr>
+                <td colSpan={4} style={{ padding: "16px", textAlign: "center", color: tokens.colorNeutralForeground4 }}>
+                  {t("targets.emptyBindings")}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        <div>
+          <Button
+            size="small"
+            appearance="subtle"
+            icon={<Add16Regular />}
+            onClick={handleOpenAddDialog}
+          >
+            {t("actions.addAction", { defaultValue: "新增動作" })}
+          </Button>
+        </div>
+      </Card>
+
+      {editingAction && (
+        <EditActionDialog
+          open={!!editingAction}
+          action={editingAction}
+          onSave={handleSaveAction}
+          onCancel={() => {
+            setEditingAction(null);
+            setIsCreating(false);
+          }}
+        />
+      )}
     </div>
   );
 };

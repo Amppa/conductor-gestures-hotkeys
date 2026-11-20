@@ -82,13 +82,19 @@
     "delete": "Delete Gesture"
   },
   "actions": {
-    "title": "Action Templates",
+    "title": "Actions",
     "subtitle": "Define keystrokes, wheel chords, programs, or AHK scripts triggered by gestures.",
-    "add": "New Action Template",
-    "type": "Action Type",
-    "value": "Command / Value",
-    "name": "Action Name",
-    "executionContent": "Command:"
+    "add": "Add Action",
+    "type": "Type",
+    "value": "Action",
+    "name": "Name",
+    "executionContent": "Command:",
+    "tableName": "Name",
+    "tableType": "Type",
+    "tableAction": "Action",
+    "addAction": "Add Action",
+    "newActionName": "New Action",
+    "deleteTip": "Delete action"
   },
   "dialogs": {
     "save": "Save",
