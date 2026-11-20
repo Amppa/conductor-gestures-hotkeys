@@ -199,8 +199,8 @@ pub fn default_app_config() -> AppConfig {
                 bindings: vec![],
             },
             Target {
-                id: "browsers".into(),
-                name: "Browsers".into(),
+                id: "group01".into(),
+                name: "Group 01".into(),
                 enabled: true,
                 kind: "group".into(),
                 executables: vec![

@@ -142,8 +142,8 @@ export const DEFAULT_TARGETS: Target[] = [
 
   // 2. Specific App Groups
   {
-    id: "browsers",
-    name: "Browsers",
+    id: "group01",
+    name: "Group 01",
     enabled: true,
     kind: "group",
     executables: ["chrome.exe", "msedge.exe", "firefox.exe", "brave.exe"],
