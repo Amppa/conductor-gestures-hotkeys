@@ -1,0 +1,12 @@
+node_modules/
+dist/
+src-tauri/target/
+runtime/
+*.log
+.DS_Store
+
+# Vendor tracked files
+vendor/autohotkey/*
+!vendor/autohotkey/AutoHotkey64.exe
+!vendor/autohotkey/license.txt
+!vendor/autohotkey/README.md
