@@ -28,6 +28,9 @@ const useStyles = makeStyles({
     display: "flex",
     flexDirection: "column",
     gap: "16px",
+    minHeight: "100%",
+    boxSizing: "border-box",
+    backgroundColor: tokens.colorNeutralBackground1,
   },
   btnRow: {
     display: "flex",

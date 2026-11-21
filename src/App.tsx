@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { makeStyles } from "@fluentui/react-components";
+import { makeStyles, tokens } from "@fluentui/react-components";
 import { useTranslation } from "react-i18next";
 import { Sidebar, NavTabId } from "./components/Sidebar";
 import { Header } from "./components/Header";
@@ -40,17 +40,23 @@ const useStyles = makeStyles({
     height: "100vh",
     width: "100vw",
     overflow: "hidden",
+    backgroundColor: tokens.colorNeutralBackground2,
   },
   mainArea: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    overflow: "hidden",
+    minWidth: 0,
     height: "100%",
+    backgroundColor: tokens.colorNeutralBackground1,
+    overflow: "hidden",
   },
   content: {
     flex: 1,
-    overflow: "hidden",
+    minWidth: 0,
+    backgroundColor: tokens.colorNeutralBackground1,
+    overflowX: "hidden",
+    overflowY: "auto",
   },
 });
 
