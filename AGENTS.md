@@ -49,11 +49,12 @@ This document specifies the workflow, engineering standards, and communication p
 ### Verification Before Merge
 Every pull request or merge back to `main` must pass:
 1. `npm run test:engine`: Headless AHK gesture recognition suite (100% pass).
-2. `npm run build`: Frontend TypeScript and Vite bundle verification.
-3. `npm run test:rust`: Rust unit and documentation tests.
-4. `npm run check:rust`: Rust compilation check.
+2. `npm run test:i18n`: Translation key parity and static key validation.
+3. `npm run build`: Frontend TypeScript and Vite bundle verification.
+4. `npm run test:rust`: Rust unit and documentation tests.
+5. `npm run check:rust`: Rust compilation check.
 
-Run all four gates with `npm run verify`.
+Run all five gates with `npm run verify`.
 
 ---
 

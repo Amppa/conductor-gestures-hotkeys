@@ -7,6 +7,9 @@
     "applySuccess": "設定已套用並重載",
     "applyFailed": "套用失敗: {{err}}"
   },
+  "common": {
+    "inDevelopment": "開發中"
+  },
   "nav": {
     "targets": "應用範圍",
     "excluded": "排除程式",
@@ -116,6 +119,7 @@
     "tableAction": "執行指令",
     "addAction": "新增指令",
     "newActionName": "新自訂指令",
+    "emptyValue": "(空白)",
     "deleteTip": "刪除指令"
   },
   "dialogs": {
@@ -124,6 +128,7 @@
     "close": "關閉",
     "editGesture": "編輯手勢",
     "gestureNamePlaceholder": "請輸入手勢名稱",
+    "gestureStrokePlaceholder": "例如 R→↘",
     "editAction": "編輯動作",
     "addProcess": "新增目標程式執行檔",
     "processNamePlaceholder": "例如 chrome.exe 或 code.exe",

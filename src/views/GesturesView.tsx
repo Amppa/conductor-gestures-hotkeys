@@ -107,7 +107,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
     setIsCreating(true);
     setEditingGesture({
       id: `gesture-${Date.now()}`,
-      name: t("gestures.newGestureName", { defaultValue: "新自訂手勢" }),
+      name: t("gestures.newGestureName"),
       trigger: "R",
       steps: [],
     });
@@ -145,9 +145,9 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
         <table className={styles.table}>
           <thead>
             <tr>
-              <th className={styles.th}>{t("gestures.tableName", { defaultValue: "名稱" })}</th>
-              <th className={styles.th} style={{ width: "120px" }}>{t("gestures.tableTrigger", { defaultValue: "觸發按鍵" })}</th>
-              <th className={styles.th}>{t("gestures.tableStroke", { defaultValue: "手勢筆畫" })}</th>
+              <th className={styles.th}>{t("gestures.tableName")}</th>
+              <th className={styles.th} style={{ width: "120px" }}>{t("gestures.tableTrigger")}</th>
+              <th className={styles.th}>{t("gestures.tableStroke")}</th>
               <th className={styles.th} style={{ width: "48px" }}></th>
             </tr>
           </thead>

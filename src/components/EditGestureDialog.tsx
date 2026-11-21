@@ -175,7 +175,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
     const parsed = parseStrokeInput(commandText, trigger);
     onSave({
       ...gesture,
-      name: name.trim() || gesture.name || t("gestures.newGestureName", { defaultValue: "新手勢" }),
+      name: name.trim() || gesture.name || t("gestures.newGestureName"),
       trigger: (parsed.trigger as GestureTrigger) || trigger,
       steps: parsed.steps,
     });
@@ -195,18 +195,18 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
                 className={styles.rowInput}
                 value={name}
                 onChange={(_, data) => setName(data.value)}
-                placeholder={t("dialogs.gestureNamePlaceholder", { defaultValue: "請輸入手勢名稱" })}
+                placeholder={t("dialogs.gestureNamePlaceholder")}
               />
             </div>
 
             {/* Row 2: Command */}
             <div className={styles.formRow}>
-              <Subtitle2 className={styles.rowLabel}>{t("dialogs.command", { defaultValue: "指令" })}：</Subtitle2>
+              <Subtitle2 className={styles.rowLabel}>{t("dialogs.command")}：</Subtitle2>
               <Input
                 className={styles.rowInput}
                 value={commandText}
                 onChange={(_, data) => handleCommandTextChange(data.value)}
-                placeholder="例如 R→↘"
+                placeholder={t("dialogs.gestureStrokePlaceholder")}
               />
             </div>
 
@@ -217,10 +217,10 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
               className={styles.tabList}
             >
               <Tab value="standard">
-                {t("dialogs.tabStandard", { defaultValue: "標準模式" })}
+                {t("dialogs.tabStandard")}
               </Tab>
               <Tab value="record">
-                {t("dialogs.tabRecord", { defaultValue: "錄製模式" })}
+                {t("dialogs.tabRecord")}
               </Tab>
             </TabList>
 

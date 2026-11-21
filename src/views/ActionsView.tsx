@@ -114,7 +114,7 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
     setIsCreating(true);
     setEditingAction({
       id: `action-${Date.now()}`,
-      name: t("actions.newActionName", { defaultValue: "新動作" }),
+      name: t("actions.newActionName"),
       type: "keys",
       value: "",
     });
@@ -152,9 +152,9 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
         <table className={styles.table}>
           <thead>
             <tr>
-              <th className={styles.th}>{t("actions.tableName", { defaultValue: "名稱" })}</th>
-              <th className={styles.th} style={{ width: "120px" }}>{t("actions.tableType", { defaultValue: "類型" })}</th>
-              <th className={styles.th}>{t("actions.tableAction", { defaultValue: "動作內容" })}</th>
+              <th className={styles.th}>{t("actions.tableName")}</th>
+              <th className={styles.th} style={{ width: "120px" }}>{t("actions.tableType")}</th>
+              <th className={styles.th}>{t("actions.tableAction")}</th>
               <th className={styles.th} style={{ width: "48px" }}></th>
             </tr>
           </thead>
@@ -175,7 +175,7 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
                   </Badge>
                 </td>
                 <td className={styles.tdAction}>
-                  <span className={styles.codeValue}>{act.value || "(空白)"}</span>
+                  <span className={styles.codeValue}>{act.value || t("actions.emptyValue")}</span>
                 </td>
                 <td className={styles.tdOps}>
                   <Button
@@ -186,7 +186,7 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
                       e.stopPropagation();
                       handleDeleteAction(act.id);
                     }}
-                    title={t("actions.deleteTip", { defaultValue: "刪除動作" })}
+                    title={t("actions.deleteTip")}
                   />
                 </td>
               </tr>
@@ -208,7 +208,7 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
             icon={<Add16Regular />}
             onClick={handleOpenAddDialog}
           >
-            {t("actions.addAction", { defaultValue: "新增動作" })}
+            {t("actions.addAction")}
           </Button>
         </div>
       </Card>

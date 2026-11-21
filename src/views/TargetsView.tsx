@@ -388,7 +388,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
       onAddGestureTemplate({
         ...updatedGesture,
         id: `gesture-${Date.now()}`,
-        name: updatedGesture.name || "新自訂手勢",
+        name: updatedGesture.name || t("gestures.newGestureName"),
       });
     }
 
@@ -573,7 +573,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                           icon={<Add16Regular />}
                           onClick={() => handleOpenAddGesture(target.id, b.id)}
                         >
-                          {t("targets.addNewGesture", { defaultValue: "設定觸發手勢..." })}
+                          {t("targets.addNewGesture")}
                         </MenuItem>
                       </MenuList>
                     </MenuPopover>
@@ -613,7 +613,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                           icon={<Add16Regular />}
                           onClick={() => handleOpenAddAction(target.id, b.id)}
                         >
-                          {t("targets.addNewAction", { defaultValue: "設定執行指令..." })}
+                          {t("targets.addNewAction")}
                         </MenuItem>
                       </MenuList>
                     </MenuPopover>
