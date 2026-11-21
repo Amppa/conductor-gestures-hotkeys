@@ -57,6 +57,8 @@
     "renameGroupPlaceholder": "Enter group name...",
     "appCount": "{{count}} apps",
     "includedApps": "Included Apps:",
+    "excludedApps": "Excluded Apps",
+    "noExcludedApps": "No excluded apps yet. Click the 'Add App' button above to add.",
     "addApp": "Add App",
     "addGesture": "Add Rule",
     "tableGesture": "Trigger",

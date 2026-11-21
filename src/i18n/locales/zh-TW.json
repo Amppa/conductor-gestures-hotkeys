@@ -57,6 +57,8 @@
     "renameGroupPlaceholder": "輸入群組名稱...",
     "appCount": "{{count}} 個程式",
     "includedApps": "包含之程式：",
+    "excludedApps": "排除程式",
+    "noExcludedApps": "目前尚未加入任何排除程式，點擊上方「新增程式」按鈕即可加入。",
     "addApp": "新增程式",
     "addGesture": "新增規則",
     "tableGesture": "觸發手勢",

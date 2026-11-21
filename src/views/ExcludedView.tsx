@@ -141,7 +141,7 @@ export const ExcludedView: React.FC<ExcludedViewProps> = ({
 
       <Card className={styles.card}>
         <div className={styles.cardHeader}>
-          <Subtitle2>{t("targets.includedApps", { defaultValue: "包含之程式：" })}</Subtitle2>
+          <Subtitle2>{t("targets.excludedApps", { defaultValue: "排除程式" })}</Subtitle2>
           <Button
             size="small"
             appearance="secondary"
