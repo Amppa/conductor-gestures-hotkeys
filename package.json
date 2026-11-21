@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "test:engine": "powershell -ExecutionPolicy Bypass -Command \"Push-Location runtime; Start-Process -FilePath ..\\vendor\\autohotkey\\AutoHotkey64.exe -ArgumentList '/ErrorStdOut RunTest.ahk' -Wait; Pop-Location; Get-Content runtime\\test_result.json -Raw\"",
+    "test:engine": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-engine.ps1",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
