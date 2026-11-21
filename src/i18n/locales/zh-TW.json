@@ -18,7 +18,7 @@
   },
   "applyBar": {
     "pendingChanges": "尚有未套用的變更",
-    "discard": "復原變更",
+    "discard": "放棄",
     "apply": "套用變更",
     "applying": "正在套用…",
     "retry": "重試啟動"
@@ -99,7 +99,7 @@
     "subtitle": "鍵盤按鍵與組合快捷鍵對應設定。",
     "inDevBadge": "開發中 (Coming Soon)",
     "inDevTitle": "觸發熱鍵功能開發中",
-    "inDevDesc": "鍵盤按鍵與全域/群組快捷鍵對應功能將於下一版本正式推出，敬請期待。"
+    "inDevDesc": "開發中"
   },
   "actions": {
     "title": "執行指令",

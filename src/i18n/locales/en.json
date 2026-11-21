@@ -18,7 +18,7 @@
   },
   "applyBar": {
     "pendingChanges": "You have unapplied changes",
-    "discard": "Revert Changes",
+    "discard": "Discard",
     "apply": "Apply Changes",
     "applying": "Applying…",
     "retry": "Retry Engine"
@@ -99,7 +99,7 @@
     "subtitle": "Keyboard hotkey and chord mappings.",
     "inDevBadge": "Coming Soon",
     "inDevTitle": "Hotkey Triggers Feature in Development",
-    "inDevDesc": "Keyboard hotkey and application-specific shortcut mappings will be officially released in the next update."
+    "inDevDesc": "In development"
   },
   "actions": {
     "title": "Commands",
