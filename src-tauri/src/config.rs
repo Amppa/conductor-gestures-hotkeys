@@ -230,6 +230,24 @@ pub fn default_app_config() -> AppConfig {
                 action_type: "keys".into(),
                 value: "^{PgDn}".into(),
             },
+            ActionTemplate {
+                id: "act-noop".into(),
+                name: "No-op (Mute)".into(),
+                action_type: "noop".into(),
+                value: "".into(),
+            },
+            ActionTemplate {
+                id: "act-lwin".into(),
+                name: "Trigger Win".into(),
+                action_type: "remap".into(),
+                value: "LWin".into(),
+            },
+            ActionTemplate {
+                id: "act-lalt".into(),
+                name: "Trigger Alt".into(),
+                action_type: "remap".into(),
+                value: "LAlt".into(),
+            },
         ],
         key_remaps: vec![
             KeyRemap {
@@ -430,6 +448,54 @@ pub fn default_app_config() -> AppConfig {
                             name: "Show Desktop".into(),
                             action_type: "keys".into(),
                             value: "#d".into(),
+                        },
+                    },
+                    Binding {
+                        id: "g-insert-mute".into(),
+                        enabled: false,
+                        gesture: Gesture {
+                            id: "key-insert".into(),
+                            name: "Insert".into(),
+                            trigger: "Insert".into(),
+                            steps: vec![],
+                        },
+                        action: Action {
+                            id: "act-noop".into(),
+                            name: "No-op (Mute)".into(),
+                            action_type: "noop".into(),
+                            value: "".into(),
+                        },
+                    },
+                    Binding {
+                        id: "g-lalt-to-lwin".into(),
+                        enabled: false,
+                        gesture: Gesture {
+                            id: "key-lalt".into(),
+                            name: "Left Alt".into(),
+                            trigger: "LAlt".into(),
+                            steps: vec![],
+                        },
+                        action: Action {
+                            id: "act-lwin".into(),
+                            name: "Trigger Win".into(),
+                            action_type: "remap".into(),
+                            value: "LWin".into(),
+                        },
+                    },
+                    Binding {
+                        id: "g-lwin-to-lalt".into(),
+                        enabled: false,
+                        gesture: Gesture {
+                            id: "key-lwin".into(),
+                            name: "Left Win".into(),
+                            trigger: "LWin".into(),
+                            steps: vec![],
+                        },
+                        action: Action {
+                            id: "act-lalt".into(),
+                            name: "Trigger Alt".into(),
+                            action_type: "remap".into(),
+                            value: "LAlt".into(),
                         },
                     },
                 ],

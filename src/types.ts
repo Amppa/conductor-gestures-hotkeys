@@ -16,9 +16,13 @@ export type GestureTrigger =
   | "EdgeTop"
   | "EdgeBottom"
   | "EdgeLeft"
-  | "EdgeRight";
+  | "EdgeRight"
+  | "Insert"
+  | "LAlt"
+  | "LWin"
+  | (string & {});
 
-export type ActionType = "keys" | "mouse" | "wheel" | "run" | "ahk";
+export type ActionType = "keys" | "mouse" | "wheel" | "run" | "ahk" | "noop" | "remap";
 
 export interface Gesture {
   id: string;

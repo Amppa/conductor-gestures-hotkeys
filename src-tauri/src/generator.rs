@@ -11,6 +11,19 @@ pub fn trigger_to_ahk_name(t: &str) -> &str {
     }
 }
 
+pub fn is_mouse_or_spatial_trigger(trig: &str) -> bool {
+    matches!(
+        trig,
+        "R" | "RB" | "RButton"
+            | "M" | "MB" | "MButton"
+            | "L" | "LB" | "LButton"
+            | "X1" | "X1B" | "XButton1"
+            | "X2" | "X2B" | "XButton2"
+            | "CornerTL" | "CornerTR" | "CornerBL" | "CornerBR"
+            | "EdgeTop" | "EdgeBottom" | "EdgeLeft" | "EdgeRight"
+    )
+}
+
 pub fn ahk_quote(s: &str) -> String {
     s.replace('"', "\"\"")
 }
@@ -28,6 +41,9 @@ pub fn resolve_action_display_name(action_id: &str, fallback_name: &str, lang: &
             "act-show-desktop" => "顯示桌面".to_string(),
             "act-vol-up" => "提高音量".to_string(),
             "act-vol-down" => "降低音量".to_string(),
+            "act-noop" => "停用按鍵 (無動作)".to_string(),
+            "act-lwin" => "觸發 Win 鍵".to_string(),
+            "act-lalt" => "觸發 Alt 鍵".to_string(),
             _ => fallback_name.to_string(),
         }
     } else {
@@ -42,6 +58,9 @@ pub fn resolve_action_display_name(action_id: &str, fallback_name: &str, lang: &
             "act-show-desktop" => "Show Desktop".to_string(),
             "act-vol-up" => "Volume Up".to_string(),
             "act-vol-down" => "Volume Down".to_string(),
+            "act-noop" => "No-op (Mute)".to_string(),
+            "act-lwin" => "Trigger Win".to_string(),
+            "act-lalt" => "Trigger Alt".to_string(),
             _ => fallback_name.to_string(),
         }
     }
@@ -135,7 +154,7 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
             s.push_str(&format!("    ; Group: {}\n", gt.name));
             s.push_str(&format!("    if ({}) {{\n", cond));
             for b in &gt.bindings {
-                if !b.enabled {
+                if !b.enabled || !is_mouse_or_spatial_trigger(&b.gesture.trigger) {
                     continue;
                 }
                 let trig = trigger_to_ahk_name(&b.gesture.trigger);
@@ -222,7 +241,7 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
                 .join(" || ");
             s.push_str(&format!("    if ({}) {{\n", cond));
             for b in &gt.bindings {
-                if !b.enabled {
+                if !b.enabled || !is_mouse_or_spatial_trigger(&b.gesture.trigger) {
                     continue;
                 }
                 let trig = trigger_to_ahk_name(&b.gesture.trigger);
@@ -240,7 +259,7 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
 
     for gt in &global_targets {
         for b in &gt.bindings {
-            if !b.enabled {
+            if !b.enabled || !is_mouse_or_spatial_trigger(&b.gesture.trigger) {
                 continue;
             }
             let trig = trigger_to_ahk_name(&b.gesture.trigger);
@@ -257,5 +276,113 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
     s.push_str("    return \"\"\n");
     s.push_str("}\n");
 
+    // Key Remappings and Suppressions (Native AHK Remap & No-op)
+    s.push_str("\n; ------------------------------------------------------------------------------\n");
+    s.push_str("; Key Remappings and Suppressions (Native AHK Remap & No-op)\n");
+    s.push_str("; ------------------------------------------------------------------------------\n");
+
+    // 1. Unified Model: From Target Bindings
+    for gt in &global_targets {
+        for b in &gt.bindings {
+            if !b.enabled {
+                continue;
+            }
+            let trig = b.gesture.trigger.trim();
+            if is_mouse_or_spatial_trigger(trig) || trig.is_empty() {
+                continue;
+            }
+            if b.action.action_type == "noop"
+                || b.action.id == "act-noop"
+                || b.action.value.eq_ignore_ascii_case("none")
+            {
+                // Key suppression (no-op / mute)
+                s.push_str(&format!("*{}::return\n", trig));
+            } else if b.action.action_type == "remap" {
+                // Transparent remap with native infinite loop protection
+                s.push_str(&format!("*{}::{}\n", trig, b.action.value.trim()));
+            } else if b.action.action_type == "keys" {
+                s.push_str(&format!("*${}::Send(\"{}\")\n", trig, ahk_quote(&b.action.value)));
+            } else if b.action.action_type == "ahk" {
+                s.push_str(&format!("*${}::{}\n", trig, b.action.value.trim()));
+            } else if b.action.action_type == "run" {
+                s.push_str(&format!("*${}::Run(\"{}\")\n", trig, ahk_quote(&b.action.value)));
+            }
+        }
+    }
+
+    // 2. Backward compatibility: From key_remaps
+    for kr in &config.key_remaps {
+        if !kr.enabled {
+            continue;
+        }
+        let src = kr.src_key.trim();
+        let dst = kr.dst_key.trim();
+        if src.is_empty() {
+            continue;
+        }
+        if dst.eq_ignore_ascii_case("none") || dst.eq_ignore_ascii_case("disabled") {
+            s.push_str(&format!("*{}::return\n", src));
+        } else if !dst.is_empty() {
+            s.push_str(&format!("*{}::{}\n", src, dst));
+        }
+    }
+
     s
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{default_app_config, Action, Binding, Gesture};
+
+    #[test]
+    fn test_default_key_remaps_not_emitted_when_disabled() {
+        let cfg = default_app_config();
+        let script = generate_ahk_script(&cfg, 1);
+        assert!(!script.contains("*Insert::return"));
+        assert!(!script.contains("*LAlt::LWin"));
+        assert!(!script.contains("*LWin::LAlt"));
+    }
+
+    #[test]
+    fn test_target_bindings_with_keyboard_triggers_emitted_when_enabled() {
+        let mut cfg = default_app_config();
+        if let Some(gt) = cfg.targets.iter_mut().find(|t| t.kind == "global") {
+            gt.bindings.push(Binding {
+                id: "test-insert".into(),
+                enabled: true,
+                gesture: Gesture {
+                    id: "key-insert".into(),
+                    name: "Insert".into(),
+                    trigger: "Insert".into(),
+                    steps: vec![],
+                },
+                action: Action {
+                    id: "act-noop".into(),
+                    name: "No-op".into(),
+                    action_type: "noop".into(),
+                    value: "".into(),
+                },
+            });
+            gt.bindings.push(Binding {
+                id: "test-lalt".into(),
+                enabled: true,
+                gesture: Gesture {
+                    id: "key-lalt".into(),
+                    name: "LAlt".into(),
+                    trigger: "LAlt".into(),
+                    steps: vec![],
+                },
+                action: Action {
+                    id: "act-lwin".into(),
+                    name: "Win".into(),
+                    action_type: "remap".into(),
+                    value: "LWin".into(),
+                },
+            });
+        }
+        let script = generate_ahk_script(&cfg, 2);
+        assert!(script.contains("*Insert::return"));
+        assert!(script.contains("*LAlt::LWin"));
+    }
 }
