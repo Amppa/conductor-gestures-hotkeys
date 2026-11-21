@@ -281,7 +281,6 @@ pub fn default_app_config() -> AppConfig {
                 executables: vec![
                     "mouse-gesture-5btn.exe".into(),
                     "photoshop.exe".into(),
-                    "games.exe".into(),
                 ],
                 bindings: vec![],
             },
