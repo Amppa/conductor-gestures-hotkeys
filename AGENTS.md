@@ -15,7 +15,7 @@ This document specifies the workflow, engineering standards, and communication p
 2. **Feature Branch Workflow (Mandatory)**:
    - NEVER commit directly to `main`.
    - Always create a dedicated branch: `git checkout -b <type>/<short-name>`.
-   - Run acceptance tests (`npm run test:engine`) and verify before merging into `main`.
+   - Run the complete quality gate (`npm run verify`) before merging into `main`.
 3. **Clean Code & Professional Style**:
    - Follow standard conventions (Google/Java style guide, CamelCase for JS/TS, snake_case for Rust/AHK globals with `g` prefix).
    - Concise and self-explanatory naming (e.g. `cnt`, `msg`, `del`, `getState()`).
@@ -50,7 +50,10 @@ This document specifies the workflow, engineering standards, and communication p
 Every pull request or merge back to `main` must pass:
 1. `npm run test:engine`: Headless AHK gesture recognition suite (100% pass).
 2. `npm run build`: Frontend TypeScript and Vite bundle verification.
-3. `cargo check --manifest-path src-tauri/Cargo.toml`: Rust compilation check.
+3. `npm run test:rust`: Rust unit and documentation tests.
+4. `npm run check:rust`: Rust compilation check.
+
+Run all four gates with `npm run verify`.
 
 ---
 
