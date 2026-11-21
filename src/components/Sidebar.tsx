@@ -103,10 +103,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={styles.tabList}
         >
           <Tab value="targets" icon={<Apps24Regular />}>
-            {t("nav.targets", { defaultValue: "應用目標" })}
+            {t("nav.targets", { defaultValue: "應用範圍" })}
           </Tab>
           <Tab value="excluded" icon={<Prohibited24Regular />}>
-            {t("nav.excluded", { defaultValue: "排除目標" })}
+            {t("nav.excluded", { defaultValue: "排除程式" })}
           </Tab>
         </TabList>
 
@@ -120,10 +120,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={styles.tabList}
         >
           <Tab value="gestures" icon={<HandDraw24Regular />}>
-            {t("nav.gestures", { defaultValue: "手勢" })}
+            {t("nav.gestures", { defaultValue: "觸發手勢" })}
           </Tab>
           <Tab value="hotkeys" icon={<Keyboard24Regular />}>
-            {t("nav.hotkeys", { defaultValue: "熱鍵" })}
+            {t("nav.hotkeys", { defaultValue: "觸發熱鍵" })}
           </Tab>
         </TabList>
 
@@ -137,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={styles.tabList}
         >
           <Tab value="actions" icon={<Flash24Regular />}>
-            {t("nav.actions", { defaultValue: "行為" })}
+            {t("nav.actions", { defaultValue: "執行指令" })}
           </Tab>
         </TabList>
       </div>
