@@ -12,7 +12,19 @@ pub struct AppConfig {
     pub edge_scroll: EdgeScrollConfig,
     pub gesture_templates: Vec<GestureTemplate>,
     pub action_templates: Vec<ActionTemplate>,
+    #[serde(default)]
+    pub key_remaps: Vec<KeyRemap>,
     pub targets: Vec<Target>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KeyRemap {
+    pub id: String,
+    pub name: String,
+    pub enabled: bool,
+    pub src_key: String,
+    pub dst_key: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -188,6 +200,59 @@ pub fn default_app_config() -> AppConfig {
                 action_type: "ahk".into(),
                 value: "WinMinimize('A')".into(),
             },
+            ActionTemplate {
+                id: "act-show-desktop".into(),
+                name: "Show Desktop".into(),
+                action_type: "keys".into(),
+                value: "#d".into(),
+            },
+            ActionTemplate {
+                id: "act-vol-up".into(),
+                name: "Volume Up".into(),
+                action_type: "keys".into(),
+                value: "{Volume_Up}".into(),
+            },
+            ActionTemplate {
+                id: "act-vol-down".into(),
+                name: "Volume Down".into(),
+                action_type: "keys".into(),
+                value: "{Volume_Down}".into(),
+            },
+            ActionTemplate {
+                id: "act-prev-tab".into(),
+                name: "Previous Tab".into(),
+                action_type: "keys".into(),
+                value: "^{PgUp}".into(),
+            },
+            ActionTemplate {
+                id: "act-next-tab".into(),
+                name: "Next Tab".into(),
+                action_type: "keys".into(),
+                value: "^{PgDn}".into(),
+            },
+        ],
+        key_remaps: vec![
+            KeyRemap {
+                id: "remap-disable-insert".into(),
+                name: "停用 Insert 鍵 (靜音)".into(),
+                enabled: false,
+                src_key: "Insert".into(),
+                dst_key: "none".into(),
+            },
+            KeyRemap {
+                id: "remap-lalt-lwin".into(),
+                name: "左 Alt 映射為 Win".into(),
+                enabled: false,
+                src_key: "LAlt".into(),
+                dst_key: "LWin".into(),
+            },
+            KeyRemap {
+                id: "remap-lwin-lalt".into(),
+                name: "左 Win 映射為 Alt".into(),
+                enabled: false,
+                src_key: "LWin".into(),
+                dst_key: "LAlt".into(),
+            },
         ],
         targets: vec![
             Target {
@@ -288,19 +353,83 @@ pub fn default_app_config() -> AppConfig {
                         },
                     },
                     Binding {
-                        id: "g-minimize".into(),
+                        id: "g-edge-left-vol-up".into(),
                         enabled: true,
                         gesture: Gesture {
-                            id: "r-down".into(),
-                            name: "Down".into(),
-                            trigger: "R".into(),
-                            steps: vec!["D".into()],
+                            id: "edge-left-wu".into(),
+                            name: "Left Edge Wheel Up".into(),
+                            trigger: "EdgeLeft".into(),
+                            steps: vec!["WU".into()],
                         },
                         action: Action {
-                            id: "act-minimize".into(),
-                            name: "Minimize Window".into(),
-                            action_type: "ahk".into(),
-                            value: "WinMinimize('A')".into(),
+                            id: "act-vol-up".into(),
+                            name: "Volume Up".into(),
+                            action_type: "keys".into(),
+                            value: "{Volume_Up}".into(),
+                        },
+                    },
+                    Binding {
+                        id: "g-edge-left-vol-down".into(),
+                        enabled: true,
+                        gesture: Gesture {
+                            id: "edge-left-wd".into(),
+                            name: "Left Edge Wheel Down".into(),
+                            trigger: "EdgeLeft".into(),
+                            steps: vec!["WD".into()],
+                        },
+                        action: Action {
+                            id: "act-vol-down".into(),
+                            name: "Volume Down".into(),
+                            action_type: "keys".into(),
+                            value: "{Volume_Down}".into(),
+                        },
+                    },
+                    Binding {
+                        id: "g-edge-top-prev-tab".into(),
+                        enabled: true,
+                        gesture: Gesture {
+                            id: "edge-top-wu".into(),
+                            name: "Top Edge Wheel Up".into(),
+                            trigger: "EdgeTop".into(),
+                            steps: vec!["WU".into()],
+                        },
+                        action: Action {
+                            id: "act-prev-tab".into(),
+                            name: "Previous Tab".into(),
+                            action_type: "keys".into(),
+                            value: "^{PgUp}".into(),
+                        },
+                    },
+                    Binding {
+                        id: "g-edge-top-next-tab".into(),
+                        enabled: true,
+                        gesture: Gesture {
+                            id: "edge-top-wd".into(),
+                            name: "Top Edge Wheel Down".into(),
+                            trigger: "EdgeTop".into(),
+                            steps: vec!["WD".into()],
+                        },
+                        action: Action {
+                            id: "act-next-tab".into(),
+                            name: "Next Tab".into(),
+                            action_type: "keys".into(),
+                            value: "^{PgDn}".into(),
+                        },
+                    },
+                    Binding {
+                        id: "g-corner-br".into(),
+                        enabled: false,
+                        gesture: Gesture {
+                            id: "corner-br".into(),
+                            name: "Bottom-Right Corner".into(),
+                            trigger: "CornerBR".into(),
+                            steps: vec![],
+                        },
+                        action: Action {
+                            id: "act-show-desktop".into(),
+                            name: "Show Desktop".into(),
+                            action_type: "keys".into(),
+                            value: "#d".into(),
                         },
                     },
                 ],

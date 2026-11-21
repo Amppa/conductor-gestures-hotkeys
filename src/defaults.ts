@@ -1,4 +1,28 @@
-import { AppConfig, Target } from "./types";
+import { AppConfig, KeyRemap, Target } from "./types";
+
+export const DEFAULT_KEY_REMAPS: KeyRemap[] = [
+  {
+    id: "remap-disable-insert",
+    name: "停用 Insert 鍵 (靜音)",
+    enabled: false,
+    srcKey: "Insert",
+    dstKey: "none",
+  },
+  {
+    id: "remap-lalt-lwin",
+    name: "左 Alt 映射為 Win",
+    enabled: false,
+    srcKey: "LAlt",
+    dstKey: "LWin",
+  },
+  {
+    id: "remap-lwin-lalt",
+    name: "左 Win 映射為 Alt",
+    enabled: false,
+    srcKey: "LWin",
+    dstKey: "LAlt",
+  },
+];
 
 export const DEFAULT_TARGETS: Target[] = [
   // 1. Global Default
@@ -42,76 +66,12 @@ export const DEFAULT_TARGETS: Target[] = [
         },
       },
       {
-        id: "g-close-tab",
+        id: "g-edge-left-vol-up",
         enabled: true,
         gesture: {
-          id: "r-down-right",
-          name: "Down-Right",
-          trigger: "R",
-          steps: ["D", "R"],
-        },
-        action: {
-          id: "act-close-tab",
-          name: "Close Tab",
-          type: "keys",
-          value: "^w",
-        },
-      },
-      {
-        id: "g-wheel-up",
-        enabled: true,
-        gesture: {
-          id: "r-wu",
-          name: "Wheel Up",
-          trigger: "R",
-          steps: ["WU"],
-        },
-        action: {
-          id: "act-prev-tab",
-          name: "Previous Tab",
-          type: "keys",
-          value: "^{PgUp}",
-        },
-      },
-      {
-        id: "g-wheel-down",
-        enabled: true,
-        gesture: {
-          id: "r-wd",
-          name: "Wheel Down",
-          trigger: "R",
-          steps: ["WD"],
-        },
-        action: {
-          id: "act-next-tab",
-          name: "Next Tab",
-          type: "keys",
-          value: "^{PgDn}",
-        },
-      },
-      {
-        id: "g-corner-tl",
-        enabled: true,
-        gesture: {
-          id: "corner-tl",
-          name: "Top-Left Corner",
-          trigger: "CornerTL",
-          steps: [],
-        },
-        action: {
-          id: "act-show-desktop",
-          name: "Show Desktop",
-          type: "keys",
-          value: "#d",
-        },
-      },
-      {
-        id: "g-edge-vol-up",
-        enabled: true,
-        gesture: {
-          id: "edge-top-wu",
-          name: "Top Edge Wheel Up",
-          trigger: "EdgeTop",
+          id: "edge-left-wu",
+          name: "Left Edge Wheel Up",
+          trigger: "EdgeLeft",
           steps: ["WU"],
         },
         action: {
@@ -122,7 +82,39 @@ export const DEFAULT_TARGETS: Target[] = [
         },
       },
       {
-        id: "g-edge-vol-down",
+        id: "g-edge-left-vol-down",
+        enabled: true,
+        gesture: {
+          id: "edge-left-wd",
+          name: "Left Edge Wheel Down",
+          trigger: "EdgeLeft",
+          steps: ["WD"],
+        },
+        action: {
+          id: "act-vol-down",
+          name: "Volume Down",
+          type: "keys",
+          value: "{Volume_Down}",
+        },
+      },
+      {
+        id: "g-edge-top-prev-tab",
+        enabled: true,
+        gesture: {
+          id: "edge-top-wu",
+          name: "Top Edge Wheel Up",
+          trigger: "EdgeTop",
+          steps: ["WU"],
+        },
+        action: {
+          id: "act-prev-tab",
+          name: "Previous Tab",
+          type: "keys",
+          value: "^{PgUp}",
+        },
+      },
+      {
+        id: "g-edge-top-next-tab",
         enabled: true,
         gesture: {
           id: "edge-top-wd",
@@ -131,10 +123,26 @@ export const DEFAULT_TARGETS: Target[] = [
           steps: ["WD"],
         },
         action: {
-          id: "act-vol-down",
-          name: "Volume Down",
+          id: "act-next-tab",
+          name: "Next Tab",
           type: "keys",
-          value: "{Volume_Down}",
+          value: "^{PgDn}",
+        },
+      },
+      {
+        id: "g-corner-br",
+        enabled: false,
+        gesture: {
+          id: "corner-br",
+          name: "Bottom-Right Corner",
+          trigger: "CornerBR",
+          steps: [],
+        },
+        action: {
+          id: "act-show-desktop",
+          name: "Show Desktop",
+          type: "keys",
+          value: "#d",
         },
       },
     ],
@@ -231,5 +239,6 @@ export const DEFAULT_CONFIG: AppConfig = {
     { id: "act-vol-up", name: "Volume Up", type: "keys", value: "{Volume_Up}" },
     { id: "act-vol-down", name: "Volume Down", type: "keys", value: "{Volume_Down}" },
   ],
+  keyRemaps: DEFAULT_KEY_REMAPS,
   targets: DEFAULT_TARGETS,
 };

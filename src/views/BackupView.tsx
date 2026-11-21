@@ -79,6 +79,7 @@ interface BackupViewProps {
 function normalizeImportedConfig(rawConfig: AppConfig): AppConfig {
   return {
     ...rawConfig,
+    keyRemaps: rawConfig.keyRemaps || [],
     gestureTemplates: (rawConfig.gestureTemplates || []).map((g) => ({
       ...g,
       trigger: normalizeTrigger(g.trigger) as any,

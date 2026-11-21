@@ -62,6 +62,14 @@ export interface EngineConfig {
   thresholdPx: number;
 }
 
+export interface KeyRemap {
+  id: string;
+  name: string;
+  enabled: boolean;
+  srcKey: string;
+  dstKey: string;
+}
+
 export interface AppConfig {
   version: number;
   language: Language;
@@ -69,6 +77,7 @@ export interface AppConfig {
   edgeScroll: EdgeScrollConfig;
   gestureTemplates: Gesture[];
   actionTemplates: Action[];
+  keyRemaps?: KeyRemap[];
   targets: Target[];
 }
 
