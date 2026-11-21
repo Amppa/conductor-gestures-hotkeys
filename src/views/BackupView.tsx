@@ -2,6 +2,8 @@ import React, { useState, useRef } from "react";
 import {
   makeStyles,
   tokens,
+  Title3,
+  Divider,
   Button,
   Dialog,
   DialogSurface,
@@ -24,13 +26,29 @@ import { normalizeTrigger } from "../utils/gestureSymbols";
 
 const useStyles = makeStyles({
   container: {
-    padding: "24px",
+    padding: "16px 24px",
     display: "flex",
     flexDirection: "column",
-    gap: "16px",
+    gap: "12px",
     minHeight: "100%",
     boxSizing: "border-box",
-    backgroundColor: tokens.colorNeutralBackground1,
+    justifyContent: "flex-start",
+  },
+  pageHeader: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    flexShrink: 0,
+  },
+  pageTitle: {
+    fontSize: "20px",
+    lineHeight: "24px",
+    fontWeight: tokens.fontWeightSemibold,
+    margin: "0 !important",
+    padding: 0,
+  },
+  divider: {
+    margin: "0 !important",
   },
   btnRow: {
     display: "flex",
@@ -252,6 +270,10 @@ export const BackupView: React.FC<BackupViewProps> = ({
 
   return (
     <div className={styles.container}>
+      <div className={styles.pageHeader}>
+        <Title3 as="h1" className={styles.pageTitle}>{t("nav.backup")}</Title3>
+        <Divider className={styles.divider} />
+      </div>
       <input
         ref={fileInputRef}
         type="file"

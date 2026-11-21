@@ -3,8 +3,9 @@ import { useTranslation } from "react-i18next";
 import {
   makeStyles,
   tokens,
+  Title3,
+  Divider,
   Card,
-  Subtitle2,
   Caption1,
   Badge,
   Button,
@@ -15,12 +16,29 @@ import { EditActionDialog } from "../components/EditActionDialog";
 
 const useStyles = makeStyles({
   container: {
-    padding: "24px",
+    padding: "16px 24px",
     display: "flex",
     flexDirection: "column",
-    gap: "16px",
-    overflowY: "auto",
-    height: "calc(100% - 48px)",
+    gap: "12px",
+    minHeight: "100%",
+    boxSizing: "border-box",
+    justifyContent: "flex-start",
+  },
+  pageHeader: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    flexShrink: 0,
+  },
+  pageTitle: {
+    fontSize: "20px",
+    lineHeight: "24px",
+    fontWeight: tokens.fontWeightSemibold,
+    margin: "0 !important",
+    padding: 0,
+  },
+  divider: {
+    margin: "0 !important",
   },
   card: {
     padding: "16px",
@@ -125,8 +143,9 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
 
   return (
     <div className={styles.container}>
-      <div>
-        <Caption1>{t("actions.subtitle")}</Caption1>
+      <div className={styles.pageHeader}>
+        <Title3 as="h1" className={styles.pageTitle}>{t("nav.actions")}</Title3>
+        <Divider className={styles.divider} />
       </div>
 
       <Card className={styles.card}>

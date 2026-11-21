@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  Title3,
+  Divider,
   Card,
-  Caption1,
+  Subtitle2,
   Tag,
   Button,
   makeStyles,
@@ -14,24 +16,62 @@ import { AddProcessDialog } from "../components/AddProcessDialog";
 
 const useStyles = makeStyles({
   container: {
-    padding: "24px",
+    padding: "16px 24px",
     display: "flex",
     flexDirection: "column",
-    gap: "16px",
-    overflowY: "auto",
-    height: "calc(100% - 48px)",
+    gap: "12px",
+    minHeight: "100%",
+    boxSizing: "border-box",
+    justifyContent: "flex-start",
   },
-  subtitle: {
-    color: tokens.colorNeutralForeground3,
+  pageHeader: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    flexShrink: 0,
+  },
+  pageTitle: {
+    fontSize: "20px",
+    lineHeight: "24px",
+    fontWeight: tokens.fontWeightSemibold,
+    margin: "0 !important",
+    padding: 0,
+  },
+  divider: {
+    margin: "0 !important",
+  },
+  hintBanner: {
+    padding: "8px 14px",
+    backgroundColor: tokens.colorNeutralBackground3,
+    borderRadius: tokens.borderRadiusMedium,
+    color: tokens.colorNeutralForeground2,
+    fontSize: tokens.fontSizeBase200,
+    lineHeight: tokens.lineHeightBase200,
+    width: "fit-content",
   },
   card: {
+    padding: "16px 20px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "14px",
     backgroundColor: tokens.colorNeutralBackground1,
+  },
+  cardHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   tagList: {
     display: "flex",
     flexWrap: "wrap",
     gap: "8px",
     alignItems: "center",
+    minHeight: "32px",
+  },
+  emptyText: {
+    color: tokens.colorNeutralForeground4,
+    fontSize: tokens.fontSizeBase200,
+    fontStyle: "italic",
   },
 });
 
@@ -52,7 +92,7 @@ export const ExcludedView: React.FC<ExcludedViewProps> = ({
   // Find or create disabled target
   const disabledTarget = targets.find((t) => t.kind === "disabled") || {
     id: "target-disabled",
-    name: "排除目標",
+    name: "排除程式",
     kind: "disabled",
     enabled: true,
     executables: [],
@@ -88,21 +128,35 @@ export const ExcludedView: React.FC<ExcludedViewProps> = ({
 
   return (
     <div className={styles.container}>
-      <Caption1 className={styles.subtitle}>
+      <div className={styles.pageHeader}>
+        <Title3 as="h1" className={styles.pageTitle}>{t("nav.excluded")}</Title3>
+        <Divider className={styles.divider} />
+      </div>
+
+      <div className={styles.hintBanner}>
         {t("targets.disabledDesc", {
-          defaultValue: "排除目標內的應用程式將完全放行原生點擊，手勢引擎不進行任何攔截。例如遊戲或特定設計軟體。",
+          defaultValue: "排除程式內的應用程式將完全放行原生點擊，手勢引擎不進行任何攔截。例如遊戲或特定設計軟體。",
         })}
-      </Caption1>
+      </div>
 
       <Card className={styles.card}>
+        <div className={styles.cardHeader}>
+          <Subtitle2>{t("targets.includedApps", { defaultValue: "包含之程式：" })}</Subtitle2>
+          <Button
+            size="small"
+            appearance="secondary"
+            icon={<Add16Regular />}
+            onClick={() => setIsAddProcessOpen(true)}
+          >
+            {t("targets.addApp", { defaultValue: "新增程式" })}
+          </Button>
+        </div>
+
         <div className={styles.tagList}>
-          <Caption1 style={{ color: tokens.colorNeutralForeground3, fontWeight: 600 }}>
-            {t("targets.includedApps", { defaultValue: "包含之程式：" })}
-          </Caption1>
           {disabledTarget.executables.map((exe) => (
             <Tag
               key={exe}
-              size="small"
+              size="medium"
               dismissible
               dismissIcon={{ "aria-label": "remove" }}
               onClick={() => handleDeleteExe(exe)}
@@ -110,14 +164,11 @@ export const ExcludedView: React.FC<ExcludedViewProps> = ({
               {exe}
             </Tag>
           ))}
-          <Button
-            size="small"
-            appearance="subtle"
-            icon={<Add16Regular />}
-            onClick={() => setIsAddProcessOpen(true)}
-          >
-            {t("targets.addApp", { defaultValue: "新增程式" })}
-          </Button>
+          {disabledTarget.executables.length === 0 && (
+            <span className={styles.emptyText}>
+              {t("targets.noExcludedApps", { defaultValue: "目前尚未加入任何排除程式，點擊上方「新增程式」按鈕即可加入。" })}
+            </span>
+          )}
         </div>
       </Card>
 

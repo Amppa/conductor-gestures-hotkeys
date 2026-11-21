@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   makeStyles,
   tokens,
+  Title3,
   Card,
   Subtitle2,
   Caption1,
@@ -36,12 +37,29 @@ import { AddProcessDialog } from "../components/AddProcessDialog";
 
 const useStyles = makeStyles({
   container: {
-    padding: "24px",
+    padding: "16px 24px",
     display: "flex",
     flexDirection: "column",
-    gap: "24px",
-    overflowY: "auto",
-    height: "calc(100% - 48px)",
+    gap: "12px",
+    minHeight: "100%",
+    boxSizing: "border-box",
+    justifyContent: "flex-start",
+  },
+  pageHeader: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    flexShrink: 0,
+  },
+  pageTitle: {
+    fontSize: "20px",
+    lineHeight: "24px",
+    fontWeight: tokens.fontWeightSemibold,
+    margin: "0 !important",
+    padding: 0,
+  },
+  divider: {
+    margin: "0 !important",
   },
   ruleHint: {
     padding: "8px 14px",
@@ -555,7 +573,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                           icon={<Add16Regular />}
                           onClick={() => handleOpenAddGesture(target.id, b.id)}
                         >
-                          {t("targets.addNewGesture", { defaultValue: "新增手勢..." })}
+                          {t("targets.addNewGesture", { defaultValue: "設定觸發手勢..." })}
                         </MenuItem>
                       </MenuList>
                     </MenuPopover>
@@ -595,7 +613,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                           icon={<Add16Regular />}
                           onClick={() => handleOpenAddAction(target.id, b.id)}
                         >
-                          {t("targets.addNewAction", { defaultValue: "新增動作..." })}
+                          {t("targets.addNewAction", { defaultValue: "設定執行指令..." })}
                         </MenuItem>
                       </MenuList>
                     </MenuPopover>
@@ -627,6 +645,11 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
 
   return (
     <div className={styles.container}>
+      <div className={styles.pageHeader}>
+        <Title3 as="h1" className={styles.pageTitle}>{t("nav.targets")}</Title3>
+        <Divider className={styles.divider} />
+      </div>
+
       {/* Top clean logic prompt */}
       <div className={styles.ruleHint}>{t("targets.ruleHint")}</div>
 
