@@ -151,6 +151,10 @@
     "typeKeys": "鍵盤快速鍵 (keys)",
     "typeAhk": "原生 AHK 腳本 (ahk)",
     "typeRun": "啟動程式 / 網址 (run)",
+    "typeNoop": "停用按鍵 (無動作)",
+    "typeRemap": "按鍵映射 (改鍵)",
+    "noopHint": "攔截該按鍵事件並直接忽略，不執行任何動作（徹底停用該鍵）。",
+    "remapHint": "目標鍵位名稱（如 LWin, LAlt, LCtrl, CapsLock 等）。",
     "keysTitle": "按鍵組合 (聚焦後直接在鍵盤按下)：",
     "keysPlaceholder": "點此直接按下快速鍵 (如 Ctrl+W)",
     "ahkCodeHint": "對應 AHK 代碼：{{value}}",
@@ -196,6 +200,9 @@
     "CornerTR": "右上觸控角 (TR)",
     "CornerBL": "左下觸控角 (BL)",
     "CornerBR": "右下觸控角 (BR)",
+    "Insert": "Insert 鍵",
+    "LAlt": "左側 Alt (LAlt)",
+    "LWin": "左側 Win (LWin)",
     "click": "單擊",
     "wheelUp": "滾輪上 (W↑)",
     "wheelDown": "滾輪下 (W↓)"
@@ -210,7 +217,10 @@
     "act-minimize": "最小化視窗",
     "act-show-desktop": "顯示桌面",
     "act-vol-up": "提高音量",
-    "act-vol-down": "降低音量"
+    "act-vol-down": "降低音量",
+    "act-noop": "停用按鍵 (無動作)",
+    "act-lwin": "觸發 Win 鍵",
+    "act-lalt": "觸發 Alt 鍵"
   },
   "gestureNames": {
     "r-left": "向左",
@@ -222,6 +232,10 @@
     "x1-click": "側鍵 X1 單擊",
     "x2-click": "側鍵 X2 單擊",
     "r-wu": "右鍵滾輪上",
-    "r-wd": "右鍵滾輪下"
+    "r-wd": "右鍵滾輪下",
+    "corner-br": "右下觸控角 (BR)",
+    "key-insert": "Insert 鍵",
+    "key-lalt": "左側 Alt",
+    "key-lwin": "左側 Win"
   }
 }

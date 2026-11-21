@@ -115,7 +115,7 @@ export const EditActionDialog: React.FC<EditActionDialogProps> = ({
       ...action,
       name: name.trim() || t("dialogs.unnamedAction"),
       type,
-      value: value.trim(),
+      value: type === "noop" ? "" : value.trim(),
     });
   };
 
@@ -144,15 +144,40 @@ export const EditActionDialog: React.FC<EditActionDialogProps> = ({
                     ? t("dialogs.typeKeys")
                     : type === "ahk"
                     ? t("dialogs.typeAhk")
-                    : t("dialogs.typeRun")
+                    : type === "run"
+                    ? t("dialogs.typeRun")
+                    : type === "noop"
+                    ? t("dialogs.typeNoop", { defaultValue: "停用按鍵 (無動作)" })
+                    : t("dialogs.typeRemap", { defaultValue: "按鍵映射 (改鍵)" })
                 }
                 onOptionSelect={(_, data) => setType(data.optionValue as ActionType)}
               >
                 <Option value="keys">{t("dialogs.typeKeys")}</Option>
                 <Option value="ahk">{t("dialogs.typeAhk")}</Option>
                 <Option value="run">{t("dialogs.typeRun")}</Option>
+                <Option value="noop">{t("dialogs.typeNoop", { defaultValue: "停用按鍵 (無動作)" })}</Option>
+                <Option value="remap">{t("dialogs.typeRemap", { defaultValue: "按鍵映射 (改鍵)" })}</Option>
               </Dropdown>
             </div>
+
+            {/* Type: No-op */}
+            {type === "noop" && (
+              <div className={styles.section}>
+                <Caption1>{t("dialogs.noopHint", { defaultValue: "攔截該按鍵事件並直接忽略，不執行任何動作（徹底停用該鍵）。" })}</Caption1>
+              </div>
+            )}
+
+            {/* Type: Remap */}
+            {type === "remap" && (
+              <div className={styles.section}>
+                <Subtitle2>{t("dialogs.remapHint", { defaultValue: "目標鍵位名稱（如 LWin, LAlt, LCtrl, CapsLock 等）：" })}</Subtitle2>
+                <Input
+                  value={value}
+                  onChange={(_, data) => setValue(data.value)}
+                  placeholder="LWin"
+                />
+              </div>
+            )}
 
             {/* Type: Keys */}
             {type === "keys" && (

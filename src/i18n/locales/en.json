@@ -151,6 +151,10 @@
     "typeKeys": "Keystroke Hotkey (keys)",
     "typeAhk": "Native AHK Script (ahk)",
     "typeRun": "Launch Program / URL (run)",
+    "typeNoop": "Disable Key (No-op)",
+    "typeRemap": "Key Remap",
+    "noopHint": "Intercepts this key event and ignores it completely (disables the key).",
+    "remapHint": "Target destination key name (e.g. LWin, LAlt, LCtrl, CapsLock).",
     "keysTitle": "Key combination (Focus and press keys directly):",
     "keysPlaceholder": "Click here and press hotkey (e.g. Ctrl+W)",
     "ahkCodeHint": "Corresponding AHK code: {{value}}",
@@ -197,6 +201,9 @@
     "CornerTR": "Top-Right Corner (TR)",
     "CornerBL": "Bottom-Left Corner (BL)",
     "CornerBR": "Bottom-Right Corner (BR)",
+    "Insert": "Insert Key",
+    "LAlt": "Left Alt (LAlt)",
+    "LWin": "Left Win (LWin)",
     "click": "Click",
     "wheelUp": "Wheel Up (W↑)",
     "wheelDown": "Wheel Down (W↓)"
@@ -211,7 +218,10 @@
     "act-minimize": "Minimize Window",
     "act-show-desktop": "Show Desktop",
     "act-vol-up": "Volume Up",
-    "act-vol-down": "Volume Down"
+    "act-vol-down": "Volume Down",
+    "act-noop": "No-op (Mute)",
+    "act-lwin": "Trigger Win",
+    "act-lalt": "Trigger Alt"
   },
   "gestureNames": {
     "r-left": "Left",
@@ -223,6 +233,10 @@
     "x1-click": "X1 Click",
     "x2-click": "X2 Click",
     "r-wu": "R + Wheel Up",
-    "r-wd": "R + Wheel Down"
+    "r-wd": "R + Wheel Down",
+    "corner-br": "Bottom-Right Corner (BR)",
+    "key-insert": "Insert Key",
+    "key-lalt": "Left Alt",
+    "key-lwin": "Left Win"
   }
 }

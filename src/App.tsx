@@ -15,13 +15,47 @@ import { AppConfig, Target, Gesture, Action } from "./types";
 import { normalizeTrigger } from "./utils/gestureSymbols";
 
 function migrateConfigTriggers(rawConfig: AppConfig): AppConfig {
-  return {
-    ...rawConfig,
-    gestureTemplates: (rawConfig.gestureTemplates || []).map((g) => ({
-      ...g,
-      trigger: normalizeTrigger(g.trigger) as any,
-    })),
-    targets: (rawConfig.targets || []).map((t) => ({
+  // 1. Auto-merge missing action templates from defaults
+  const existingActionIds = new Set((rawConfig.actionTemplates || []).map((a) => a.id));
+  const mergedActions = [...(rawConfig.actionTemplates || [])];
+  for (const defA of DEFAULT_CONFIG.actionTemplates) {
+    if (!existingActionIds.has(defA.id)) {
+      mergedActions.push(defA);
+    }
+  }
+
+  // 2. Auto-merge missing gesture templates from defaults
+  const existingGestureIds = new Set((rawConfig.gestureTemplates || []).map((g) => g.id));
+  const mergedGestures = [...(rawConfig.gestureTemplates || [])];
+  for (const defG of DEFAULT_CONFIG.gestureTemplates) {
+    if (!existingGestureIds.has(defG.id)) {
+      mergedGestures.push(defG);
+    }
+  }
+
+  // 3. Auto-merge missing factory bindings into Global Target
+  const defGlobal = DEFAULT_CONFIG.targets.find((dt) => dt.kind === "global");
+  const updatedTargets = (rawConfig.targets || []).map((t) => {
+    if (t.kind === "global" && defGlobal) {
+      const existingBindingIds = new Set(t.bindings.map((b) => b.id));
+      const newBindings = [...t.bindings];
+      for (const defB of defGlobal.bindings) {
+        if (!existingBindingIds.has(defB.id)) {
+          newBindings.push(defB);
+        }
+      }
+      return {
+        ...t,
+        bindings: newBindings.map((b) => ({
+          ...b,
+          gesture: {
+            ...b.gesture,
+            trigger: normalizeTrigger(b.gesture.trigger) as any,
+          },
+        })),
+      };
+    }
+    return {
       ...t,
       bindings: (t.bindings || []).map((b) => ({
         ...b,
@@ -30,7 +64,17 @@ function migrateConfigTriggers(rawConfig: AppConfig): AppConfig {
           trigger: normalizeTrigger(b.gesture.trigger) as any,
         },
       })),
+    };
+  });
+
+  return {
+    ...rawConfig,
+    actionTemplates: mergedActions,
+    gestureTemplates: mergedGestures.map((g) => ({
+      ...g,
+      trigger: normalizeTrigger(g.trigger) as any,
     })),
+    targets: updatedTargets,
   };
 }
 

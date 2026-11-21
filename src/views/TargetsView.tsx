@@ -227,6 +227,42 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
     setEditingAction({ targetId, binding: b });
   };
 
+  const checkGestureEmpty = (gesture?: Gesture): boolean => {
+    if (!gesture || !gesture.trigger) return true;
+    const trig = gesture.trigger;
+    const allowsEmptySteps =
+      trig.startsWith("Corner") ||
+      ["Insert", "LAlt", "LWin", "X1", "X2"].includes(trig) ||
+      !["R", "M", "L", "EdgeTop", "EdgeBottom", "EdgeLeft", "EdgeRight"].includes(trig);
+    if (allowsEmptySteps) return false;
+    return !gesture.steps || gesture.steps.length === 0;
+  };
+
+  const checkActionEmpty = (action?: Action): boolean => {
+    if (!action) return true;
+    if (action.type === "noop" || action.id === "act-noop") return false;
+    return !action.value || !action.value.trim();
+  };
+
+  const isGestureEmpty = (b: Binding): boolean => checkGestureEmpty(b.gesture);
+
+  const isActionEmpty = (b: Binding): boolean => checkActionEmpty(b.action);
+
+  const isDuplicateGesture = (target: Target, b: Binding): boolean => {
+    if (isGestureEmpty(b)) return false;
+    const bKey = `${b.gesture.trigger}:${(b.gesture.steps || []).join(",")}`;
+    return target.bindings.some(
+      (other) =>
+        other.id !== b.id &&
+        !isGestureEmpty(other) &&
+        `${other.gesture.trigger}:${(other.gesture.steps || []).join(",")}` === bKey
+    );
+  };
+
+  const isBindingInvalid = (target: Target, b: Binding): boolean => {
+    return isGestureEmpty(b) || isActionEmpty(b) || isDuplicateGesture(target, b);
+  };
+
   const handleSelectPresetGesture = (targetId: string, bindingId: string, template: Gesture) => {
     const decoupled: Gesture = {
       ...template,
@@ -253,15 +289,14 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
         bindings: t.bindings.map((b) => {
           if (b.id !== bindingId) return b;
           const candidate = { ...b, gesture: updatedGesture };
-          const emptyG = !updatedGesture.steps || updatedGesture.steps.length === 0;
-          const emptyA = !b.action || !b.action.value || !b.action.value.trim();
+          const emptyG = checkGestureEmpty(updatedGesture);
+          const emptyA = checkActionEmpty(b.action);
           const isDup = t.bindings.some(
             (o) =>
               o.id !== b.id &&
-              o.gesture.steps &&
-              o.gesture.steps.length > 0 &&
-              `${o.gesture.trigger}:${o.gesture.steps.join(",")}` ===
-                `${updatedGesture.trigger}:${updatedGesture.steps.join(",")}`
+              !checkGestureEmpty(o.gesture) &&
+              `${o.gesture.trigger}:${(o.gesture.steps || []).join(",")}` ===
+                `${updatedGesture.trigger}:${(updatedGesture.steps || []).join(",")}`
           );
           const shouldEnable = !emptyG && !emptyA && !isDup;
           return {
@@ -282,15 +317,14 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
         bindings: t.bindings.map((b) => {
           if (b.id !== bindingId) return b;
           const candidate = { ...b, action: updatedAction };
-          const emptyG = !b.gesture.steps || b.gesture.steps.length === 0;
-          const emptyA = !updatedAction.value || !updatedAction.value.trim();
+          const emptyG = checkGestureEmpty(b.gesture);
+          const emptyA = checkActionEmpty(updatedAction);
           const isDup = t.bindings.some(
             (o) =>
               o.id !== b.id &&
-              o.gesture.steps &&
-              o.gesture.steps.length > 0 &&
-              `${o.gesture.trigger}:${o.gesture.steps.join(",")}` ===
-                `${b.gesture.trigger}:${b.gesture.steps.join(",")}`
+              !checkGestureEmpty(o.gesture) &&
+              `${o.gesture.trigger}:${(o.gesture.steps || []).join(",")}` ===
+                `${b.gesture.trigger}:${(b.gesture.steps || []).join(",")}`
           );
           const shouldEnable = !emptyG && !emptyA && !isDup;
           return {
@@ -303,29 +337,6 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
     onUpdateTargets(updated);
   };
 
-  const isGestureEmpty = (b: Binding): boolean => {
-    return !b.gesture || !b.gesture.steps || b.gesture.steps.length === 0;
-  };
-
-  const isActionEmpty = (b: Binding): boolean => {
-    return !b.action || !b.action.value || !b.action.value.trim();
-  };
-
-  const isDuplicateGesture = (target: Target, b: Binding): boolean => {
-    if (isGestureEmpty(b)) return false;
-    const bKey = `${b.gesture.trigger}:${b.gesture.steps.join(",")}`;
-    return target.bindings.some(
-      (other) =>
-        other.id !== b.id &&
-        !isGestureEmpty(other) &&
-        `${other.gesture.trigger}:${other.gesture.steps.join(",")}` === bKey
-    );
-  };
-
-  const isBindingInvalid = (target: Target, b: Binding): boolean => {
-    return isGestureEmpty(b) || isActionEmpty(b) || isDuplicateGesture(target, b);
-  };
-
   const handleSaveGesture = (updatedGesture: Gesture, addToTemplates?: boolean) => {
     if (!editingGesture) return;
     const { targetId, binding } = editingGesture;
@@ -336,15 +347,14 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
         bindings: t.bindings.map((b) => {
           if (b.id !== binding.id) return b;
           const candidate = { ...b, gesture: updatedGesture };
-          const emptyG = !updatedGesture.steps || updatedGesture.steps.length === 0;
-          const emptyA = !b.action || !b.action.value || !b.action.value.trim();
+          const emptyG = checkGestureEmpty(updatedGesture);
+          const emptyA = checkActionEmpty(b.action);
           const isDup = t.bindings.some(
             (o) =>
               o.id !== b.id &&
-              o.gesture.steps &&
-              o.gesture.steps.length > 0 &&
-              `${o.gesture.trigger}:${o.gesture.steps.join(",")}` ===
-                `${updatedGesture.trigger}:${updatedGesture.steps.join(",")}`
+              !checkGestureEmpty(o.gesture) &&
+              `${o.gesture.trigger}:${(o.gesture.steps || []).join(",")}` ===
+                `${updatedGesture.trigger}:${(updatedGesture.steps || []).join(",")}`
           );
           const shouldEnable = !emptyG && !emptyA && !isDup;
           return {
@@ -377,15 +387,14 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
         bindings: t.bindings.map((b) => {
           if (b.id !== binding.id) return b;
           const candidate = { ...b, action: updatedAction };
-          const emptyG = !b.gesture.steps || b.gesture.steps.length === 0;
-          const emptyA = !updatedAction.value || !updatedAction.value.trim();
+          const emptyG = checkGestureEmpty(b.gesture);
+          const emptyA = checkActionEmpty(updatedAction);
           const isDup = t.bindings.some(
             (o) =>
               o.id !== b.id &&
-              o.gesture.steps &&
-              o.gesture.steps.length > 0 &&
-              `${o.gesture.trigger}:${o.gesture.steps.join(",")}` ===
-                `${b.gesture.trigger}:${b.gesture.steps.join(",")}`
+              !checkGestureEmpty(o.gesture) &&
+              `${o.gesture.trigger}:${(o.gesture.steps || []).join(",")}` ===
+                `${b.gesture.trigger}:${(b.gesture.steps || []).join(",")}`
           );
           const shouldEnable = !emptyG && !emptyA && !isDup;
           return {
