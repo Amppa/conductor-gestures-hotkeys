@@ -42,6 +42,7 @@ pub fn run() {
             commands::set_autostart,
             commands::is_engine_paused,
             commands::set_engine_paused,
+            commands::export_config_dialog,
         ])
         .run(tauri::generate_context!())
         .expect("error while running MouseGesture 5Btn");

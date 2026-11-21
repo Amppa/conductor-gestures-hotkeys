@@ -225,3 +225,20 @@ pub fn is_engine_paused(state: State<'_, AppState>) -> bool {
 pub fn set_engine_paused(state: State<'_, AppState>, paused: bool) {
     state.paused.store(paused, Ordering::SeqCst);
 }
+
+#[tauri::command]
+pub async fn export_config_dialog(content: String, default_file_name: String) -> Result<Option<String>, String> {
+    let file = rfd::AsyncFileDialog::new()
+        .set_file_name(&default_file_name)
+        .add_filter("JSON 設定檔 (*.json)", &["json"])
+        .save_file()
+        .await;
+
+    if let Some(handle) = file {
+        let path = handle.path().to_path_buf();
+        fs::write(&path, content).map_err(|e| e.to_string())?;
+        Ok(Some(path.to_string_lossy().to_string()))
+    } else {
+        Ok(None)
+    }
+}

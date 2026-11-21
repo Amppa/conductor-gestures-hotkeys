@@ -77,3 +77,15 @@ export interface RuntimeStatus {
   appliedRevision: number | null;
   msg: string;
 }
+
+export interface BackupHeader {
+  app: string;
+  schemaVersion: number;
+  engineType: string;
+  exportedAt: string;
+}
+
+export interface BackupData {
+  header: BackupHeader;
+  config: AppConfig;
+}
