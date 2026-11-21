@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { makeStyles, tokens } from "@fluentui/react-components";
 import { useTranslation } from "react-i18next";
 import { Sidebar, NavTabId } from "./components/Sidebar";
-import { Header } from "./components/Header";
+import { ApplyBar } from "./components/ApplyBar";
 import { TargetsView } from "./views/TargetsView";
 import { ExcludedView } from "./views/ExcludedView";
 import { GesturesView } from "./views/GesturesView";
@@ -98,6 +98,7 @@ const useStyles = makeStyles({
   content: {
     flex: 1,
     minWidth: 0,
+    minHeight: 0,
     backgroundColor: tokens.colorNeutralBackground1,
     overflowX: "hidden",
     overflowY: "auto",
@@ -112,8 +113,8 @@ export const App: React.FC = () => {
   const [savedConfig, setSavedConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [isPaused, setIsPaused] = useState(false);
   const [autostartEnabled, setAutostartEnabled] = useState(false);
-  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
-  const feedbackTimerRef = useRef<number | null>(null);
+  const [isApplying, setIsApplying] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
   const isDirty = JSON.stringify(config) !== JSON.stringify(savedConfig);
 
@@ -134,11 +135,16 @@ export const App: React.FC = () => {
         }
         // Auto-apply gesture engine on startup to guarantee active status
         try {
-          await invoke<{ success: boolean; msg: string }>("apply_config", {
+          const res = await invoke<{ success: boolean; msg: string }>("apply_config", {
             config: activeConfig,
           });
+          if (res && !res.success) {
+            setApplyError(res.msg || t("app.applyFailed", { err: "Engine failed to start" }));
+          }
         } catch (e) {
           console.warn("Auto-apply engine on startup warning:", e);
+          const errorText = e instanceof Error ? e.message : String(e);
+          setApplyError(t("app.applyFailed", { err: errorText }));
         }
         const autostart = await invoke<boolean>("autostart_enabled");
         setAutostartEnabled(autostart);
@@ -151,17 +157,6 @@ export const App: React.FC = () => {
     initApp();
   }, []);
 
-  const handleTogglePause = async () => {
-    const nextPaused = !isPaused;
-    setIsPaused(nextPaused);
-    try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("set_engine_paused", { paused: nextPaused });
-    } catch {
-      // Browser fallback
-    }
-  };
-
   const handleToggleAutostart = async (enabled: boolean) => {
     setAutostartEnabled(enabled);
     try {
@@ -173,19 +168,29 @@ export const App: React.FC = () => {
   };
 
   const handleReload = async () => {
+    setIsApplying(true);
+    setApplyError(null);
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       const res = await invoke<{ success: boolean; msg: string }>("apply_config", { config });
-      setSavedConfig(config);
-      setFeedbackMsg(res?.msg || t("header.appliedSuccess"));
-      if (feedbackTimerRef.current) {
-        window.clearTimeout(feedbackTimerRef.current);
+      if (res && !res.success) {
+        setApplyError(res.msg || t("app.applyFailed", { err: "Engine failed to reload" }));
+      } else {
+        setSavedConfig(config);
       }
-      feedbackTimerRef.current = window.setTimeout(() => {
-        setFeedbackMsg(null);
-      }, 3000);
     } catch (err) {
-      alert(t("app.applyFailed", { err }));
+      const errorText = err instanceof Error ? err.message : String(err);
+      setApplyError(t("app.applyFailed", { err: errorText }));
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  const handleDiscardChanges = () => {
+    setConfig(savedConfig);
+    setApplyError(null);
+    if (savedConfig.language) {
+      i18n.changeLanguage(savedConfig.language);
     }
   };
 
@@ -224,37 +229,10 @@ export const App: React.FC = () => {
     }));
   };
 
-  const getTabTitle = (tab: NavTabId): string => {
-    switch (tab) {
-      case "targets":
-        return t("nav.targets", { defaultValue: "應用目標" });
-      case "excluded":
-        return t("nav.excluded", { defaultValue: "排除目標" });
-      case "gestures":
-        return t("nav.gestures", { defaultValue: "手勢" });
-      case "hotkeys":
-        return t("nav.hotkeys", { defaultValue: "熱鍵" });
-      case "actions":
-        return t("nav.actions", { defaultValue: "行為" });
-      case "backup":
-        return t("nav.backup", { defaultValue: "匯入匯出" });
-      case "settings":
-        return t("nav.settings", { defaultValue: "設定" });
-    }
-  };
-
   return (
     <div className={styles.root}>
       <Sidebar selectedTab={selectedTab} onTabSelect={setSelectedTab} />
       <div className={styles.mainArea}>
-        <Header
-          title={getTabTitle(selectedTab)}
-          isPaused={isPaused}
-          isDirty={isDirty}
-          feedbackMsg={feedbackMsg}
-          onTogglePause={handleTogglePause}
-          onReload={handleReload}
-        />
         <main className={styles.content}>
           {selectedTab === "targets" && (
             <TargetsView
@@ -300,6 +278,13 @@ export const App: React.FC = () => {
             />
           )}
         </main>
+        <ApplyBar
+          isDirty={isDirty}
+          isApplying={isApplying}
+          errorMsg={applyError}
+          onDiscard={handleDiscardChanges}
+          onApply={handleReload}
+        />
       </div>
     </div>
   );
