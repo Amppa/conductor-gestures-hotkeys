@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "test:engine": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-engine.ps1",
+    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
+    "check:rust": "cargo check --manifest-path src-tauri/Cargo.toml",
+    "verify": "npm run test:engine && npm run build && npm run test:rust && npm run check:rust",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
