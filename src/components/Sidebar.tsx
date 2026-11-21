@@ -103,10 +103,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={styles.tabList}
         >
           <Tab value="targets" icon={<Apps24Regular />}>
-            {t("nav.targets", { defaultValue: "應用範圍" })}
+            {t("nav.targets")}
           </Tab>
           <Tab value="excluded" icon={<Prohibited24Regular />}>
-            {t("nav.excluded", { defaultValue: "排除程式" })}
+            {t("nav.excluded")}
           </Tab>
         </TabList>
 
@@ -120,10 +120,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={styles.tabList}
         >
           <Tab value="gestures" icon={<HandDraw24Regular />}>
-            {t("nav.gestures", { defaultValue: "觸發手勢" })}
+            {t("nav.gestures")}
           </Tab>
           <Tab value="hotkeys" icon={<Keyboard24Regular />}>
-            {t("nav.hotkeys", { defaultValue: "觸發熱鍵" })}
+            {t("nav.hotkeys")}
           </Tab>
         </TabList>
 
@@ -137,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={styles.tabList}
         >
           <Tab value="actions" icon={<Flash24Regular />}>
-            {t("nav.actions", { defaultValue: "執行指令" })}
+            {t("nav.actions")}
           </Tab>
         </TabList>
       </div>
@@ -152,10 +152,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className={styles.tabList}
         >
           <Tab value="backup" icon={<ArrowDownload24Regular />}>
-            {t("nav.backup", { defaultValue: "匯入匯出" })}
+            {t("nav.backup")}
           </Tab>
           <Tab value="settings" icon={<Settings24Regular />}>
-            {t("nav.settings", { defaultValue: "設定" })}
+            {t("nav.settings")}
           </Tab>
         </TabList>
       </div>

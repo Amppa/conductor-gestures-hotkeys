@@ -103,7 +103,7 @@ export const ApplyBar: React.FC<ApplyBarProps> = ({
             ? t("applyBar.applying")
             : isDirty
             ? t("applyBar.apply")
-            : t("applyBar.retry", { defaultValue: "重試啟動" })}
+            : t("applyBar.retry")}
         </Button>
       </div>
     </div>

@@ -44,7 +44,7 @@ export const HotkeysView: React.FC = () => {
         <Title3 as="h1" className={styles.pageTitle}>{t("nav.hotkeys")}</Title3>
         <Divider className={styles.divider} />
       </div>
-      <div className={styles.text}>{t("hotkeys.inDevDesc", { defaultValue: "開發中" })}</div>
+      <div className={styles.text}>{t("hotkeys.inDevDesc")}</div>
     </div>
   );
 };

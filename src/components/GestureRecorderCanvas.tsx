@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { makeStyles, tokens, Button, Badge, Subtitle2, Caption1 } from "@fluentui/react-components";
 import { ArrowReset20Regular } from "@fluentui/react-icons";
 import { GestureTrigger } from "../types";
@@ -92,6 +93,7 @@ export const GestureRecorderCanvas: React.FC<GestureRecorderCanvasProps> = ({
   onRecordFinished,
 }) => {
   const styles = useStyles();
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [currentTrigger, setCurrentTrigger] = useState<GestureTrigger>(initialTrigger);
@@ -317,13 +319,13 @@ export const GestureRecorderCanvas: React.FC<GestureRecorderCanvasProps> = ({
         />
         <div className={styles.watermark}>
           <span style={{ fontSize: tokens.fontSizeBase400, color: tokens.colorNeutralForeground3 }}>
-            開發中
+            {t("common.inDevelopment")}
           </span>
         </div>
       </div>
 
       <div className={styles.statusBar} style={{ opacity: 0.6, justifyContent: "center" }}>
-        <Caption1 style={{ color: tokens.colorNeutralForeground4 }}>開發中</Caption1>
+        <Caption1 style={{ color: tokens.colorNeutralForeground4 }}>{t("common.inDevelopment")}</Caption1>
       </div>
     </div>
   );

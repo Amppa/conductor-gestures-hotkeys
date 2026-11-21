@@ -7,6 +7,9 @@
     "applySuccess": "Configuration applied & reloaded",
     "applyFailed": "Apply failed: {{err}}"
   },
+  "common": {
+    "inDevelopment": "In Development"
+  },
   "nav": {
     "targets": "Scope",
     "excluded": "Excluded Apps",
@@ -116,6 +119,7 @@
     "tableAction": "Command",
     "addAction": "Add Command",
     "newActionName": "New Action",
+    "emptyValue": "(Empty)",
     "deleteTip": "Delete command"
   },
   "dialogs": {
@@ -124,6 +128,7 @@
     "close": "Close",
     "editGesture": "Edit Gesture",
     "gestureNamePlaceholder": "Enter gesture name",
+    "gestureStrokePlaceholder": "e.g. R→↘",
     "editAction": "Edit Action",
     "addProcess": "Add Executable Process",
     "processNamePlaceholder": "e.g. chrome.exe or code.exe",

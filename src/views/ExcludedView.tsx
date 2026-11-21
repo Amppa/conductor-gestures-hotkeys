@@ -92,7 +92,7 @@ export const ExcludedView: React.FC<ExcludedViewProps> = ({
   // Find or create disabled target
   const disabledTarget = targets.find((t) => t.kind === "disabled") || {
     id: "target-disabled",
-    name: "排除程式",
+    name: t("targets.excludedApps"),
     kind: "disabled",
     enabled: true,
     executables: [],
@@ -134,21 +134,19 @@ export const ExcludedView: React.FC<ExcludedViewProps> = ({
       </div>
 
       <div className={styles.hintBanner}>
-        {t("targets.disabledDesc", {
-          defaultValue: "排除程式內的應用程式將完全放行原生點擊，手勢引擎不進行任何攔截。例如遊戲或特定設計軟體。",
-        })}
+        {t("targets.disabledDesc")}
       </div>
 
       <Card className={styles.card}>
         <div className={styles.cardHeader}>
-          <Subtitle2>{t("targets.excludedApps", { defaultValue: "排除程式" })}</Subtitle2>
+          <Subtitle2>{t("targets.excludedApps")}</Subtitle2>
           <Button
             size="small"
             appearance="secondary"
             icon={<Add16Regular />}
             onClick={() => setIsAddProcessOpen(true)}
           >
-            {t("targets.addApp", { defaultValue: "新增程式" })}
+            {t("targets.addApp")}
           </Button>
         </div>
 
@@ -166,7 +164,7 @@ export const ExcludedView: React.FC<ExcludedViewProps> = ({
           ))}
           {disabledTarget.executables.length === 0 && (
             <span className={styles.emptyText}>
-              {t("targets.noExcludedApps", { defaultValue: "目前尚未加入任何排除程式，點擊上方「新增程式」按鈕即可加入。" })}
+              {t("targets.noExcludedApps")}
             </span>
           )}
         </div>
