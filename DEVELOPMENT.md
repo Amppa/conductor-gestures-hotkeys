@@ -22,9 +22,10 @@
 # Quality Gates (Must 100% pass before merge)
 npm run verify                                     # Run all gates below
 npm run test:engine                                # Gate 1: AHK gesture engine suite
-npm run build                                      # Gate 2: Frontend TS build
-npm run test:rust                                  # Gate 3: Rust unit and doc tests
-npm run check:rust                                 # Gate 4: Rust compilation check
+npm run test:i18n                                  # Gate 2: Translation key validation
+npm run build                                      # Gate 3: Frontend TS build
+npm run test:rust                                  # Gate 4: Rust unit and doc tests
+npm run check:rust                                 # Gate 5: Rust compilation check
 
 # Local Dev
 npm run dev                                        # UI-only fast dev (Vite HMR)
