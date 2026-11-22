@@ -13,6 +13,7 @@ import { SettingsView } from "./views/SettingsView";
 import { DEFAULT_CONFIG } from "./defaults";
 import { AppConfig, Target, Gesture, Action } from "./types";
 import { normalizeTrigger } from "./utils/gestureSymbols";
+import { isKeyboardTemplate } from "./utils/triggerTypes";
 
 function migrateConfigTriggers(rawConfig: AppConfig): AppConfig {
   // 1. Auto-merge missing action templates from defaults
@@ -24,14 +25,8 @@ function migrateConfigTriggers(rawConfig: AppConfig): AppConfig {
     }
   }
 
-  // 2. Auto-merge missing gesture templates from defaults
-  const existingGestureIds = new Set((rawConfig.gestureTemplates || []).map((g) => g.id));
-  const mergedGestures = [...(rawConfig.gestureTemplates || [])];
-  for (const defG of DEFAULT_CONFIG.gestureTemplates) {
-    if (!existingGestureIds.has(defG.id)) {
-      mergedGestures.push(defG);
-    }
-  }
+  // 2. Templates are user-owned; deleted factory templates must not reappear.
+  const gestureTemplates = rawConfig.gestureTemplates || [];
 
   // 3. Auto-merge missing factory bindings into Global Target
   const defGlobal = DEFAULT_CONFIG.targets.find((dt) => dt.kind === "global");
@@ -70,9 +65,10 @@ function migrateConfigTriggers(rawConfig: AppConfig): AppConfig {
   return {
     ...rawConfig,
     actionTemplates: mergedActions,
-    gestureTemplates: mergedGestures.map((g) => ({
+    gestureTemplates: gestureTemplates.map((g) => ({
       ...g,
       trigger: normalizeTrigger(g.trigger) as any,
+      steps: [...(g.steps || [])],
     })),
     targets: updatedTargets,
   };
@@ -204,7 +200,20 @@ export const App: React.FC = () => {
   const handleUpdateGestures = (newGestures: Gesture[]) => {
     setConfig((prev) => ({
       ...prev,
-      gestureTemplates: newGestures,
+      gestureTemplates: [
+        ...newGestures,
+        ...prev.gestureTemplates.filter(isKeyboardTemplate),
+      ],
+    }));
+  };
+
+  const handleUpdateHotkeys = (newHotkeys: Gesture[]) => {
+    setConfig((prev) => ({
+      ...prev,
+      gestureTemplates: [
+        ...prev.gestureTemplates.filter((template) => !isKeyboardTemplate(template)),
+        ...newHotkeys,
+      ],
     }));
   };
 
@@ -252,11 +261,18 @@ export const App: React.FC = () => {
           )}
           {selectedTab === "gestures" && (
             <GesturesView
-              gestures={config.gestureTemplates}
+              gestures={config.gestureTemplates.filter(
+                (template) => !isKeyboardTemplate(template)
+              )}
               onUpdateGestures={handleUpdateGestures}
             />
           )}
-          {selectedTab === "hotkeys" && <HotkeysView />}
+          {selectedTab === "hotkeys" && (
+            <HotkeysView
+              hotkeys={config.gestureTemplates.filter(isKeyboardTemplate)}
+              onUpdateHotkeys={handleUpdateHotkeys}
+            />
+          )}
           {selectedTab === "actions" && (
             <ActionsView
               actions={config.actionTemplates}

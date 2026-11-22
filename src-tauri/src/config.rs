@@ -151,6 +151,12 @@ pub fn default_app_config() -> AppConfig {
                 steps: vec!["R".into()],
             },
             GestureTemplate {
+                id: "r-up".into(),
+                name: "Up".into(),
+                trigger: "R".into(),
+                steps: vec!["U".into()],
+            },
+            GestureTemplate {
                 id: "r-down".into(),
                 name: "Down".into(),
                 trigger: "R".into(),
@@ -167,6 +173,54 @@ pub fn default_app_config() -> AppConfig {
                 name: "Up-Left".into(),
                 trigger: "R".into(),
                 steps: vec!["U".into(), "L".into()],
+            },
+            GestureTemplate {
+                id: "x1-click".into(),
+                name: "X1 Click".into(),
+                trigger: "X1".into(),
+                steps: vec![],
+            },
+            GestureTemplate {
+                id: "x2-click".into(),
+                name: "X2 Click".into(),
+                trigger: "X2".into(),
+                steps: vec![],
+            },
+            GestureTemplate {
+                id: "r-wu".into(),
+                name: "R + Wheel Up".into(),
+                trigger: "R".into(),
+                steps: vec!["WU".into()],
+            },
+            GestureTemplate {
+                id: "r-wd".into(),
+                name: "R + Wheel Down".into(),
+                trigger: "R".into(),
+                steps: vec!["WD".into()],
+            },
+            GestureTemplate {
+                id: "corner-br".into(),
+                name: "Bottom-Right Corner".into(),
+                trigger: "CornerBR".into(),
+                steps: vec![],
+            },
+            GestureTemplate {
+                id: "key-insert".into(),
+                name: "Insert Key".into(),
+                trigger: "Insert".into(),
+                steps: vec![],
+            },
+            GestureTemplate {
+                id: "key-lalt".into(),
+                name: "Left Alt".into(),
+                trigger: "LAlt".into(),
+                steps: vec![],
+            },
+            GestureTemplate {
+                id: "key-lwin".into(),
+                name: "Left Win".into(),
+                trigger: "LWin".into(),
+                steps: vec![],
             },
         ],
         action_templates: vec![
@@ -278,10 +332,7 @@ pub fn default_app_config() -> AppConfig {
                 name: "Disabled List (Bypass)".into(),
                 enabled: true,
                 kind: "disabled".into(),
-                executables: vec![
-                    "mouse-gesture-5btn.exe".into(),
-                    "photoshop.exe".into(),
-                ],
+                executables: vec!["mouse-gesture-5btn.exe".into(), "photoshop.exe".into()],
                 bindings: vec![],
             },
             Target {
@@ -500,5 +551,40 @@ pub fn default_app_config() -> AppConfig {
                 ],
             },
         ],
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_trigger_templates_match_the_frontend_catalog() {
+        let config = default_app_config();
+        let ids = config
+            .gesture_templates
+            .iter()
+            .map(|template| template.id.as_str())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            ids,
+            vec![
+                "r-left",
+                "r-right",
+                "r-up",
+                "r-down",
+                "r-down-right",
+                "r-up-left",
+                "x1-click",
+                "x2-click",
+                "r-wu",
+                "r-wd",
+                "corner-br",
+                "key-insert",
+                "key-lalt",
+                "key-lwin",
+            ]
+        );
     }
 }

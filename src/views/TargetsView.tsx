@@ -286,6 +286,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
       ...template,
       id: `gesture-${Date.now()}`,
       name: t("gestureNames." + template.id, { defaultValue: template.name }),
+      steps: [...(template.steps || [])],
     };
     handleSaveGestureDirect(targetId, bindingId, decoupled);
   };
