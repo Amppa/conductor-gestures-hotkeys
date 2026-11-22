@@ -2,6 +2,56 @@ use std::collections::HashSet;
 
 use crate::config::{AppConfig, Binding, Target};
 
+const KEYBOARD_RUNTIME_HELPERS: &str = r#"global gGeneratedRemapState := Map()
+global gGeneratedRemapDestinationCounts := Map()
+
+GeneratedSendKeys(keys) {
+    previousLevel := SendLevel(0)
+    try Send(keys)
+    finally SendLevel(previousLevel)
+}
+
+GeneratedRemapKeyDown(source, destination) {
+    global gGeneratedRemapState, gGeneratedRemapDestinationCounts
+    if (destination = "")
+        return
+    if !gGeneratedRemapState.Has(source) {
+        gGeneratedRemapState[source] := destination
+        count := gGeneratedRemapDestinationCounts.Get(destination, 0) + 1
+        gGeneratedRemapDestinationCounts[destination] := count
+    }
+    activeDestination := gGeneratedRemapState[source]
+    previousLevel := SendLevel(0)
+    try {
+        SetKeyDelay(-1)
+        Send("{Blind}{" activeDestination " DownR}")
+    } finally {
+        SendLevel(previousLevel)
+    }
+}
+
+GeneratedRemapKeyUp(source) {
+    global gGeneratedRemapState, gGeneratedRemapDestinationCounts
+    if !gGeneratedRemapState.Has(source)
+        return
+    destination := gGeneratedRemapState.Delete(source)
+    count := gGeneratedRemapDestinationCounts.Get(destination, 1) - 1
+    if (count > 0) {
+        gGeneratedRemapDestinationCounts[destination] := count
+        return
+    }
+    gGeneratedRemapDestinationCounts.Delete(destination)
+    previousLevel := SendLevel(0)
+    try {
+        SetKeyDelay(-1)
+        Send("{Blind}{" destination " Up}")
+    } finally {
+        SendLevel(previousLevel)
+    }
+}
+
+"#;
+
 pub fn trigger_to_ahk_name(t: &str) -> &str {
     match t {
         "RB" | "R" => "RButton",
@@ -48,6 +98,10 @@ pub fn ahk_quote(s: &str) -> String {
 fn is_keyboard_binding(binding: &Binding) -> bool {
     let trigger = binding.gesture.trigger.trim();
     binding.enabled && !trigger.is_empty() && !is_mouse_or_spatial_trigger(trigger)
+}
+
+fn is_gesture_binding(binding: &Binding) -> bool {
+    binding.enabled && is_mouse_or_spatial_trigger(&binding.gesture.trigger)
 }
 
 fn write_hotkey_action(script: &mut String, binding: &Binding) {
@@ -113,53 +167,7 @@ fn write_target_hotkeys(
 }
 
 fn write_keyboard_helpers(script: &mut String) {
-    script.push_str("global gGeneratedRemapState := Map()\n");
-    script.push_str("global gGeneratedRemapDestinationCounts := Map()\n\n");
-
-    script.push_str("GeneratedSendKeys(keys) {\n");
-    script.push_str("    previousLevel := SendLevel(0)\n");
-    script.push_str("    try Send(keys)\n");
-    script.push_str("    finally SendLevel(previousLevel)\n");
-    script.push_str("}\n\n");
-
-    script.push_str("GeneratedRemapKeyDown(source, destination) {\n");
-    script.push_str("    global gGeneratedRemapState, gGeneratedRemapDestinationCounts\n");
-    script.push_str("    if (destination = \"\")\n");
-    script.push_str("        return\n");
-    script.push_str("    if !gGeneratedRemapState.Has(source) {\n");
-    script.push_str("        gGeneratedRemapState[source] := destination\n");
-    script.push_str("        count := gGeneratedRemapDestinationCounts.Get(destination, 0) + 1\n");
-    script.push_str("        gGeneratedRemapDestinationCounts[destination] := count\n");
-    script.push_str("    }\n");
-    script.push_str("    activeDestination := gGeneratedRemapState[source]\n");
-    script.push_str("    previousLevel := SendLevel(0)\n");
-    script.push_str("    try {\n");
-    script.push_str("        SetKeyDelay(-1)\n");
-    script.push_str("        Send(\"{Blind}{\" activeDestination \" DownR}\")\n");
-    script.push_str("    } finally {\n");
-    script.push_str("        SendLevel(previousLevel)\n");
-    script.push_str("    }\n");
-    script.push_str("}\n\n");
-
-    script.push_str("GeneratedRemapKeyUp(source) {\n");
-    script.push_str("    global gGeneratedRemapState, gGeneratedRemapDestinationCounts\n");
-    script.push_str("    if !gGeneratedRemapState.Has(source)\n");
-    script.push_str("        return\n");
-    script.push_str("    destination := gGeneratedRemapState.Delete(source)\n");
-    script.push_str("    count := gGeneratedRemapDestinationCounts.Get(destination, 1) - 1\n");
-    script.push_str("    if (count > 0) {\n");
-    script.push_str("        gGeneratedRemapDestinationCounts[destination] := count\n");
-    script.push_str("        return\n");
-    script.push_str("    }\n");
-    script.push_str("    gGeneratedRemapDestinationCounts.Delete(destination)\n");
-    script.push_str("    previousLevel := SendLevel(0)\n");
-    script.push_str("    try {\n");
-    script.push_str("        SetKeyDelay(-1)\n");
-    script.push_str("        Send(\"{Blind}{\" destination \" Up}\")\n");
-    script.push_str("    } finally {\n");
-    script.push_str("        SendLevel(previousLevel)\n");
-    script.push_str("    }\n");
-    script.push_str("}\n\n");
+    script.push_str(KEYBOARD_RUNTIME_HELPERS);
 }
 
 pub fn resolve_action_display_name(action_id: &str, fallback_name: &str, lang: &str) -> String {
@@ -298,7 +306,7 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
             s.push_str(&format!("    ; Group: {}\n", gt.name));
             s.push_str(&format!("    if ({}) {{\n", cond));
             for b in &gt.bindings {
-                if !b.enabled || !is_mouse_or_spatial_trigger(&b.gesture.trigger) {
+                if !is_gesture_binding(b) {
                     continue;
                 }
                 let trig = trigger_to_ahk_name(&b.gesture.trigger);
@@ -347,7 +355,7 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
     for gt in &global_targets {
         s.push_str("    ; Priority 1: Global Fallback\n");
         for b in &gt.bindings {
-            if !b.enabled {
+            if !is_gesture_binding(b) {
                 continue;
             }
             let trig = trigger_to_ahk_name(&b.gesture.trigger);
@@ -409,7 +417,7 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
                 .join(" || ");
             s.push_str(&format!("    if ({}) {{\n", cond));
             for b in &gt.bindings {
-                if !b.enabled || !is_mouse_or_spatial_trigger(&b.gesture.trigger) {
+                if !is_gesture_binding(b) {
                     continue;
                 }
                 let trig = trigger_to_ahk_name(&b.gesture.trigger);
@@ -431,7 +439,7 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
 
     for gt in &global_targets {
         for b in &gt.bindings {
-            if !b.enabled || !is_mouse_or_spatial_trigger(&b.gesture.trigger) {
+            if !is_gesture_binding(b) {
                 continue;
             }
             let trig = trigger_to_ahk_name(&b.gesture.trigger);
@@ -631,6 +639,15 @@ mod tests {
         assert!(script.contains("*LAlt::GeneratedRemapKeyDown(\"LAlt\", \"LWin\")"));
         assert!(script.contains("~*LAlt up::GeneratedRemapKeyUp(\"LAlt\")"));
         assert!(!script.contains("~*Insert up::"));
+
+        let dispatcher_start = script
+            .find("GeneratedDispatchGestureAction(trigger")
+            .expect("gesture dispatcher should be generated");
+        let dispatcher_end = script[dispatcher_start..]
+            .find("; Action Name Query")
+            .map(|position| position + dispatcher_start)
+            .expect("gesture dispatcher should have an end marker");
+        assert!(!script[dispatcher_start..dispatcher_end].contains("trigger = \"Insert\""));
     }
 
     #[test]
