@@ -25,14 +25,8 @@ function migrateConfigTriggers(rawConfig: AppConfig): AppConfig {
     }
   }
 
-  // 2. Auto-merge missing gesture templates from defaults
-  const existingGestureIds = new Set((rawConfig.gestureTemplates || []).map((g) => g.id));
-  const mergedGestures = [...(rawConfig.gestureTemplates || [])];
-  for (const defG of DEFAULT_CONFIG.gestureTemplates) {
-    if (!existingGestureIds.has(defG.id)) {
-      mergedGestures.push(defG);
-    }
-  }
+  // 2. Templates are user-owned; deleted factory templates must not reappear.
+  const gestureTemplates = rawConfig.gestureTemplates || [];
 
   // 3. Auto-merge missing factory bindings into Global Target
   const defGlobal = DEFAULT_CONFIG.targets.find((dt) => dt.kind === "global");
@@ -71,9 +65,10 @@ function migrateConfigTriggers(rawConfig: AppConfig): AppConfig {
   return {
     ...rawConfig,
     actionTemplates: mergedActions,
-    gestureTemplates: mergedGestures.map((g) => ({
+    gestureTemplates: gestureTemplates.map((g) => ({
       ...g,
       trigger: normalizeTrigger(g.trigger) as any,
+      steps: [...(g.steps || [])],
     })),
     targets: updatedTargets,
   };
