@@ -44,6 +44,29 @@ interface EditHotkeyDialogProps {
   onCancel: () => void;
 }
 
+function getAutomaticName(trigger: string, t: (key: string) => string): string {
+  switch (trigger) {
+    case "LCtrl":
+      return t("hotkeys.keyNameLCtrl");
+    case "RCtrl":
+      return t("hotkeys.keyNameRCtrl");
+    case "LShift":
+      return t("hotkeys.keyNameLShift");
+    case "RShift":
+      return t("hotkeys.keyNameRShift");
+    case "LAlt":
+      return t("hotkeys.keyNameLAlt");
+    case "RAlt":
+      return t("hotkeys.keyNameRAlt");
+    case "LWin":
+      return t("hotkeys.keyNameLWin");
+    case "RWin":
+      return t("hotkeys.keyNameRWin");
+    default:
+      return formatHotkeyTrigger(trigger);
+  }
+}
+
 export const EditHotkeyDialog: React.FC<EditHotkeyDialogProps> = ({
   hotkey,
   existingHotkeys,
@@ -55,6 +78,9 @@ export const EditHotkeyDialog: React.FC<EditHotkeyDialogProps> = ({
   const { t } = useTranslation();
   const [name, setName] = useState(hotkey.name);
   const [trigger, setTrigger] = useState(hotkey.trigger);
+  const [isNameCustomized, setIsNameCustomized] = useState(
+    !isCreating && hotkey.name.trim().length > 0
+  );
 
   const duplicate = existingHotkeys.some(
     (item) =>
@@ -68,7 +94,11 @@ export const EditHotkeyDialog: React.FC<EditHotkeyDialogProps> = ({
     event.stopPropagation();
     if (event.repeat) return;
     const captured = keyboardEventToTrigger(event);
-    if (captured) setTrigger(captured);
+    if (!captured) return;
+    setTrigger(captured);
+    if (!isNameCustomized) {
+      setName(getAutomaticName(captured, t));
+    }
   };
 
   const handleSave = () => {
@@ -92,7 +122,10 @@ export const EditHotkeyDialog: React.FC<EditHotkeyDialogProps> = ({
             <Field label={t("hotkeys.nameLabel")} required>
               <Input
                 value={name}
-                onChange={(_, data) => setName(data.value)}
+                onChange={(_, data) => {
+                  setName(data.value);
+                  setIsNameCustomized(data.value.trim().length > 0);
+                }}
                 placeholder={t("hotkeys.namePlaceholder")}
               />
             </Field>

@@ -21,6 +21,7 @@ The runtime must satisfy these invariants:
 - The Trigger Hotkeys catalog therefore has no enabled switch and no usage-count column.
 - Runtime registration is determined only by enabled Rules, never by catalog membership.
 - Keyboard trigger matching always allows additional held modifiers and exposes no matching-mode option.
+- Capturing a key generates a localized template name automatically; users can override it, after which key capture no longer replaces the custom name.
 
 ## Current State
 

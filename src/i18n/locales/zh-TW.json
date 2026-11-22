@@ -115,7 +115,15 @@
     "duplicate": "這個按鍵已經有觸發熱鍵範本。",
     "empty": "尚未建立觸發熱鍵範本",
     "editTip": "點擊以編輯觸發熱鍵範本",
-    "deleteTip": "刪除觸發熱鍵範本"
+    "deleteTip": "刪除觸發熱鍵範本",
+    "keyNameLCtrl": "左側 Ctrl",
+    "keyNameRCtrl": "右側 Ctrl",
+    "keyNameLShift": "左側 Shift",
+    "keyNameRShift": "右側 Shift",
+    "keyNameLAlt": "左側 Alt",
+    "keyNameRAlt": "右側 Alt",
+    "keyNameLWin": "左側 Win",
+    "keyNameRWin": "右側 Win"
   },
   "actions": {
     "title": "執行指令",

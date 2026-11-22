@@ -115,7 +115,15 @@
     "duplicate": "A hotkey trigger template already uses this key.",
     "empty": "No hotkey trigger templates",
     "editTip": "Click to edit the hotkey trigger template",
-    "deleteTip": "Delete hotkey trigger template"
+    "deleteTip": "Delete hotkey trigger template",
+    "keyNameLCtrl": "Left Ctrl",
+    "keyNameRCtrl": "Right Ctrl",
+    "keyNameLShift": "Left Shift",
+    "keyNameRShift": "Right Shift",
+    "keyNameLAlt": "Left Alt",
+    "keyNameRAlt": "Right Alt",
+    "keyNameLWin": "Left Win",
+    "keyNameRWin": "Right Win"
   },
   "actions": {
     "title": "Commands",
