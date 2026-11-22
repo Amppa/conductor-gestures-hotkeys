@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "MouseGesture 5Btn",
+    "title": "Conductor",
     "subtitle": "滑鼠五鍵與手勢管理系統",
     "engineRunning": "手勢引擎運作中",
     "enginePaused": "手勢已暫停",

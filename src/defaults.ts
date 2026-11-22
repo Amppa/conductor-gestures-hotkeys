@@ -245,7 +245,7 @@ export const DEFAULT_TARGETS: Target[] = [
     name: "Disabled List (Bypass)",
     enabled: true,
     kind: "disabled",
-    executables: ["mouse-gesture-5btn.exe", "photoshop.exe"],
+    executables: ["conductor.exe", "photoshop.exe"],
     bindings: [],
   },
 ];

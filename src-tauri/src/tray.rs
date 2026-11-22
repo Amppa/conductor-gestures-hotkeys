@@ -31,7 +31,7 @@ pub fn setup_tray(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Erro
     let pause_item_ref = pause_item.clone();
     TrayIconBuilder::new()
         .icon(app.default_window_icon().expect("application icon").clone())
-        .tooltip("MouseGesture 5Btn：執行中")
+        .tooltip("Conductor：執行中")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(move |app, event| match event.id.as_ref() {

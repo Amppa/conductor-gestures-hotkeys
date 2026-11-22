@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "MouseGesture 5Btn",
+    "title": "Conductor",
     "subtitle": "5-Button Mouse & Gesture Manager",
     "engineRunning": "Gesture engine is active",
     "enginePaused": "Gestures paused",

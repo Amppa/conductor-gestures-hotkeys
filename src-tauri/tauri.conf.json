@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "MouseGesture5Btn",
+  "productName": "Conductor",
   "version": "0.1.0",
-  "identifier": "io.mousegesture5btn.app",
+  "identifier": "io.conductor.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "MouseGesture 5Btn",
+        "title": "Conductor",
         "width": 960,
         "height": 620,
         "minWidth": 800,

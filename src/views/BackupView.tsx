@@ -121,7 +121,7 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
 
     const backupData: BackupData = {
       header: {
-        app: "Mouse-gesture-5btn",
+        app: "Conductor",
         schemaVersion: 1,
         engineType: "ahk-v2",
         exportedAt: now.toISOString(),

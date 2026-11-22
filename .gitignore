@@ -1,9 +1,26 @@
+# JavaScript build output
 node_modules/
 dist/
+coverage/
+
+# Rust and Tauri build output
 src-tauri/target/
+src-tauri/gen/schemas/
+
+# Conductor runtime state
 runtime/
+
+# Logs and local environment files
 *.log
+.env
+.env.*
+!.env.example
+
+# Operating system and IDE files
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
 
 # Vendor tracked files
 vendor/autohotkey/*
