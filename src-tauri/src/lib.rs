@@ -45,5 +45,5 @@ pub fn run() {
             commands::export_config_dialog,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running MouseGesture 5Btn");
+        .expect("error while running Conductor");
 }

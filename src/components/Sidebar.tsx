@@ -16,7 +16,6 @@ import {
   Keyboard24Regular,
   Flash24Regular,
   Settings24Regular,
-  ArrowDownload24Regular,
 } from "@fluentui/react-icons";
 
 export type NavTabId =
@@ -25,7 +24,6 @@ export type NavTabId =
   | "gestures"
   | "hotkeys"
   | "actions"
-  | "backup"
   | "settings";
 
 const useStyles = makeStyles({
@@ -151,9 +149,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onTabSelect={(_, data) => onTabSelect(data.value as NavTabId)}
           className={styles.tabList}
         >
-          <Tab value="backup" icon={<ArrowDownload24Regular />}>
-            {t("nav.backup")}
-          </Tab>
           <Tab value="settings" icon={<Settings24Regular />}>
             {t("nav.settings")}
           </Tab>

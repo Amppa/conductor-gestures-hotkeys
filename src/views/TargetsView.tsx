@@ -19,6 +19,12 @@ import {
   MenuList,
   MenuItem,
   MenuDivider,
+  Dialog,
+  DialogSurface,
+  DialogTitle,
+  DialogBody,
+  DialogContent,
+  DialogActions,
 } from "@fluentui/react-components";
 import {
   Add16Regular,
@@ -60,15 +66,6 @@ const useStyles = makeStyles({
   },
   divider: {
     margin: "0 !important",
-  },
-  ruleHint: {
-    padding: "8px 14px",
-    backgroundColor: tokens.colorNeutralBackground3,
-    borderRadius: tokens.borderRadiusMedium,
-    color: tokens.colorNeutralForeground2,
-    fontSize: tokens.fontSizeBase200,
-    fontWeight: 500,
-    width: "fit-content",
   },
   section: {
     display: "flex",
@@ -186,6 +183,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
   const [editingGesture, setEditingGesture] = useState<{ targetId: string; binding: Binding } | null>(null);
   const [editingAction, setEditingAction] = useState<{ targetId: string; binding: Binding } | null>(null);
   const [addProcessTargetId, setAddProcessTargetId] = useState<string | null>(null);
+  const [pendingDeleteGroupId, setPendingDeleteGroupId] = useState<string | null>(null);
 
   // Inline group rename state
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
@@ -495,9 +493,10 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
     onUpdateTargets([...targets, newGroup]);
   };
 
-  // Delete a specific group
-  const handleDeleteGroup = (groupId: string) => {
-    onUpdateTargets(targets.filter((t) => t.id !== groupId));
+  const handleConfirmDeleteGroup = () => {
+    if (!pendingDeleteGroupId) return;
+    onUpdateTargets(targets.filter((target) => target.id !== pendingDeleteGroupId));
+    setPendingDeleteGroupId(null);
   };
 
   // Render a clean [ ] Checkbox | Gesture | Action table
@@ -652,8 +651,6 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
       </div>
 
       {/* Top clean logic prompt */}
-      <div className={styles.ruleHint}>{t("targets.ruleHint")}</div>
-
       {/* 1. Global Default */}
       {globalTarget && (
         <div className={styles.section}>
@@ -773,18 +770,19 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
                           handleStartRename(group.id, groupDisplayName);
                         }}
                       />
+                      <Button
+                        size="small"
+                        appearance="subtle"
+                        icon={<Delete16Regular />}
+                        title={t("targets.deleteGroup")}
+                        aria-label={t("targets.deleteGroup")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPendingDeleteGroupId(group.id);
+                        }}
+                      />
                     </>
                   )}
-                </div>
-                <div style={{ display: "flex", gap: "8px" }} onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    size="small"
-                    appearance="subtle"
-                    icon={<Delete16Regular />}
-                    onClick={() => handleDeleteGroup(group.id)}
-                  >
-                    {t("targets.deleteGroup")}
-                  </Button>
                 </div>
               </div>
 
@@ -878,6 +876,31 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
           onCancel={() => setAddProcessTargetId(null)}
         />
       )}
+
+      <Dialog
+        open={!!pendingDeleteGroupId}
+        onOpenChange={(_, data) => !data.open && setPendingDeleteGroupId(null)}
+      >
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>{t("targets.deleteGroupConfirmTitle")}</DialogTitle>
+            <DialogContent>
+              {t("targets.deleteGroupConfirmMessage", {
+                name:
+                  targets.find((target) => target.id === pendingDeleteGroupId)?.name || "",
+              })}
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="secondary" onClick={() => setPendingDeleteGroupId(null)}>
+                {t("dialogs.cancel")}
+              </Button>
+              <Button appearance="primary" onClick={handleConfirmDeleteGroup}>
+                {t("targets.deleteGroupConfirm")}
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
     </div>
   );
 };

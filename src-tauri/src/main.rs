@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    mouse_gesture_5btn_lib::run();
+    conductor_lib::run();
 }

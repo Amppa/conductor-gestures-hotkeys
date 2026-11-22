@@ -257,8 +257,8 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
         }
     }
     // Always include app itself in blacklist so it never intercepts gestures during config/recording
-    if !exes.contains(&"mouse-gesture-5btn.exe".to_string()) {
-        exes.push("mouse-gesture-5btn.exe".to_string());
+    if !exes.contains(&"conductor.exe".to_string()) {
+        exes.push("conductor.exe".to_string());
     }
     if !exes.is_empty() {
         s.push_str("    switch StrLower(procName) {\n");
@@ -754,7 +754,7 @@ mod tests {
             .expect("system clock should be after Unix epoch")
             .as_nanos();
         let temp_dir = std::env::temp_dir().join(format!(
-            "mouse-gesture-keyboard-test-{}-{timestamp}",
+            "conductor-keyboard-test-{}-{timestamp}",
             std::process::id()
         ));
         fs::create_dir_all(&temp_dir).expect("temporary directory should be created");

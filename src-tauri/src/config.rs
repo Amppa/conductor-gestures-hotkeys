@@ -332,7 +332,7 @@ pub fn default_app_config() -> AppConfig {
                 name: "Disabled List (Bypass)".into(),
                 enabled: true,
                 kind: "disabled".into(),
-                executables: vec!["mouse-gesture-5btn.exe".into(), "photoshop.exe".into()],
+                executables: vec!["conductor.exe".into(), "photoshop.exe".into()],
                 bindings: vec![],
             },
             Target {

@@ -2,8 +2,6 @@ import React, { useState, useRef } from "react";
 import {
   makeStyles,
   tokens,
-  Title3,
-  Divider,
   Button,
   Dialog,
   DialogSurface,
@@ -25,35 +23,16 @@ import { DEFAULT_CONFIG } from "../defaults";
 import { normalizeTrigger } from "../utils/gestureSymbols";
 
 const useStyles = makeStyles({
-  container: {
-    padding: "16px 24px",
+  controls: {
     display: "flex",
     flexDirection: "column",
-    gap: "12px",
-    minHeight: "100%",
-    boxSizing: "border-box",
-    justifyContent: "flex-start",
-  },
-  pageHeader: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    flexShrink: 0,
-  },
-  pageTitle: {
-    fontSize: "20px",
-    lineHeight: "24px",
-    fontWeight: tokens.fontWeightSemibold,
-    margin: "0 !important",
-    padding: 0,
-  },
-  divider: {
-    margin: "0 !important",
+    gap: "6px",
+    width: "100%",
   },
   btnRow: {
     display: "flex",
     alignItems: "center",
-    gap: "12px",
+    gap: "8px",
     flexWrap: "wrap",
   },
   whiteBtn: {
@@ -89,7 +68,7 @@ const useStyles = makeStyles({
   },
 });
 
-interface BackupViewProps {
+interface BackupSectionProps {
   config: AppConfig;
   onUpdateConfig: (newConfig: AppConfig) => void;
 }
@@ -115,7 +94,7 @@ function normalizeImportedConfig(rawConfig: AppConfig): AppConfig {
   };
 }
 
-export const BackupView: React.FC<BackupViewProps> = ({
+export const BackupSection: React.FC<BackupSectionProps> = ({
   config,
   onUpdateConfig,
 }) => {
@@ -142,7 +121,7 @@ export const BackupView: React.FC<BackupViewProps> = ({
 
     const backupData: BackupData = {
       header: {
-        app: "Mouse-gesture-5btn",
+        app: "Conductor",
         schemaVersion: 1,
         engineType: "ahk-v2",
         exportedAt: now.toISOString(),
@@ -269,11 +248,7 @@ export const BackupView: React.FC<BackupViewProps> = ({
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.pageHeader}>
-        <Title3 as="h1" className={styles.pageTitle}>{t("nav.backup")}</Title3>
-        <Divider className={styles.divider} />
-      </div>
+    <div className={styles.controls}>
       <input
         ref={fileInputRef}
         type="file"
@@ -285,6 +260,7 @@ export const BackupView: React.FC<BackupViewProps> = ({
       {/* Three clean white buttons */}
       <div className={styles.btnRow}>
         <Button
+          size="small"
           className={styles.whiteBtn}
           icon={<ArrowDownload20Regular />}
           onClick={handleExport}
@@ -293,6 +269,7 @@ export const BackupView: React.FC<BackupViewProps> = ({
         </Button>
 
         <Button
+          size="small"
           className={styles.whiteBtn}
           icon={<ArrowUpload20Regular />}
           onClick={handleSelectImportFile}
@@ -301,6 +278,7 @@ export const BackupView: React.FC<BackupViewProps> = ({
         </Button>
 
         <Button
+          size="small"
           className={styles.whiteBtn}
           icon={<ArrowReset20Regular />}
           onClick={() => setIsResetConfirmOpen(true)}

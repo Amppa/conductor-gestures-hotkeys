@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "MouseGesture 5Btn",
+    "title": "Conductor",
     "subtitle": "滑鼠五鍵與手勢管理系統",
     "engineRunning": "手勢引擎運作中",
     "enginePaused": "手勢已暫停",
@@ -31,12 +31,13 @@
     "languageTitle": "語言",
     "thresholdTitle": "手勢靈敏度",
     "autostartTitle": "開機自動啟動",
-    "debugTitle": "偵錯日誌"
+    "debugTitle": "偵錯日誌",
+    "backupTitle": "備份設定"
   },
   "backup": {
-    "exportBtn": "匯出設定",
+    "exportBtn": "匯出",
     "exportSuccess": "已成功匯出至 {{fileName}}",
-    "importBtn": "匯入設定",
+    "importBtn": "匯入",
     "importWarningTitle": "確認覆蓋現有設定？",
     "importSuccess": "設定檔載入成功，請確認無誤後點擊底部「套用變更」生效。",
     "importInvalidFormat": "匯入失敗：設定檔格式不正確或缺少必要結構。",
@@ -47,8 +48,7 @@
     "cancel": "取消"
   },
   "targets": {
-    "ruleHint": "優先度：排除程式 > 白名單 > 全域預設",
-    "globalTitle": "全域預設 (Global Default)",
+    "globalTitle": "全域預設",
     "disabledTitle": "排除程式",
     "group01Title": "群組01",
     "globalBadge": "全域通用",
@@ -56,10 +56,13 @@
     "addGroup": "新增白名單群組",
     "newGroupName": "新白名單群組",
     "deleteGroup": "刪除群組",
+    "deleteGroupConfirmTitle": "刪除群組？",
+    "deleteGroupConfirmMessage": "將刪除「{{name}}」及其中所有規則。此動作無法復原。",
+    "deleteGroupConfirm": "刪除",
     "renameGroupTip": "重新命名群組",
     "renameGroupPlaceholder": "輸入群組名稱...",
     "appCount": "{{count}} 個程式",
-    "includedApps": "包含之程式：",
+    "includedApps": "目標程式：",
     "excludedApps": "排除程式",
     "noExcludedApps": "目前尚未加入任何排除程式，點擊上方「新增程式」按鈕即可加入。",
     "addApp": "新增程式",
@@ -77,8 +80,8 @@
     "emptyBindings": "尚未建立規則，點擊下方「新增規則」按鈕新增",
     "newGestureName": "新手勢",
     "newActionName": "新指令",
-    "disabledDesc": "排除程式內的應用程式將完全放行原生點擊，手勢引擎不進行任何攔截。例如遊戲或特定設計軟體。",
-    "whitelistDesc": "為特定應用程式自訂專屬手勢，優先於全域預設。例如瀏覽器。",
+    "disabledDesc": "排除程式內的應用程式將完全放行原生點擊，手勢引擎不進行任何攔截。例如遊戲或特定設計軟體。優先度：排除程式 > 白名單 > 全域預設。",
+    "whitelistDesc": "為特定應用程式自訂專屬手勢，如瀏覽器專用手勢。規則優先於全域預設。",
     "addDisabledApp": "新增排除程式",
     "groupGestures": "群組規則：",
     "addGroupGesture": "新增規則",

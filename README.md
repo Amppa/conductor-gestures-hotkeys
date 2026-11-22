@@ -1,6 +1,6 @@
-# MouseGesture 5Btn (新世代五鍵滑鼠手勢管理系統)
+# Conductor
 
-MouseGesture 5Btn 是一套專為 Windows 11 打造的高效能滑鼠手勢與按鍵自訂工具。結合了 **Tauri 2 + React 19 + Fluent UI** 的現代磨砂視覺介面，以及後台 **AutoHotkey v2 輕量手勢引擎**，徹底解決了傳統手勢工具（如 MouseGestureL）介面陳舊、設定繁複的痛點。
+Conductor 是一套專為 Windows 11 打造的手勢與熱鍵指揮工具。它以 **Tauri 2 + React 19 + Fluent UI** 提供現代桌面介面，並由 **AutoHotkey v2** 引擎負責滑鼠手勢、鍵盤觸發與指令執行。
 
 ---
 
@@ -12,7 +12,8 @@ MouseGesture 5Btn 是一套專為 Windows 11 打造的高效能滑鼠手勢與�
   - **手勢清單 (Gestures)**：管理觸發鍵（RB、MB、X1、X2）與向量方向步進。
   - **動作清單 (Actions)**：管理快速鍵、視窗控制與腳本動作。
   - **系統設定 (Settings)**：配置手勢閥值、螢幕邊緣滾動與開機自啟動。
-- **5 鍵滑鼠深度支援**：完整支援滑鼠側鍵 `XButton1` (X1) 與 `XButton2` (X2) 作為獨立手勢觸發鍵或雙鍵修飾。
+- **多按鍵滑鼠支援**：支援滑鼠側鍵 `XButton1` (X1) 與 `XButton2` (X2) 作為獨立手勢觸發鍵或雙鍵修飾，產品定位不限定特定按鍵數量。
+- **鍵盤觸發範本**：可定義需要攔截的按鍵與修飾鍵，再以值複製方式綁定到各應用範圍的規則。
 - **右鍵狀態機與原生單擊無感還原**：按下右鍵位移小於閥值（預設 10px）放開時，精準發送原生物理右鍵點擊，不卡鍵、不影響常規右鍵選單。
 - **8 方向向量辨識器**：以三角函數即時計算位移角度（上、下、左、右、四個斜向），反應速度小於 1ms。
 - **螢幕頂部邊緣滾輪音量控制**：游標移動至螢幕最頂部邊緣時滾動滾輪，自動調節系統音量，重現 MouseInc 經典手感。
@@ -26,9 +27,9 @@ MouseGesture 5Btn 是一套專為 Windows 11 打造的高效能滑鼠手勢與�
 ## 專案目錄結構
 
 ```text
-Mouse-gesture-5btn/
+conductor-gestures-hotkeys/
 ├── engine/
-│   └── GestureEngine.ahk        # AHK v2 核心手勢引擎 (狀態機、8方向辨識、5鍵勾點、頂部滾輪)
+│   └── GestureEngine.ahk        # AHK v2 核心手勢引擎 (狀態機、8方向辨識、多按鍵勾點、頂部滾輪)
 ├── src-tauri/
 │   ├── Cargo.toml               # Tauri 2 Rust 核心配置
 │   ├── tauri.conf.json          # 視窗、系統匣、打包資源設定

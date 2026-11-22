@@ -5,7 +5,7 @@ Persistent
 CoordMode("Mouse", "Screen")
 
 ; ==============================================================================
-; MouseGesture 5Btn - Core Gesture Engine (AutoHotkey v2)
+; Conductor - Core Gesture Engine (AutoHotkey v2)
 ; ==============================================================================
 
 global STATE_IDLE := 0
@@ -174,7 +174,7 @@ InitHudGui() {
         return
 
     ; Use ToolWindow without caption, layered for smooth rendering
-    gHudGui := Gui("-Caption +AlwaysOnTop +ToolWindow +Owner +E0x20", "MouseGestureHUD")
+    gHudGui := Gui("-Caption +AlwaysOnTop +ToolWindow +Owner +E0x20", "ConductorHUD")
     gHudGui.BackColor := "1E1E1E"
     gHudGui.MarginX := 24
     gHudGui.MarginY := 16

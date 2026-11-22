@@ -1,9 +1,9 @@
 # AGENTS.md - AI Agent Collaboration & Engineering Guidelines
 
-This document specifies the workflow, engineering standards, and communication protocols for AI agents working on the `Mouse-gesture-5btn` project.
+This document specifies the workflow, engineering standards, and communication protocols for AI agents working on the `Conductor` project.
 
-- For **System Architecture & Domain Models**, see [ARCHITECTURE.md](file:///d:/My%20Data/真的文件/我的git/Other/Mouse-gesture-5btn/ARCHITECTURE.md).
-- For **RD Workflow & Developer Toolchain**, see [DEVELOPMENT.md](file:///d:/My%20Data/真的文件/我的git/Other/Mouse-gesture-5btn/DEVELOPMENT.md).
+- For **System Architecture & Domain Models**, see [ARCHITECTURE.md](ARCHITECTURE.md).
+- For **RD Workflow & Developer Toolchain**, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ---
 
