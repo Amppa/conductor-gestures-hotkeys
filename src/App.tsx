@@ -13,6 +13,7 @@ import { SettingsView } from "./views/SettingsView";
 import { DEFAULT_CONFIG } from "./defaults";
 import { AppConfig, Target, Gesture, Action } from "./types";
 import { normalizeTrigger } from "./utils/gestureSymbols";
+import { isKeyboardTemplate } from "./utils/triggerTypes";
 
 function migrateConfigTriggers(rawConfig: AppConfig): AppConfig {
   // 1. Auto-merge missing action templates from defaults
@@ -204,7 +205,20 @@ export const App: React.FC = () => {
   const handleUpdateGestures = (newGestures: Gesture[]) => {
     setConfig((prev) => ({
       ...prev,
-      gestureTemplates: newGestures,
+      gestureTemplates: [
+        ...newGestures,
+        ...prev.gestureTemplates.filter(isKeyboardTemplate),
+      ],
+    }));
+  };
+
+  const handleUpdateHotkeys = (newHotkeys: Gesture[]) => {
+    setConfig((prev) => ({
+      ...prev,
+      gestureTemplates: [
+        ...prev.gestureTemplates.filter((template) => !isKeyboardTemplate(template)),
+        ...newHotkeys,
+      ],
     }));
   };
 
@@ -252,11 +266,18 @@ export const App: React.FC = () => {
           )}
           {selectedTab === "gestures" && (
             <GesturesView
-              gestures={config.gestureTemplates}
+              gestures={config.gestureTemplates.filter(
+                (template) => !isKeyboardTemplate(template)
+              )}
               onUpdateGestures={handleUpdateGestures}
             />
           )}
-          {selectedTab === "hotkeys" && <HotkeysView />}
+          {selectedTab === "hotkeys" && (
+            <HotkeysView
+              hotkeys={config.gestureTemplates.filter(isKeyboardTemplate)}
+              onUpdateHotkeys={handleUpdateHotkeys}
+            />
+          )}
           {selectedTab === "actions" && (
             <ActionsView
               actions={config.actionTemplates}

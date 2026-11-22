@@ -101,10 +101,21 @@
   },
   "hotkeys": {
     "title": "觸發熱鍵",
-    "subtitle": "鍵盤按鍵與組合快捷鍵對應設定。",
-    "inDevBadge": "開發中 (Coming Soon)",
-    "inDevTitle": "觸發熱鍵功能開發中",
-    "inDevDesc": "開發中"
+    "description": "建立可供規則複製使用的鍵盤觸發範本。修改範本不會影響既有規則；沒有規則使用時不會攔截按鍵。",
+    "tableName": "名稱",
+    "tableKey": "按鍵",
+    "add": "新增觸發熱鍵",
+    "addTitle": "新增觸發熱鍵範本",
+    "editTitle": "編輯觸發熱鍵範本",
+    "nameLabel": "名稱",
+    "keyLabel": "按鍵",
+    "namePlaceholder": "例如：左側 Alt",
+    "capturePlaceholder": "點擊後按下按鍵",
+    "captureHint": "按下單一按鍵或組合鍵；額外修飾鍵預設允許。",
+    "duplicate": "這個按鍵已經有觸發熱鍵範本。",
+    "empty": "尚未建立觸發熱鍵範本",
+    "editTip": "點擊以編輯觸發熱鍵範本",
+    "deleteTip": "刪除觸發熱鍵範本"
   },
   "actions": {
     "title": "執行指令",

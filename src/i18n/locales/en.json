@@ -101,10 +101,21 @@
   },
   "hotkeys": {
     "title": "Hotkey Triggers",
-    "subtitle": "Keyboard hotkey and chord mappings.",
-    "inDevBadge": "Coming Soon",
-    "inDevTitle": "Hotkey Triggers Feature in Development",
-    "inDevDesc": "In development"
+    "description": "Create keyboard trigger templates that Rules copy by value. Editing a template does not change existing Rules, and unused templates do not intercept input.",
+    "tableName": "Name",
+    "tableKey": "Key",
+    "add": "Add hotkey trigger",
+    "addTitle": "Add hotkey trigger template",
+    "editTitle": "Edit hotkey trigger template",
+    "nameLabel": "Name",
+    "keyLabel": "Key",
+    "namePlaceholder": "For example: Left Alt",
+    "capturePlaceholder": "Focus and press a key",
+    "captureHint": "Press one key or a key combination; additional modifiers are allowed by default.",
+    "duplicate": "A hotkey trigger template already uses this key.",
+    "empty": "No hotkey trigger templates",
+    "editTip": "Click to edit the hotkey trigger template",
+    "deleteTip": "Delete hotkey trigger template"
   },
   "actions": {
     "title": "Commands",
