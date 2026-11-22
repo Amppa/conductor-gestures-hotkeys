@@ -29,8 +29,11 @@ global gIsPaused := false
 global gEdgeScrollEnabled := true
 global gDebugLogEnabled := false
 global gShowTrail := true
-global gTrailColor := 0x0078D4 ; Windows 11 Fluent Blue (BGR: 0xD47800)
 global gTrailWidth := 4
+global gOsdDurationMs := 1000
+global gOsdFontSizePx := 20
+global gOsdOpacityPct := 90
+global gOsdUnknownGestureLabel := "未知手勢"
 global gChordWheelTriggered := false
 global gLogFile := A_ScriptDir . "\gesture.log"
 
@@ -168,24 +171,52 @@ global gHudGui := ""
 global gHudTextMain := ""
 global gHudTextSub := ""
 
+AddHudTextControl() {
+    global gHudGui, gOsdFontSizePx
+    control := gHudGui.Add("Text", "x0 y0 w1 h1 Center cFFFFFF BackgroundTrans +0x200 +0x4000", "")
+    fontSizePt := Round(gOsdFontSizePx * 0.75, 2)
+    control.SetFont("s" . fontSizePt . " bold", "微軟正黑體")
+    return control
+}
+
 InitHudGui() {
-    global gHudGui, gHudTextMain, gHudTextSub
+    global gHudGui, gHudTextMain, gHudTextSub, gOsdOpacityPct
     if (gHudGui != "")
         return
 
-    ; Use ToolWindow without caption, layered for smooth rendering
-    gHudGui := Gui("-Caption +AlwaysOnTop +ToolWindow +Owner +E0x20", "ConductorHUD")
+    windowOpts := "-Caption +AlwaysOnTop +ToolWindow +Owner +E0x20 -DPIScale"
+    gHudGui := Gui(windowOpts, "ConductorHUD")
     gHudGui.BackColor := "1E1E1E"
-    gHudGui.MarginX := 24
-    gHudGui.MarginY := 16
-    WinSetTransparent(230, gHudGui)
+    gHudGui.MarginX := 0
+    gHudGui.MarginY := 0
+    opacityAlpha := Round(255 * gOsdOpacityPct / 100)
+    WinSetTransparent(opacityAlpha, gHudGui)
 
-    ; Generous height & clean line-spacing to avoid text clipping
-    gHudTextMain := gHudGui.Add("Text", "w520 h36 Center cFFFFFF", "")
-    gHudTextMain.SetFont("s16 bold", "微軟正黑體")
+    gHudTextMain := AddHudTextControl()
+    gHudTextSub := AddHudTextControl()
+}
 
-    gHudTextSub := gHudGui.Add("Text", "w520 h28 Center c58A6FF", "")
-    gHudTextSub.SetFont("s13", "微軟正黑體")
+MeasureHudText(control, text) {
+    global gOsdFontSizePx
+    hDC := DllCall("GetDC", "Ptr", control.Hwnd, "Ptr")
+    if (!hDC)
+        return { w: StrLen(text) * gOsdFontSizePx, h: gOsdFontSizePx }
+
+    hFont := DllCall("SendMessage", "Ptr", control.Hwnd, "UInt", 0x31, "Ptr", 0, "Ptr", 0, "Ptr")
+    hOldFont := hFont ? DllCall("SelectObject", "Ptr", hDC, "Ptr", hFont, "Ptr") : 0
+    size := Buffer(8, 0)
+    measured := false
+    try {
+        measured := DllCall("GetTextExtentPoint32W", "Ptr", hDC, "Str", text, "Int", StrLen(text), "Ptr", size.Ptr)
+    } finally {
+        if (hOldFont)
+            DllCall("SelectObject", "Ptr", hDC, "Ptr", hOldFont, "Ptr")
+        DllCall("ReleaseDC", "Ptr", control.Hwnd, "Ptr", hDC)
+    }
+
+    if (!measured)
+        return { w: StrLen(text) * gOsdFontSizePx, h: gOsdFontSizePx }
+    return { w: NumGet(size, 0, "Int"), h: NumGet(size, 4, "Int") }
 }
 
 ; ------------------------------------------------------------------------------
@@ -221,7 +252,12 @@ GetMonitorRectAt(x, y, &mL, &mT, &mR, &mB, &mW, &mH) {
 
 UpdateGestureOSD(trigger, steps, procName) {
     global gFnGetGestureActionName, gHudGui, gHudTextMain, gHudTextSub
+    global gOsdDurationMs, gOsdFontSizePx, gOsdUnknownGestureLabel
+    if (gOsdDurationMs <= 0)
+        return
+
     InitHudGui()
+    SetTimer(HideGestureOSD, 0)
 
     trigName := FormatTriggerName(trigger)
     arrows := ""
@@ -235,7 +271,7 @@ UpdateGestureOSD(trigger, steps, procName) {
 
     ; Update HUD Window Text
     mainStr := trigName . (arrows != "" ? " " . arrows : "")
-    subStr := (actionName != "" ? "» " . actionName : (procName != "" ? "[" . procName . "]" : ""))
+    subStr := (actionName != "" ? actionName : gOsdUnknownGestureLabel)
 
     gHudTextMain.Text := mainStr
     gHudTextSub.Text := subStr
@@ -244,11 +280,33 @@ UpdateGestureOSD(trigger, steps, procName) {
     MouseGetPos(&curX, &curY)
     GetMonitorRectAt(curX, curY, &mL, &mT, &mR, &mB, &mW, &mH)
 
-    hudW := 568
-    hudH := 96
+    mainSize := MeasureHudText(gHudTextMain, mainStr)
+    subSize := MeasureHudText(gHudTextSub, subStr)
+    lineH := Max(mainSize.h, subSize.h)
+    lineGap := 0
+    paddingX := Round(lineH * 0.5)
+    paddingY := Round(lineH * 0.5)
+    minContentW := lineH * 9
+    maxContentW := Max(minContentW, Min(720, Round(mW * 0.8)) - paddingX * 2)
+    contentW := Min(Max(mainSize.w, subSize.w, minContentW), maxContentW)
+    subY := paddingY + lineH + lineGap
+    hudW := contentW + paddingX * 2
+    hudH := subY + lineH + paddingY
+
+    gHudTextMain.Move(paddingX, paddingY, contentW, lineH)
+    gHudTextSub.Move(paddingX, subY, contentW, lineH)
+
     hudX := mL + (mW - hudW) // 2
     hudY := mT + (mH * 3) // 4 - (hudH // 2) ; Exactly at Y 3/4 of current monitor
     gHudGui.Show("x" . hudX . " y" . hudY . " w" . hudW . " h" . hudH . " NoActivate")
+}
+
+ScheduleHideGestureOSD() {
+    global gOsdDurationMs
+    if (gOsdDurationMs <= 0)
+        HideGestureOSD()
+    else
+        SetTimer(HideGestureOSD, -gOsdDurationMs)
 }
 
 HideGestureOSD() {
@@ -314,7 +372,7 @@ PollHotCorner() {
             if (!gFnIsProcessDisabled(procName)) {
                 LogGesture("HotCorner Triggered: " . spatial . " Process: " . procName)
                 UpdateGestureOSD(spatial, [], procName)
-                SetTimer(HideGestureOSD, -800)
+                ScheduleHideGestureOSD()
                 gFnDispatchGestureAction(spatial, "", procName)
             }
         }
@@ -426,7 +484,7 @@ OnTriggerUp(btnName) {
     if (gChordWheelTriggered) {
         gState := STATE_IDLE
         gChordWheelTriggered := false
-        SetTimer(HideGestureOSD, -300)
+        ScheduleHideGestureOSD()
         return
     }
 
@@ -446,7 +504,7 @@ OnTriggerUp(btnName) {
         }
         LogGesture("Gesture Release: Trigger=" . gTrigger . " Steps=" . stepStr . " Process=" . gStartProcess)
         UpdateGestureOSD(gTrigger, gSteps, gStartProcess)
-        SetTimer(HideGestureOSD, -300)
+        ScheduleHideGestureOSD()
         gFnDispatchGestureAction(gTrigger, stepStr, gStartProcess)
         return
     }
@@ -479,7 +537,7 @@ HandleSpatialWheel(wheelDir) {
 
     LogGesture("Spatial Wheel: " . spatial . " Wheel=" . wheelDir . " Process=" . procName)
     UpdateGestureOSD(spatial, [wheelDir], procName)
-    SetTimer(HideGestureOSD, -400)
+    ScheduleHideGestureOSD()
 
     ; Try dispatching to spatial binding (e.g. EdgeTopR + WU)
     dispatched := gFnDispatchGestureAction(spatial, wheelDir, procName)
@@ -510,7 +568,7 @@ HandleChordWheel(wheelDir) {
     gChordWheelTriggered := true
     LogGesture("Chord Wheel: Trigger=" . gTrigger . " Wheel=" . wheelDir . " Process=" . gStartProcess)
     UpdateGestureOSD(gTrigger, [wheelDir], gStartProcess)
-    SetTimer(HideGestureOSD, -400)
+    ScheduleHideGestureOSD()
 
     gFnDispatchGestureAction(gTrigger, wheelDir, gStartProcess)
     return true

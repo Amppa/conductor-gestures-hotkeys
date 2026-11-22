@@ -64,6 +64,9 @@ export interface EngineConfig {
   enabled: boolean;
   debug: boolean;
   thresholdPx: number;
+  osdDurationMs: number;
+  osdFontSizePx: number;
+  osdOpacityPct: number;
 }
 
 export interface KeyRemap {

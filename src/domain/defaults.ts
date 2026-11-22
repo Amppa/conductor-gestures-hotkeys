@@ -1,5 +1,14 @@
 import { AppConfig, KeyRemap, Target } from "./types";
 
+export const normalizeOsdDurationMs = (value: number): number =>
+  Math.round(Math.min(Math.max(value, 0), 2000) / 500) * 500;
+
+export const normalizeOsdFontSizePx = (value: number): number =>
+  Math.round((Math.min(Math.max(value, 15), 25) - 15) / 5) * 5 + 15;
+
+export const normalizeOsdOpacityPct = (value: number): number =>
+  Math.round(Math.min(Math.max(value, 0), 100) / 10) * 10;
+
 export const DEFAULT_KEY_REMAPS: KeyRemap[] = [
   {
     id: "remap-disable-insert",
@@ -257,6 +266,9 @@ export const DEFAULT_CONFIG: AppConfig = {
     enabled: true,
     debug: false,
     thresholdPx: 10,
+    osdDurationMs: 1000,
+    osdFontSizePx: 20,
+    osdOpacityPct: 90,
   },
   edgeScroll: {
     enabled: true,

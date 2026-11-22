@@ -30,6 +30,11 @@
     "title": "設定",
     "languageTitle": "語言",
     "thresholdTitle": "手勢靈敏度",
+    "osdDurationTitle": "手勢提示時長",
+    "osdDurationOff": "不顯示",
+    "osdDurationValue": "{{seconds}} 秒",
+    "osdFontSizeTitle": "手勢提示文字大小",
+    "osdOpacityTitle": "手勢提示不透明度",
     "autostartTitle": "開機自動啟動",
     "debugTitle": "偵錯日誌",
     "backupTitle": "備份設定"

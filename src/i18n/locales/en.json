@@ -30,6 +30,11 @@
     "title": "Settings",
     "languageTitle": "Language",
     "thresholdTitle": "Gesture Sensitivity",
+    "osdDurationTitle": "Gesture Hint Duration",
+    "osdDurationOff": "Hidden",
+    "osdDurationValue": "{{seconds}} s",
+    "osdFontSizeTitle": "Gesture Hint Text Size",
+    "osdOpacityTitle": "Gesture Hint Opacity",
     "autostartTitle": "Start with Windows",
     "debugTitle": "Debug Logging",
     "backupTitle": "Backup Settings"

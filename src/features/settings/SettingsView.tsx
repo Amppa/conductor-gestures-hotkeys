@@ -65,6 +65,9 @@ const useStyles = makeStyles({
   slider: {
     flexGrow: 1,
     minWidth: 0,
+    "& .fui-Slider__rail::before": {
+      display: "none",
+    },
   },
   select: {
     width: "200px",
@@ -82,7 +85,7 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeBase200,
     color: tokens.colorNeutralForeground3,
     fontVariantNumeric: "tabular-nums",
-    width: "40px",
+    width: "56px",
     textAlign: "right",
   },
 });
@@ -117,6 +120,36 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       engine: {
         ...config.engine,
         thresholdPx: val,
+      },
+    });
+  };
+
+  const handleOsdDurationChange = (val: number) => {
+    onUpdateConfig({
+      ...config,
+      engine: {
+        ...config.engine,
+        osdDurationMs: val,
+      },
+    });
+  };
+
+  const handleOsdFontSizeChange = (val: number) => {
+    onUpdateConfig({
+      ...config,
+      engine: {
+        ...config.engine,
+        osdFontSizePx: val,
+      },
+    });
+  };
+
+  const handleOsdOpacityChange = (val: number) => {
+    onUpdateConfig({
+      ...config,
+      engine: {
+        ...config.engine,
+        osdOpacityPct: val,
       },
     });
   };
@@ -164,6 +197,64 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(_, data) => handleThresholdChange(data.value)}
             />
             <span className={styles.valueLabel}>{config.engine.thresholdPx} px</span>
+          </div>
+        </div>
+
+        <div className={styles.row}>
+          <span className={styles.itemLabel}>{t("settings.osdDurationTitle")}</span>
+          <div className={styles.sliderGroup}>
+            <Slider
+              className={styles.slider}
+              aria-label={t("settings.osdDurationTitle")}
+              min={0}
+              max={2000}
+              step={500}
+              value={config.engine.osdDurationMs}
+              onChange={(_, data) => handleOsdDurationChange(data.value)}
+            />
+            <span className={styles.valueLabel}>
+              {config.engine.osdDurationMs === 0
+                ? t("settings.osdDurationOff")
+                : t("settings.osdDurationValue", {
+                    seconds: config.engine.osdDurationMs / 1000,
+                  })}
+            </span>
+          </div>
+        </div>
+
+        <div className={styles.row}>
+          <span className={styles.itemLabel}>{t("settings.osdFontSizeTitle")}</span>
+          <div className={styles.sliderGroup}>
+            <Slider
+              className={styles.slider}
+              aria-label={t("settings.osdFontSizeTitle")}
+              min={15}
+              max={25}
+              step={5}
+              value={config.engine.osdFontSizePx}
+              onChange={(_, data) => handleOsdFontSizeChange(data.value)}
+            />
+            <span className={styles.valueLabel}>{config.engine.osdFontSizePx} px</span>
+          </div>
+        </div>
+
+        <div className={styles.row}>
+          <span className={styles.itemLabel}>
+            {t("settings.osdOpacityTitle")}
+          </span>
+          <div className={styles.sliderGroup}>
+            <Slider
+              className={styles.slider}
+              aria-label={t("settings.osdOpacityTitle")}
+              min={0}
+              max={100}
+              step={10}
+              value={config.engine.osdOpacityPct}
+              onChange={(_, data) => handleOsdOpacityChange(data.value)}
+            />
+            <span className={styles.valueLabel}>
+              {config.engine.osdOpacityPct}%
+            </span>
           </div>
         </div>
 

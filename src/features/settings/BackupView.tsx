@@ -19,7 +19,12 @@ import {
 } from "@fluentui/react-icons";
 import { useTranslation } from "react-i18next";
 import { AppConfig, BackupData } from "../../domain/types";
-import { DEFAULT_CONFIG } from "../../domain/defaults";
+import {
+  DEFAULT_CONFIG,
+  normalizeOsdDurationMs,
+  normalizeOsdFontSizePx,
+  normalizeOsdOpacityPct,
+} from "../../domain/defaults";
 import { normalizeTrigger } from "../gestures/gestureSymbols";
 
 const useStyles = makeStyles({
@@ -74,8 +79,27 @@ interface BackupSectionProps {
 }
 
 function normalizeImportedConfig(rawConfig: AppConfig): AppConfig {
+  const engine = rawConfig.engine as
+    | (Partial<AppConfig["engine"]> & { osdFontSizePt?: number })
+    | undefined;
+
   return {
     ...rawConfig,
+    engine: {
+      ...engine,
+      osdDurationMs: normalizeOsdDurationMs(
+        engine?.osdDurationMs ?? DEFAULT_CONFIG.engine.osdDurationMs,
+      ),
+      osdFontSizePx: normalizeOsdFontSizePx(
+        engine?.osdFontSizePx ?? engine?.osdFontSizePt ?? DEFAULT_CONFIG.engine.osdFontSizePx,
+      ),
+      osdOpacityPct: normalizeOsdOpacityPct(
+        engine?.osdOpacityPct ?? DEFAULT_CONFIG.engine.osdOpacityPct,
+      ),
+      enabled: engine?.enabled ?? DEFAULT_CONFIG.engine.enabled,
+      debug: engine?.debug ?? DEFAULT_CONFIG.engine.debug,
+      thresholdPx: engine?.thresholdPx ?? DEFAULT_CONFIG.engine.thresholdPx,
+    },
     keyRemaps: rawConfig.keyRemaps || [],
     gestureTemplates: (rawConfig.gestureTemplates || []).map((g) => ({
       ...g,

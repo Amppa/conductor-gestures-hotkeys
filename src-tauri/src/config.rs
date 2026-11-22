@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 // -----------------------------------------------------------------------------
 // Data Types Matching Config Schema
@@ -33,6 +33,67 @@ pub struct EngineConfig {
     pub enabled: bool,
     pub debug: bool,
     pub threshold_px: i32,
+    #[serde(
+        default = "default_osd_duration_ms",
+        deserialize_with = "deserialize_osd_duration_ms"
+    )]
+    pub osd_duration_ms: u32,
+    #[serde(
+        default = "default_osd_font_size_px",
+        alias = "osdFontSizePt",
+        deserialize_with = "deserialize_osd_font_size_px"
+    )]
+    pub osd_font_size_px: u32,
+    #[serde(
+        default = "default_osd_opacity_pct",
+        deserialize_with = "deserialize_osd_opacity_pct"
+    )]
+    pub osd_opacity_pct: u32,
+}
+
+fn default_osd_duration_ms() -> u32 {
+    1000
+}
+
+pub(crate) fn normalize_osd_duration_ms(value: u32) -> u32 {
+    ((value.min(2000) + 250) / 500) * 500
+}
+
+fn deserialize_osd_duration_ms<'de, D>(deserializer: D) -> Result<u32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    u32::deserialize(deserializer).map(normalize_osd_duration_ms)
+}
+
+fn default_osd_font_size_px() -> u32 {
+    20
+}
+
+pub(crate) fn normalize_osd_font_size_px(value: u32) -> u32 {
+    ((value.clamp(15, 25) - 15 + 2) / 5) * 5 + 15
+}
+
+fn deserialize_osd_font_size_px<'de, D>(deserializer: D) -> Result<u32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    u32::deserialize(deserializer).map(normalize_osd_font_size_px)
+}
+
+fn default_osd_opacity_pct() -> u32 {
+    90
+}
+
+pub(crate) fn normalize_osd_opacity_pct(value: u32) -> u32 {
+    ((value.min(100) + 5) / 10) * 10
+}
+
+fn deserialize_osd_opacity_pct<'de, D>(deserializer: D) -> Result<u32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    u32::deserialize(deserializer).map(normalize_osd_opacity_pct)
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -131,6 +192,9 @@ pub fn default_app_config() -> AppConfig {
             enabled: true,
             debug: false,
             threshold_px: 10,
+            osd_duration_ms: default_osd_duration_ms(),
+            osd_font_size_px: default_osd_font_size_px(),
+            osd_opacity_pct: default_osd_opacity_pct(),
         },
         edge_scroll: EdgeScrollConfig {
             enabled: true,
@@ -586,5 +650,95 @@ mod tests {
                 "key-lwin",
             ]
         );
+    }
+
+    #[test]
+    fn missing_osd_duration_uses_default() {
+        let mut value =
+            serde_json::to_value(default_app_config()).expect("config should serialize");
+        value["engine"]
+            .as_object_mut()
+            .expect("engine should be an object")
+            .remove("osdDurationMs");
+
+        let config: AppConfig = serde_json::from_value(value).expect("legacy config should load");
+
+        assert_eq!(config.engine.osd_duration_ms, 1000);
+    }
+
+    #[test]
+    fn osd_duration_is_normalized_to_supported_steps() {
+        let mut value =
+            serde_json::to_value(default_app_config()).expect("config should serialize");
+        value["engine"]["osdDurationMs"] = serde_json::json!(300);
+
+        let config: AppConfig = serde_json::from_value(value).expect("config should load");
+
+        assert_eq!(config.engine.osd_duration_ms, 500);
+    }
+
+    #[test]
+    fn missing_osd_font_size_uses_default() {
+        let mut value =
+            serde_json::to_value(default_app_config()).expect("config should serialize");
+        value["engine"]
+            .as_object_mut()
+            .expect("engine should be an object")
+            .remove("osdFontSizePx");
+
+        let config: AppConfig = serde_json::from_value(value).expect("legacy config should load");
+
+        assert_eq!(config.engine.osd_font_size_px, 20);
+    }
+
+    #[test]
+    fn osd_font_size_is_normalized_to_supported_steps() {
+        let mut value =
+            serde_json::to_value(default_app_config()).expect("config should serialize");
+        value["engine"]["osdFontSizePx"] = serde_json::json!(24);
+
+        let config: AppConfig = serde_json::from_value(value).expect("config should load");
+
+        assert_eq!(config.engine.osd_font_size_px, 25);
+    }
+
+    #[test]
+    fn legacy_osd_font_size_field_is_supported() {
+        let mut value =
+            serde_json::to_value(default_app_config()).expect("config should serialize");
+        let engine = value["engine"]
+            .as_object_mut()
+            .expect("engine should be an object");
+        engine.remove("osdFontSizePx");
+        engine.insert("osdFontSizePt".into(), serde_json::json!(24));
+
+        let config: AppConfig = serde_json::from_value(value).expect("legacy config should load");
+
+        assert_eq!(config.engine.osd_font_size_px, 25);
+    }
+
+    #[test]
+    fn missing_osd_opacity_uses_default() {
+        let mut value =
+            serde_json::to_value(default_app_config()).expect("config should serialize");
+        value["engine"]
+            .as_object_mut()
+            .expect("engine should be an object")
+            .remove("osdOpacityPct");
+
+        let config: AppConfig = serde_json::from_value(value).expect("legacy config should load");
+
+        assert_eq!(config.engine.osd_opacity_pct, 90);
+    }
+
+    #[test]
+    fn osd_opacity_is_normalized_to_supported_steps() {
+        let mut value =
+            serde_json::to_value(default_app_config()).expect("config should serialize");
+        value["engine"]["osdOpacityPct"] = serde_json::json!(51);
+
+        let config: AppConfig = serde_json::from_value(value).expect("config should load");
+
+        assert_eq!(config.engine.osd_opacity_pct, 50);
     }
 }

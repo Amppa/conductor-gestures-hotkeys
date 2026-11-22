@@ -1,6 +1,9 @@
 use std::collections::HashSet;
 
-use crate::config::{AppConfig, Binding, Target};
+use crate::config::{
+    normalize_osd_duration_ms, normalize_osd_font_size_px, normalize_osd_opacity_pct, AppConfig,
+    Binding, Target,
+};
 
 const KEYBOARD_RUNTIME_HELPERS: &str = r#"global gGeneratedRemapState := Map()
 global gGeneratedRemapDestinationCounts := Map()
@@ -220,6 +223,26 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
     s.push_str(&format!(
         "global gThreshold := {}\n",
         config.engine.threshold_px
+    ));
+    s.push_str(&format!(
+        "global gOsdDurationMs := {}\n",
+        normalize_osd_duration_ms(config.engine.osd_duration_ms)
+    ));
+    s.push_str(&format!(
+        "global gOsdFontSizePx := {}\n",
+        normalize_osd_font_size_px(config.engine.osd_font_size_px)
+    ));
+    s.push_str(&format!(
+        "global gOsdOpacityPct := {}\n",
+        normalize_osd_opacity_pct(config.engine.osd_opacity_pct)
+    ));
+    s.push_str(&format!(
+        "global gOsdUnknownGestureLabel := \"{}\"\n",
+        if config.language == "zh-TW" {
+            "未知手勢"
+        } else {
+            "Unknown Gesture"
+        }
     ));
     s.push_str(&format!(
         "global gEdgeScrollEnabled := {}\n",
@@ -622,6 +645,27 @@ mod tests {
         let script = generate_ahk_script(&cfg, 1);
         assert!(!script.contains("Context-sensitive keyboard rules"));
         assert!(!script.contains("#InputLevel 1"));
+    }
+
+    #[test]
+    fn test_osd_settings_are_emitted() {
+        let mut cfg = default_app_config();
+        cfg.engine.osd_duration_ms = 1500;
+        cfg.engine.osd_font_size_px = 25;
+        cfg.engine.osd_opacity_pct = 60;
+        let script = generate_ahk_script(&cfg, 1);
+
+        assert!(script.contains("global gOsdDurationMs := 1500"));
+        assert!(script.contains("global gOsdFontSizePx := 25"));
+        assert!(script.contains("global gOsdOpacityPct := 60"));
+        assert!(script.contains("global gOsdUnknownGestureLabel := \"未知手勢\""));
+
+        cfg.language = "en".into();
+        cfg.engine.osd_duration_ms = 0;
+        let script = generate_ahk_script(&cfg, 2);
+
+        assert!(script.contains("global gOsdDurationMs := 0"));
+        assert!(script.contains("global gOsdUnknownGestureLabel := \"Unknown Gesture\""));
     }
 
     #[test]
