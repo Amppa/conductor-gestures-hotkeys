@@ -31,13 +31,13 @@
     "languageTitle": "語言",
     "thresholdTitle": "手勢靈敏度",
     "autostartTitle": "開機自動啟動",
-    "debugTitle": "偵錯日誌"
+    "debugTitle": "偵錯日誌",
+    "backupTitle": "備份設定"
   },
   "backup": {
-    "sectionTitle": "匯入、匯出與重設",
-    "exportBtn": "匯出設定",
+    "exportBtn": "匯出",
     "exportSuccess": "已成功匯出至 {{fileName}}",
-    "importBtn": "匯入設定",
+    "importBtn": "匯入",
     "importWarningTitle": "確認覆蓋現有設定？",
     "importSuccess": "設定檔載入成功，請確認無誤後點擊底部「套用變更」生效。",
     "importInvalidFormat": "匯入失敗：設定檔格式不正確或缺少必要結構。",

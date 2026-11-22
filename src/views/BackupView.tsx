@@ -2,7 +2,6 @@ import React, { useState, useRef } from "react";
 import {
   makeStyles,
   tokens,
-  Subtitle2,
   Button,
   Dialog,
   DialogSurface,
@@ -24,20 +23,16 @@ import { DEFAULT_CONFIG } from "../defaults";
 import { normalizeTrigger } from "../utils/gestureSymbols";
 
 const useStyles = makeStyles({
-  section: {
+  controls: {
     display: "flex",
     flexDirection: "column",
-    gap: "12px",
+    gap: "6px",
     width: "100%",
-    maxWidth: "560px",
-  },
-  sectionTitle: {
-    fontWeight: tokens.fontWeightSemibold,
   },
   btnRow: {
     display: "flex",
     alignItems: "center",
-    gap: "12px",
+    gap: "8px",
     flexWrap: "wrap",
   },
   whiteBtn: {
@@ -253,8 +248,7 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
   };
 
   return (
-    <section className={styles.section}>
-      <Subtitle2 className={styles.sectionTitle}>{t("backup.sectionTitle")}</Subtitle2>
+    <div className={styles.controls}>
       <input
         ref={fileInputRef}
         type="file"
@@ -266,6 +260,7 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
       {/* Three clean white buttons */}
       <div className={styles.btnRow}>
         <Button
+          size="small"
           className={styles.whiteBtn}
           icon={<ArrowDownload20Regular />}
           onClick={handleExport}
@@ -274,6 +269,7 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
         </Button>
 
         <Button
+          size="small"
           className={styles.whiteBtn}
           icon={<ArrowUpload20Regular />}
           onClick={handleSelectImportFile}
@@ -282,6 +278,7 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
         </Button>
 
         <Button
+          size="small"
           className={styles.whiteBtn}
           icon={<ArrowReset20Regular />}
           onClick={() => setIsResetConfirmOpen(true)}
@@ -361,6 +358,6 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
           </DialogBody>
         </DialogSurface>
       </Dialog>
-    </section>
+    </div>
   );
 };

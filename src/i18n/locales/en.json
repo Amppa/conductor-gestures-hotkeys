@@ -31,13 +31,13 @@
     "languageTitle": "Language",
     "thresholdTitle": "Gesture Sensitivity",
     "autostartTitle": "Start with Windows",
-    "debugTitle": "Debug Logging"
+    "debugTitle": "Debug Logging",
+    "backupTitle": "Backup Settings"
   },
   "backup": {
-    "sectionTitle": "Import, Export, and Reset",
-    "exportBtn": "Export Config",
+    "exportBtn": "Export",
     "exportSuccess": "Successfully exported to {{fileName}}",
-    "importBtn": "Import Config",
+    "importBtn": "Import",
     "importWarningTitle": "Overwrite current settings?",
     "importSuccess": "Configuration loaded successfully. Review the changes and click 'Apply Changes' at the bottom to take effect.",
     "importInvalidFormat": "Import failed: Invalid configuration format or missing required structure.",

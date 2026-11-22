@@ -40,11 +40,11 @@ const useStyles = makeStyles({
   },
   settingsList: {
     width: "100%",
-    maxWidth: "560px",
+    maxWidth: "680px",
   },
   row: {
     display: "grid",
-    gridTemplateColumns: "minmax(180px, 220px) minmax(180px, 240px)",
+    gridTemplateColumns: "minmax(180px, 220px) minmax(300px, 1fr)",
     columnGap: "24px",
     alignItems: "center",
     justifyContent: "start",
@@ -186,9 +186,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             onChange={(_, data) => onToggleAutostart(data.checked)}
           />
         </div>
+
+        <div className={styles.row}>
+          <span className={styles.itemLabel}>{t("settings.backupTitle")}</span>
+          <BackupSection config={config} onUpdateConfig={onUpdateConfig} />
+        </div>
       </div>
-      <Divider />
-      <BackupSection config={config} onUpdateConfig={onUpdateConfig} />
     </div>
   );
 };
