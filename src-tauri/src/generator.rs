@@ -1,4 +1,6 @@
-use crate::config::{AppConfig, Target};
+use std::collections::HashSet;
+
+use crate::config::{AppConfig, Binding, Target};
 
 pub fn trigger_to_ahk_name(t: &str) -> &str {
     match t {
@@ -14,18 +16,150 @@ pub fn trigger_to_ahk_name(t: &str) -> &str {
 pub fn is_mouse_or_spatial_trigger(trig: &str) -> bool {
     matches!(
         trig,
-        "R" | "RB" | "RButton"
-            | "M" | "MB" | "MButton"
-            | "L" | "LB" | "LButton"
-            | "X1" | "X1B" | "XButton1"
-            | "X2" | "X2B" | "XButton2"
-            | "CornerTL" | "CornerTR" | "CornerBL" | "CornerBR"
-            | "EdgeTop" | "EdgeBottom" | "EdgeLeft" | "EdgeRight"
+        "R" | "RB"
+            | "RButton"
+            | "M"
+            | "MB"
+            | "MButton"
+            | "L"
+            | "LB"
+            | "LButton"
+            | "X1"
+            | "X1B"
+            | "XButton1"
+            | "X2"
+            | "X2B"
+            | "XButton2"
+            | "CornerTL"
+            | "CornerTR"
+            | "CornerBL"
+            | "CornerBR"
+            | "EdgeTop"
+            | "EdgeBottom"
+            | "EdgeLeft"
+            | "EdgeRight"
     )
 }
 
 pub fn ahk_quote(s: &str) -> String {
     s.replace('"', "\"\"")
+}
+
+fn is_keyboard_binding(binding: &Binding) -> bool {
+    let trigger = binding.gesture.trigger.trim();
+    binding.enabled && !trigger.is_empty() && !is_mouse_or_spatial_trigger(trigger)
+}
+
+fn write_hotkey_action(script: &mut String, binding: &Binding) {
+    let trigger = binding.gesture.trigger.trim();
+    let action = &binding.action;
+
+    if action.action_type == "noop"
+        || action.id == "act-noop"
+        || action.value.eq_ignore_ascii_case("none")
+    {
+        script.push_str(&format!("*{}::return\n", trigger));
+        return;
+    }
+
+    match action.action_type.as_str() {
+        "remap" => script.push_str(&format!(
+            "*{}::GeneratedRemapKeyDown(\"{}\", \"{}\")\n",
+            trigger,
+            ahk_quote(trigger),
+            ahk_quote(action.value.trim())
+        )),
+        "keys" => script.push_str(&format!(
+            "*{}::GeneratedSendKeys(\"{}\")\n",
+            trigger,
+            ahk_quote(&action.value)
+        )),
+        "run" => script.push_str(&format!(
+            "*{}::Run(\"{}\")\n",
+            trigger,
+            ahk_quote(&action.value)
+        )),
+        "ahk" => {
+            script.push_str(&format!("*{}::\n{{\n", trigger));
+            script.push_str("    previousLevel := SendLevel(0)\n");
+            script.push_str("    try {\n");
+            for line in action.value.lines() {
+                script.push_str(&format!("        {}\n", line));
+            }
+            script.push_str("    } finally {\n");
+            script.push_str("        SendLevel(previousLevel)\n");
+            script.push_str("    }\n");
+            script.push_str("}\n");
+        }
+        _ => {}
+    }
+}
+
+fn write_target_hotkeys(
+    script: &mut String,
+    target: &Target,
+    emitted_triggers: &mut HashSet<String>,
+) {
+    for binding in target
+        .bindings
+        .iter()
+        .filter(|binding| is_keyboard_binding(binding))
+    {
+        let trigger = binding.gesture.trigger.trim().to_ascii_lowercase();
+        if emitted_triggers.insert(trigger) {
+            write_hotkey_action(script, binding);
+        }
+    }
+}
+
+fn write_keyboard_helpers(script: &mut String) {
+    script.push_str("global gGeneratedRemapState := Map()\n");
+    script.push_str("global gGeneratedRemapDestinationCounts := Map()\n\n");
+
+    script.push_str("GeneratedSendKeys(keys) {\n");
+    script.push_str("    previousLevel := SendLevel(0)\n");
+    script.push_str("    try Send(keys)\n");
+    script.push_str("    finally SendLevel(previousLevel)\n");
+    script.push_str("}\n\n");
+
+    script.push_str("GeneratedRemapKeyDown(source, destination) {\n");
+    script.push_str("    global gGeneratedRemapState, gGeneratedRemapDestinationCounts\n");
+    script.push_str("    if (destination = \"\")\n");
+    script.push_str("        return\n");
+    script.push_str("    if !gGeneratedRemapState.Has(source) {\n");
+    script.push_str("        gGeneratedRemapState[source] := destination\n");
+    script.push_str("        count := gGeneratedRemapDestinationCounts.Get(destination, 0) + 1\n");
+    script.push_str("        gGeneratedRemapDestinationCounts[destination] := count\n");
+    script.push_str("    }\n");
+    script.push_str("    activeDestination := gGeneratedRemapState[source]\n");
+    script.push_str("    previousLevel := SendLevel(0)\n");
+    script.push_str("    try {\n");
+    script.push_str("        SetKeyDelay(-1)\n");
+    script.push_str("        Send(\"{Blind}{\" activeDestination \" DownR}\")\n");
+    script.push_str("    } finally {\n");
+    script.push_str("        SendLevel(previousLevel)\n");
+    script.push_str("    }\n");
+    script.push_str("}\n\n");
+
+    script.push_str("GeneratedRemapKeyUp(source) {\n");
+    script.push_str("    global gGeneratedRemapState, gGeneratedRemapDestinationCounts\n");
+    script.push_str("    if !gGeneratedRemapState.Has(source)\n");
+    script.push_str("        return\n");
+    script.push_str("    destination := gGeneratedRemapState.Delete(source)\n");
+    script.push_str("    count := gGeneratedRemapDestinationCounts.Get(destination, 1) - 1\n");
+    script.push_str("    if (count > 0) {\n");
+    script.push_str("        gGeneratedRemapDestinationCounts[destination] := count\n");
+    script.push_str("        return\n");
+    script.push_str("    }\n");
+    script.push_str("    gGeneratedRemapDestinationCounts.Delete(destination)\n");
+    script.push_str("    previousLevel := SendLevel(0)\n");
+    script.push_str("    try {\n");
+    script.push_str("        SetKeyDelay(-1)\n");
+    script.push_str("        Send(\"{Blind}{\" destination \" Up}\")\n");
+    script.push_str("    } finally {\n");
+    script.push_str("        SendLevel(previousLevel)\n");
+    script.push_str("    }\n");
+    script.push_str("}\n\n");
 }
 
 pub fn resolve_action_display_name(action_id: &str, fallback_name: &str, lang: &str) -> String {
@@ -75,10 +209,17 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
     // Include the core gesture engine located in the same runtime directory
     s.push_str("#Include \"GestureEngine.ahk\"\n\n");
 
-    s.push_str(&format!("global gThreshold := {}\n", config.engine.threshold_px));
+    s.push_str(&format!(
+        "global gThreshold := {}\n",
+        config.engine.threshold_px
+    ));
     s.push_str(&format!(
         "global gEdgeScrollEnabled := {}\n",
-        if config.edge_scroll.enabled { "true" } else { "false" }
+        if config.edge_scroll.enabled {
+            "true"
+        } else {
+            "false"
+        }
     ));
     s.push_str(&format!(
         "global gDebugLogEnabled := {}\n\n",
@@ -118,7 +259,10 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
             .map(|e| format!("\"{}\"", ahk_quote(e)))
             .collect::<Vec<_>>()
             .join(", ");
-        s.push_str(&format!("        case {}:\n            return true\n", case_items));
+        s.push_str(&format!(
+            "        case {}:\n            return true\n",
+            case_items
+        ));
         s.push_str("        default:\n            return false\n");
         s.push_str("    }\n");
     } else {
@@ -164,10 +308,22 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
                     trig, steps
                 ));
                 match b.action.action_type.as_str() {
-                    "keys" => s.push_str(&format!("            Send(\"{}\")\n", ahk_quote(&b.action.value))),
-                    "run" => s.push_str(&format!("            Run(\"{}\")\n", ahk_quote(&b.action.value))),
-                    "mouse" => s.push_str(&format!("            Click(\"{}\")\n", ahk_quote(&b.action.value))),
-                    "wheel" => s.push_str(&format!("            Send(\"{}\")\n", ahk_quote(&b.action.value))),
+                    "keys" => s.push_str(&format!(
+                        "            Send(\"{}\")\n",
+                        ahk_quote(&b.action.value)
+                    )),
+                    "run" => s.push_str(&format!(
+                        "            Run(\"{}\")\n",
+                        ahk_quote(&b.action.value)
+                    )),
+                    "mouse" => s.push_str(&format!(
+                        "            Click(\"{}\")\n",
+                        ahk_quote(&b.action.value)
+                    )),
+                    "wheel" => s.push_str(&format!(
+                        "            Send(\"{}\")\n",
+                        ahk_quote(&b.action.value)
+                    )),
                     "ahk" => {
                         for line in b.action.value.lines() {
                             s.push_str(&format!("            {}\n", line));
@@ -201,10 +357,22 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
                 trig, steps
             ));
             match b.action.action_type.as_str() {
-                "keys" => s.push_str(&format!("        Send(\"{}\")\n", ahk_quote(&b.action.value))),
-                "run" => s.push_str(&format!("        Run(\"{}\")\n", ahk_quote(&b.action.value))),
-                "mouse" => s.push_str(&format!("        Click(\"{}\")\n", ahk_quote(&b.action.value))),
-                "wheel" => s.push_str(&format!("        Send(\"{}\")\n", ahk_quote(&b.action.value))),
+                "keys" => s.push_str(&format!(
+                    "        Send(\"{}\")\n",
+                    ahk_quote(&b.action.value)
+                )),
+                "run" => s.push_str(&format!(
+                    "        Run(\"{}\")\n",
+                    ahk_quote(&b.action.value)
+                )),
+                "mouse" => s.push_str(&format!(
+                    "        Click(\"{}\")\n",
+                    ahk_quote(&b.action.value)
+                )),
+                "wheel" => s.push_str(&format!(
+                    "        Send(\"{}\")\n",
+                    ahk_quote(&b.action.value)
+                )),
                 "ahk" => {
                     for line in b.action.value.lines() {
                         s.push_str(&format!("        {}\n", line));
@@ -246,12 +414,16 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
                 }
                 let trig = trigger_to_ahk_name(&b.gesture.trigger);
                 let steps = b.gesture.steps.join(",");
-                let act_name = resolve_action_display_name(&b.action.id, &b.action.name, &config.language);
+                let act_name =
+                    resolve_action_display_name(&b.action.id, &b.action.name, &config.language);
                 s.push_str(&format!(
                     "        if (trigger = \"{}\" && stepStr = \"{}\")\n",
                     trig, steps
                 ));
-                s.push_str(&format!("            return \"{}\"\n", ahk_quote(&act_name)));
+                s.push_str(&format!(
+                    "            return \"{}\"\n",
+                    ahk_quote(&act_name)
+                ));
             }
             s.push_str("    }\n\n");
         }
@@ -264,7 +436,8 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
             }
             let trig = trigger_to_ahk_name(&b.gesture.trigger);
             let steps = b.gesture.steps.join(",");
-            let act_name = resolve_action_display_name(&b.action.id, &b.action.name, &config.language);
+            let act_name =
+                resolve_action_display_name(&b.action.id, &b.action.name, &config.language);
             s.push_str(&format!(
                 "    if (trigger = \"{}\" && stepStr = \"{}\")\n",
                 trig, steps
@@ -276,55 +449,136 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
     s.push_str("    return \"\"\n");
     s.push_str("}\n");
 
-    // Key Remappings and Suppressions (Native AHK Remap & No-op)
-    s.push_str("\n; ------------------------------------------------------------------------------\n");
-    s.push_str("; Key Remappings and Suppressions (Native AHK Remap & No-op)\n");
-    s.push_str("; ------------------------------------------------------------------------------\n");
-
-    // 1. Unified Model: From Target Bindings
-    for gt in &global_targets {
-        for b in &gt.bindings {
-            if !b.enabled {
-                continue;
+    let mut keyboard_triggers = Vec::new();
+    let mut keyboard_trigger_keys = HashSet::new();
+    let mut remap_trigger_keys = HashSet::new();
+    for target in group_targets.iter().chain(global_targets.iter()) {
+        for binding in target
+            .bindings
+            .iter()
+            .filter(|binding| is_keyboard_binding(binding))
+        {
+            let trigger = binding.gesture.trigger.trim();
+            let trigger_key = trigger.to_ascii_lowercase();
+            if binding.action.action_type == "remap" {
+                remap_trigger_keys.insert(trigger_key.clone());
             }
-            let trig = b.gesture.trigger.trim();
-            if is_mouse_or_spatial_trigger(trig) || trig.is_empty() {
-                continue;
-            }
-            if b.action.action_type == "noop"
-                || b.action.id == "act-noop"
-                || b.action.value.eq_ignore_ascii_case("none")
-            {
-                // Key suppression (no-op / mute)
-                s.push_str(&format!("*{}::return\n", trig));
-            } else if b.action.action_type == "remap" {
-                // Transparent remap with native infinite loop protection
-                s.push_str(&format!("*{}::{}\n", trig, b.action.value.trim()));
-            } else if b.action.action_type == "keys" {
-                s.push_str(&format!("*${}::Send(\"{}\")\n", trig, ahk_quote(&b.action.value)));
-            } else if b.action.action_type == "ahk" {
-                s.push_str(&format!("*${}::{}\n", trig, b.action.value.trim()));
-            } else if b.action.action_type == "run" {
-                s.push_str(&format!("*${}::Run(\"{}\")\n", trig, ahk_quote(&b.action.value)));
+            if keyboard_trigger_keys.insert(trigger_key) {
+                keyboard_triggers.push(trigger.to_string());
             }
         }
     }
+    for remap in config.key_remaps.iter().filter(|remap| remap.enabled) {
+        let trigger = remap.src_key.trim();
+        let destination = remap.dst_key.trim();
+        let trigger_key = trigger.to_ascii_lowercase();
+        if !destination.is_empty()
+            && !destination.eq_ignore_ascii_case("none")
+            && !destination.eq_ignore_ascii_case("disabled")
+        {
+            remap_trigger_keys.insert(trigger_key.clone());
+        }
+        if !trigger.is_empty() && keyboard_trigger_keys.insert(trigger_key) {
+            keyboard_triggers.push(trigger.to_string());
+        }
+    }
 
-    // 2. Backward compatibility: From key_remaps
-    for kr in &config.key_remaps {
-        if !kr.enabled {
-            continue;
+    if !keyboard_triggers.is_empty() {
+        s.push_str(
+            "\n; ------------------------------------------------------------------------------\n",
+        );
+        s.push_str("; Context-sensitive keyboard rules\n");
+        s.push_str(
+            "; ------------------------------------------------------------------------------\n",
+        );
+        write_keyboard_helpers(&mut s);
+
+        if !exes.is_empty() {
+            for exe in &exes {
+                s.push_str(&format!(
+                    "GroupAdd(\"GeneratedDisabledApps\", \"ahk_exe {}\")\n",
+                    ahk_quote(exe)
+                ));
+            }
+            s.push('\n');
         }
-        let src = kr.src_key.trim();
-        let dst = kr.dst_key.trim();
-        if src.is_empty() {
-            continue;
+
+        for (index, target) in group_targets.iter().enumerate() {
+            if !target.bindings.iter().any(is_keyboard_binding) {
+                continue;
+            }
+            for exe in target
+                .executables
+                .iter()
+                .map(|exe| exe.trim())
+                .filter(|exe| !exe.is_empty())
+            {
+                s.push_str(&format!(
+                    "GroupAdd(\"GeneratedKeyboardGroup{}\", \"ahk_exe {}\")\n",
+                    index,
+                    ahk_quote(exe)
+                ));
+            }
         }
-        if dst.eq_ignore_ascii_case("none") || dst.eq_ignore_ascii_case("disabled") {
-            s.push_str(&format!("*{}::return\n", src));
-        } else if !dst.is_empty() {
-            s.push_str(&format!("*{}::{}\n", src, dst));
+        s.push('\n');
+        s.push_str("#InputLevel 1\n");
+
+        if !exes.is_empty() {
+            s.push_str("#HotIf WinActive(\"ahk_group GeneratedDisabledApps\")\n");
+            for trigger in &keyboard_triggers {
+                s.push_str(&format!("~*{}::return\n", trigger));
+            }
         }
+
+        for (index, target) in group_targets.iter().enumerate() {
+            if !target.bindings.iter().any(is_keyboard_binding) {
+                continue;
+            }
+            s.push_str(&format!(
+                "#HotIf WinActive(\"ahk_group GeneratedKeyboardGroup{}\")\n",
+                index
+            ));
+            let mut emitted_triggers = HashSet::new();
+            write_target_hotkeys(&mut s, target, &mut emitted_triggers);
+        }
+
+        s.push_str("#HotIf\n");
+        let mut global_triggers = HashSet::new();
+        for target in &global_targets {
+            write_target_hotkeys(&mut s, target, &mut global_triggers);
+        }
+
+        for remap in config.key_remaps.iter().filter(|remap| remap.enabled) {
+            let source = remap.src_key.trim();
+            let destination = remap.dst_key.trim();
+            if source.is_empty() || !global_triggers.insert(source.to_ascii_lowercase()) {
+                continue;
+            }
+            if destination.eq_ignore_ascii_case("none")
+                || destination.eq_ignore_ascii_case("disabled")
+            {
+                s.push_str(&format!("*{}::return\n", source));
+            } else if !destination.is_empty() {
+                s.push_str(&format!(
+                    "*{}::GeneratedRemapKeyDown(\"{}\", \"{}\")\n",
+                    source,
+                    ahk_quote(source),
+                    ahk_quote(destination)
+                ));
+            }
+        }
+
+        for trigger in keyboard_triggers
+            .iter()
+            .filter(|trigger| remap_trigger_keys.contains(&trigger.to_ascii_lowercase()))
+        {
+            s.push_str(&format!(
+                "~*{} up::GeneratedRemapKeyUp(\"{}\")\n",
+                trigger,
+                ahk_quote(trigger)
+            ));
+        }
+        s.push_str("#InputLevel 0\n");
     }
 
     s
@@ -383,6 +637,6 @@ mod tests {
         }
         let script = generate_ahk_script(&cfg, 2);
         assert!(script.contains("*Insert::return"));
-        assert!(script.contains("*LAlt::LWin"));
+        assert!(script.contains("*LAlt::GeneratedRemapKeyDown(\"LAlt\", \"LWin\")"));
     }
 }
