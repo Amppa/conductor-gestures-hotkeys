@@ -12,6 +12,16 @@ The runtime must satisfy these invariants:
 4. Rule-generated synthetic input never triggers another generated rule.
 5. Remaps preserve key-down, key-up, auto-repeat, and extra held modifiers.
 
+## Template Semantics
+
+- Trigger Gestures and Trigger Hotkeys are template catalogs.
+- Assigning either template type to a Rule performs a copy by value.
+- The Rule owns its copied trigger data and stores no template reference.
+- Later template edits or deletion never propagate to existing Rules.
+- The Trigger Hotkeys catalog therefore has no enabled switch and no usage-count column.
+- Runtime registration is determined only by enabled Rules, never by catalog membership.
+- Keyboard trigger matching always allows additional held modifiers and exposes no matching-mode option.
+
 ## Current State
 
 - Keyboard bindings already use the same `Target -> Binding -> Gesture + Action` structure as mouse gestures.
@@ -34,11 +44,10 @@ The runtime must satisfy these invariants:
 
 ### Deferred
 
-- Full Trigger Hotkeys page CRUD and key-capture UI.
 - Migration from the current `Binding` model to `Rule { scope, trigger, commands[] }`.
 - Multiple commands per rule.
 - Tap-versus-hold behavior for standalone modifier keys.
-- User-configurable exact versus allow-extra modifier matching.
+- Exact modifier matching.
 - Rule chaining through synthetic keyboard events.
 
 ## Generated AHK Design
@@ -89,6 +98,9 @@ Custom AHK which explicitly changes `SendLevel` is outside the recursion guarant
 1. `docs(hotkeys): document keyboard trigger rule design`
 2. `refactor(generator): compile scoped keyboard rule variants`
 3. `test(generator): cover keyboard scope and recursion safeguards`
+4. `docs(architecture): define trigger template value semantics`
+5. `feat(hotkeys): add keyboard trigger template catalog`
+6. `refactor(ui): separate gesture and hotkey templates`
 
 ## Automated Verification
 
