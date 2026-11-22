@@ -16,8 +16,8 @@ import {
   Caption1,
   makeStyles,
 } from "@fluentui/react-components";
-import { Action, ActionType } from "../types";
-import { toAhkKey, fromAhkKey } from "../utils/keyMap";
+import { Action, ActionType } from "../../domain/types";
+import { toAhkKey, fromAhkKey } from "../../shared/keyMap";
 
 const useStyles = makeStyles({
   content: {

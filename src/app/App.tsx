@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { makeStyles, tokens } from "@fluentui/react-components";
 import { useTranslation } from "react-i18next";
-import { Sidebar, NavTabId } from "./components/Sidebar";
-import { ApplyBar } from "./components/ApplyBar";
-import { TargetsView } from "./views/TargetsView";
-import { ExcludedView } from "./views/ExcludedView";
-import { GesturesView } from "./views/GesturesView";
-import { HotkeysView } from "./views/HotkeysView";
-import { ActionsView } from "./views/ActionsView";
-import { SettingsView } from "./views/SettingsView";
-import { DEFAULT_CONFIG } from "./defaults";
-import { AppConfig, Target, Gesture, Action } from "./types";
-import { normalizeTrigger } from "./utils/gestureSymbols";
-import { isKeyboardTemplate } from "./utils/triggerTypes";
+import { Sidebar, NavTabId } from "./Sidebar";
+import { ApplyBar } from "./ApplyBar";
+import { TargetsView } from "../features/scopes/TargetsView";
+import { ExcludedView } from "../features/scopes/ExcludedView";
+import { GesturesView } from "../features/gestures/GesturesView";
+import { HotkeysView } from "../features/hotkeys/HotkeysView";
+import { ActionsView } from "../features/commands/ActionsView";
+import { SettingsView } from "../features/settings/SettingsView";
+import { DEFAULT_CONFIG } from "../domain/defaults";
+import { AppConfig, Target, Gesture, Action } from "../domain/types";
+import { normalizeTrigger } from "../features/gestures/gestureSymbols";
+import { isKeyboardTemplate } from "../domain/triggerTypes";
 
 function migrateConfigTriggers(rawConfig: AppConfig): AppConfig {
   // 1. Auto-merge missing action templates from defaults

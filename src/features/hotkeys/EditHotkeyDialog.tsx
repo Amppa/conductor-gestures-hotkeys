@@ -13,11 +13,11 @@ import {
   tokens,
 } from "@fluentui/react-components";
 import { useTranslation } from "react-i18next";
-import { Gesture } from "../types";
+import { Gesture } from "../../domain/types";
 import {
   formatHotkeyTrigger,
   keyboardEventToTrigger,
-} from "../utils/hotkeyTrigger";
+} from "./hotkeyTrigger";
 
 const useStyles = makeStyles({
   surface: {

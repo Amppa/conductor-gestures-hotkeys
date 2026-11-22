@@ -35,11 +35,11 @@ import {
   Checkmark16Regular,
   Dismiss16Regular,
 } from "@fluentui/react-icons";
-import { Target, Binding, Gesture, Action } from "../types";
-import { formatGestureLabel } from "../utils/gestureSymbols";
-import { EditGestureDialog } from "../components/EditGestureDialog";
-import { EditActionDialog } from "../components/EditActionDialog";
-import { AddProcessDialog } from "../components/AddProcessDialog";
+import { Target, Binding, Gesture, Action } from "../../domain/types";
+import { formatGestureLabel } from "../gestures/gestureSymbols";
+import { EditGestureDialog } from "../gestures/EditGestureDialog";
+import { EditActionDialog } from "../commands/EditActionDialog";
+import { AddProcessDialog } from "./AddProcessDialog";
 
 const useStyles = makeStyles({
   container: {

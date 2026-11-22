@@ -18,9 +18,9 @@ import {
   Warning20Regular,
 } from "@fluentui/react-icons";
 import { useTranslation } from "react-i18next";
-import { AppConfig, BackupData } from "../types";
-import { DEFAULT_CONFIG } from "../defaults";
-import { normalizeTrigger } from "../utils/gestureSymbols";
+import { AppConfig, BackupData } from "../../domain/types";
+import { DEFAULT_CONFIG } from "../../domain/defaults";
+import { normalizeTrigger } from "../gestures/gestureSymbols";
 
 const useStyles = makeStyles({
   controls: {

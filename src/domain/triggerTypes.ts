@@ -1,4 +1,4 @@
-import { Gesture, GestureTrigger } from "../types";
+import { Gesture, GestureTrigger } from "./types";
 
 const MOUSE_OR_SPATIAL_TRIGGERS = new Set<string>([
   "R",
