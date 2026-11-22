@@ -11,8 +11,8 @@ import {
   tokens,
 } from "@fluentui/react-components";
 import { Add16Regular } from "@fluentui/react-icons";
-import { Target } from "../types";
-import { AddProcessDialog } from "../components/AddProcessDialog";
+import { Target } from "../../domain/types";
+import { AddProcessDialog } from "./AddProcessDialog";
 
 const useStyles = makeStyles({
   container: {

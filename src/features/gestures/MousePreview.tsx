@@ -1,6 +1,6 @@
 import React from "react";
 import { makeStyles, tokens } from "@fluentui/react-components";
-import { GestureTrigger } from "../types";
+import { GestureTrigger } from "../../domain/types";
 
 const useStyles = makeStyles({
   container: {

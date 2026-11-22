@@ -150,4 +150,4 @@
 - **優勢**: AHK 針對鍵盤快速鍵取代、視窗操控的語法最簡單直覺，使用者容易自行添加腳本。
 
 ---
-*分析報告已歸檔至 `research/PROJECTS_ANALYSIS.md` 與 `../ref/research/PROJECTS_ANALYSIS.md`。*
+*分析報告已歸檔至 `docs/research/gesture-tools.md`。*

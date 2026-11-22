@@ -9,9 +9,9 @@ import {
 } from "@fluentui/react-components";
 import { Add16Regular, Delete16Regular } from "@fluentui/react-icons";
 import { useTranslation } from "react-i18next";
-import { EditHotkeyDialog } from "../components/EditHotkeyDialog";
-import { Gesture } from "../types";
-import { formatHotkeyTrigger } from "../utils/hotkeyTrigger";
+import { EditHotkeyDialog } from "./EditHotkeyDialog";
+import { Gesture } from "../../domain/types";
+import { formatHotkeyTrigger } from "./hotkeyTrigger";
 
 const useStyles = makeStyles({
   container: {

@@ -15,11 +15,11 @@ import {
   makeStyles,
   tokens,
 } from "@fluentui/react-components";
-import { Gesture, GestureTrigger } from "../types";
+import { Gesture, GestureTrigger } from "../../domain/types";
 import {
   formatStepSymbol,
   parseStrokeInput,
-} from "../utils/gestureSymbols";
+} from "./gestureSymbols";
 import { MousePreview } from "./MousePreview";
 import { GestureRecorderCanvas } from "./GestureRecorderCanvas";
 

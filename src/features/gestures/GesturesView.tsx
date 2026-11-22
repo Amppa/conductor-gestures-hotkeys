@@ -11,8 +11,9 @@ import {
   Button,
 } from "@fluentui/react-components";
 import { Add16Regular, Delete16Regular } from "@fluentui/react-icons";
-import { Action } from "../types";
-import { EditActionDialog } from "../components/EditActionDialog";
+import { Gesture } from "../../domain/types";
+import { formatGestureLabel, formatTriggerSymbol } from "./gestureSymbols";
+import { EditGestureDialog } from "./EditGestureDialog";
 
 const useStyles = makeStyles({
   container: {
@@ -72,22 +73,14 @@ const useStyles = makeStyles({
     fontWeight: 600,
     userSelect: "none",
   },
-  tdType: {
+  tdTrigger: {
     width: "120px",
     padding: "8px 12px",
   },
-  tdAction: {
+  tdStroke: {
     padding: "8px 12px",
     userSelect: "none",
     color: tokens.colorBrandForeground1,
-  },
-  codeValue: {
-    fontFamily: "Consolas, 'Cascadia Code', monospace",
-    fontSize: tokens.fontSizeBase200,
-    padding: "2px 6px",
-    backgroundColor: tokens.colorNeutralBackground3,
-    borderRadius: tokens.borderRadiusSmall,
-    wordBreak: "break-all",
   },
   tdOps: {
     width: "48px",
@@ -96,55 +89,55 @@ const useStyles = makeStyles({
   },
 });
 
-interface ActionsViewProps {
-  actions: Action[];
-  onUpdateActions?: (updated: Action[]) => void;
+interface GesturesViewProps {
+  gestures: Gesture[];
+  onUpdateGestures: (updated: Gesture[]) => void;
 }
 
-export const ActionsView: React.FC<ActionsViewProps> = ({
-  actions,
-  onUpdateActions,
+export const GesturesView: React.FC<GesturesViewProps> = ({
+  gestures,
+  onUpdateGestures,
 }) => {
   const styles = useStyles();
   const { t } = useTranslation();
-  const [editingAction, setEditingAction] = useState<Action | null>(null);
+  const [editingGesture, setEditingGesture] = useState<Gesture | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
   const handleOpenAddDialog = () => {
     setIsCreating(true);
-    setEditingAction({
-      id: `action-${Date.now()}`,
-      name: t("actions.newActionName"),
-      type: "keys",
-      value: "",
+    setEditingGesture({
+      id: `gesture-${Date.now()}`,
+      name: t("gestures.newGestureName"),
+      trigger: "R",
+      steps: [],
     });
   };
 
-  const handleEditAction = (action: Action) => {
+  const handleEditGesture = (gesture: Gesture) => {
     setIsCreating(false);
-    setEditingAction(action);
+    setEditingGesture(gesture);
   };
 
-  const handleSaveAction = (saved: Action) => {
-    if (!onUpdateActions) return;
+  const handleSaveGesture = (saved: Gesture) => {
     if (isCreating) {
-      onUpdateActions([...actions, saved]);
+      onUpdateGestures([...gestures, saved]);
     } else {
-      onUpdateActions(actions.map((a) => (a.id === saved.id ? saved : a)));
+      onUpdateGestures(
+        gestures.map((g) => (g.id === saved.id ? saved : g))
+      );
     }
-    setEditingAction(null);
+    setEditingGesture(null);
     setIsCreating(false);
   };
 
-  const handleDeleteAction = (id: string) => {
-    if (!onUpdateActions) return;
-    onUpdateActions(actions.filter((a) => a.id !== id));
+  const handleDeleteGesture = (id: string) => {
+    onUpdateGestures(gestures.filter((g) => g.id !== id));
   };
 
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
-        <Title3 as="h1" className={styles.pageTitle}>{t("nav.actions")}</Title3>
+        <Title3 as="h1" className={styles.pageTitle}>{t("nav.gestures")}</Title3>
         <Divider className={styles.divider} />
       </div>
 
@@ -152,30 +145,36 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
         <table className={styles.table}>
           <thead>
             <tr>
-              <th className={styles.th}>{t("actions.tableName")}</th>
-              <th className={styles.th} style={{ width: "120px" }}>{t("actions.tableType")}</th>
-              <th className={styles.th}>{t("actions.tableAction")}</th>
+              <th className={styles.th}>{t("gestures.tableName")}</th>
+              <th className={styles.th} style={{ width: "120px" }}>{t("gestures.tableTrigger")}</th>
+              <th className={styles.th}>{t("gestures.tableStroke")}</th>
               <th className={styles.th} style={{ width: "48px" }}></th>
             </tr>
           </thead>
           <tbody>
-            {actions.map((act) => (
+            {gestures.map((gesture) => (
               <tr
-                key={act.id}
+                key={gesture.id}
                 className={styles.tr}
-                onClick={() => handleEditAction(act)}
-                title={t("targets.doubleClickActionTip")}
+                onClick={() => handleEditGesture(gesture)}
+                title={t("targets.doubleClickGestureTip")}
               >
                 <td className={styles.tdName}>
-                  {t("actionNames." + act.id, { defaultValue: act.name })}
+                  {t("gestureNames." + gesture.id, { defaultValue: gesture.name })}
                 </td>
-                <td className={styles.tdType}>
-                  <Badge appearance="tint" color="informative">
-                    {act.type}
+                <td className={styles.tdTrigger}>
+                  <Badge appearance="tint" color="brand">
+                    {formatTriggerSymbol(gesture.trigger, t)}
                   </Badge>
                 </td>
-                <td className={styles.tdAction}>
-                  <span className={styles.codeValue}>{act.value || t("actions.emptyValue")}</span>
+                <td className={styles.tdStroke}>
+                  {gesture.steps.length > 0 ? (
+                    formatGestureLabel(gesture.trigger, gesture.steps, t)
+                  ) : (
+                    <span style={{ color: tokens.colorNeutralForeground4, fontStyle: "italic" }}>
+                      {t("targets.noGesture")}
+                    </span>
+                  )}
                 </td>
                 <td className={styles.tdOps}>
                   <Button
@@ -184,14 +183,14 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
                     icon={<Delete16Regular />}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteAction(act.id);
+                      handleDeleteGesture(gesture.id);
                     }}
-                    title={t("actions.deleteTip")}
+                    title={t("gestures.delete")}
                   />
                 </td>
               </tr>
             ))}
-            {actions.length === 0 && (
+            {gestures.length === 0 && (
               <tr>
                 <td colSpan={4} style={{ padding: "16px", textAlign: "center", color: tokens.colorNeutralForeground4 }}>
                   {t("targets.emptyBindings")}
@@ -208,18 +207,18 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
             icon={<Add16Regular />}
             onClick={handleOpenAddDialog}
           >
-            {t("actions.addAction")}
+            {t("gestures.add")}
           </Button>
         </div>
       </Card>
 
-      {editingAction && (
-        <EditActionDialog
-          open={!!editingAction}
-          action={editingAction}
-          onSave={handleSaveAction}
+      {editingGesture && (
+        <EditGestureDialog
+          open={!!editingGesture}
+          gesture={editingGesture}
+          onSave={handleSaveGesture}
           onCancel={() => {
-            setEditingAction(null);
+            setEditingGesture(null);
             setIsCreating(false);
           }}
         />
