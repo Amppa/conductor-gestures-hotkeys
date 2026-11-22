@@ -85,4 +85,3 @@ export function formatHotkeyTrigger(trigger: string): string {
   if (remaining) parts.push(remaining);
   return parts.join(" + ");
 }
-

@@ -44,27 +44,20 @@ interface EditHotkeyDialogProps {
   onCancel: () => void;
 }
 
+const MODIFIER_NAME_KEYS: Record<string, string> = {
+  LCtrl: "hotkeys.keyNameLCtrl",
+  RCtrl: "hotkeys.keyNameRCtrl",
+  LShift: "hotkeys.keyNameLShift",
+  RShift: "hotkeys.keyNameRShift",
+  LAlt: "hotkeys.keyNameLAlt",
+  RAlt: "hotkeys.keyNameRAlt",
+  LWin: "hotkeys.keyNameLWin",
+  RWin: "hotkeys.keyNameRWin",
+};
+
 function getAutomaticName(trigger: string, t: (key: string) => string): string {
-  switch (trigger) {
-    case "LCtrl":
-      return t("hotkeys.keyNameLCtrl");
-    case "RCtrl":
-      return t("hotkeys.keyNameRCtrl");
-    case "LShift":
-      return t("hotkeys.keyNameLShift");
-    case "RShift":
-      return t("hotkeys.keyNameRShift");
-    case "LAlt":
-      return t("hotkeys.keyNameLAlt");
-    case "RAlt":
-      return t("hotkeys.keyNameRAlt");
-    case "LWin":
-      return t("hotkeys.keyNameLWin");
-    case "RWin":
-      return t("hotkeys.keyNameRWin");
-    default:
-      return formatHotkeyTrigger(trigger);
-  }
+  const nameKey = MODIFIER_NAME_KEYS[trigger];
+  return nameKey ? t(nameKey) : formatHotkeyTrigger(trigger);
 }
 
 export const EditHotkeyDialog: React.FC<EditHotkeyDialogProps> = ({
