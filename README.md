@@ -51,8 +51,9 @@ conductor-gestures-hotkeys/
 │   └── main.tsx                 # 前端進入點
 ├── vendor/
 │   └── autohotkey/              # 隨附免安裝 AutoHotkey v2 執行階段
-└── research/
-    └── PROJECTS_ANALYSIS.md     # 6 大主流開源手勢專案深度技術剖析報告
+└── docs/
+    ├── plans/                   # 功能規劃與開發路線
+    └── research/                # 手勢工具技術研究
 ```
 
 ---
