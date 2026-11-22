@@ -61,15 +61,6 @@ const useStyles = makeStyles({
   divider: {
     margin: "0 !important",
   },
-  ruleHint: {
-    padding: "8px 14px",
-    backgroundColor: tokens.colorNeutralBackground3,
-    borderRadius: tokens.borderRadiusMedium,
-    color: tokens.colorNeutralForeground2,
-    fontSize: tokens.fontSizeBase200,
-    fontWeight: 500,
-    width: "fit-content",
-  },
   section: {
     display: "flex",
     flexDirection: "column",
@@ -652,8 +643,6 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
       </div>
 
       {/* Top clean logic prompt */}
-      <div className={styles.ruleHint}>{t("targets.ruleHint")}</div>
-
       {/* 1. Global Default */}
       {globalTarget && (
         <div className={styles.section}>

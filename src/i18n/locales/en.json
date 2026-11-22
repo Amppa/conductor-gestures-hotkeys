@@ -48,7 +48,6 @@
     "cancel": "Cancel"
   },
   "targets": {
-    "ruleHint": "Priority: Excluded Apps > Whitelist > Global Default",
     "globalTitle": "Global Default",
     "disabledTitle": "Excluded Apps",
     "group01Title": "Group 01",
@@ -60,7 +59,7 @@
     "renameGroupTip": "Rename group",
     "renameGroupPlaceholder": "Enter group name...",
     "appCount": "{{count}} apps",
-    "includedApps": "Included Apps:",
+    "includedApps": "Target Apps:",
     "excludedApps": "Excluded Apps",
     "noExcludedApps": "No excluded apps yet. Click the 'Add App' button above to add.",
     "addApp": "Add App",
@@ -78,8 +77,8 @@
     "emptyBindings": "No rules yet. Click button below to add.",
     "newGestureName": "New Gesture",
     "newActionName": "New Action",
-    "disabledDesc": "Applications in this list bypass mouse gesture hooks completely, preserving native mouse input. e.g. Games or design software.",
-    "whitelistDesc": "Define custom gestures for specific application groups, taking priority over global defaults. e.g. Browsers.",
+    "disabledDesc": "Applications in this list bypass mouse gesture hooks completely, preserving native mouse input, such as games or design software. Priority: Excluded Apps > Whitelist > Global Default.",
+    "whitelistDesc": "Define custom gestures for specific apps, such as browser-only gestures. These rules take priority over the global default.",
     "addDisabledApp": "Add Excluded App",
     "groupGestures": "Group Rules:",
     "addGroupGesture": "Add Rule",
