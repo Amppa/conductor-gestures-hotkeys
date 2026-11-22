@@ -10,6 +10,7 @@ import {
 } from "@fluentui/react-components";
 import { useTranslation } from "react-i18next";
 import { AppConfig, Language } from "../types";
+import { BackupSection } from "./BackupView";
 
 const useStyles = makeStyles({
   container: {
@@ -186,6 +187,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           />
         </div>
       </div>
+      <Divider />
+      <BackupSection config={config} onUpdateConfig={onUpdateConfig} />
     </div>
   );
 };

@@ -8,7 +8,6 @@ import { ExcludedView } from "./views/ExcludedView";
 import { GesturesView } from "./views/GesturesView";
 import { HotkeysView } from "./views/HotkeysView";
 import { ActionsView } from "./views/ActionsView";
-import { BackupView } from "./views/BackupView";
 import { SettingsView } from "./views/SettingsView";
 import { DEFAULT_CONFIG } from "./defaults";
 import { AppConfig, Target, Gesture, Action } from "./types";
@@ -277,12 +276,6 @@ export const App: React.FC = () => {
             <ActionsView
               actions={config.actionTemplates}
               onUpdateActions={handleUpdateActions}
-            />
-          )}
-          {selectedTab === "backup" && (
-            <BackupView
-              config={config}
-              onUpdateConfig={setConfig}
             />
           )}
           {selectedTab === "settings" && (

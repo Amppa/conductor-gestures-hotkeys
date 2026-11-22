@@ -34,6 +34,7 @@
     "debugTitle": "偵錯日誌"
   },
   "backup": {
+    "sectionTitle": "匯入、匯出與重設",
     "exportBtn": "匯出設定",
     "exportSuccess": "已成功匯出至 {{fileName}}",
     "importBtn": "匯入設定",

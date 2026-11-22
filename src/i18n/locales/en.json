@@ -34,6 +34,7 @@
     "debugTitle": "Debug Logging"
   },
   "backup": {
+    "sectionTitle": "Import, Export, and Reset",
     "exportBtn": "Export Config",
     "exportSuccess": "Successfully exported to {{fileName}}",
     "importBtn": "Import Config",

@@ -2,8 +2,7 @@ import React, { useState, useRef } from "react";
 import {
   makeStyles,
   tokens,
-  Title3,
-  Divider,
+  Subtitle2,
   Button,
   Dialog,
   DialogSurface,
@@ -25,30 +24,15 @@ import { DEFAULT_CONFIG } from "../defaults";
 import { normalizeTrigger } from "../utils/gestureSymbols";
 
 const useStyles = makeStyles({
-  container: {
-    padding: "16px 24px",
+  section: {
     display: "flex",
     flexDirection: "column",
     gap: "12px",
-    minHeight: "100%",
-    boxSizing: "border-box",
-    justifyContent: "flex-start",
+    width: "100%",
+    maxWidth: "560px",
   },
-  pageHeader: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    flexShrink: 0,
-  },
-  pageTitle: {
-    fontSize: "20px",
-    lineHeight: "24px",
+  sectionTitle: {
     fontWeight: tokens.fontWeightSemibold,
-    margin: "0 !important",
-    padding: 0,
-  },
-  divider: {
-    margin: "0 !important",
   },
   btnRow: {
     display: "flex",
@@ -89,7 +73,7 @@ const useStyles = makeStyles({
   },
 });
 
-interface BackupViewProps {
+interface BackupSectionProps {
   config: AppConfig;
   onUpdateConfig: (newConfig: AppConfig) => void;
 }
@@ -115,7 +99,7 @@ function normalizeImportedConfig(rawConfig: AppConfig): AppConfig {
   };
 }
 
-export const BackupView: React.FC<BackupViewProps> = ({
+export const BackupSection: React.FC<BackupSectionProps> = ({
   config,
   onUpdateConfig,
 }) => {
@@ -269,11 +253,8 @@ export const BackupView: React.FC<BackupViewProps> = ({
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.pageHeader}>
-        <Title3 as="h1" className={styles.pageTitle}>{t("nav.backup")}</Title3>
-        <Divider className={styles.divider} />
-      </div>
+    <section className={styles.section}>
+      <Subtitle2 className={styles.sectionTitle}>{t("backup.sectionTitle")}</Subtitle2>
       <input
         ref={fileInputRef}
         type="file"
@@ -380,6 +361,6 @@ export const BackupView: React.FC<BackupViewProps> = ({
           </DialogBody>
         </DialogSurface>
       </Dialog>
-    </div>
+    </section>
   );
 };
