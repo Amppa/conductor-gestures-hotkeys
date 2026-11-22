@@ -589,54 +589,186 @@ mod tests {
     use super::*;
     use crate::config::{default_app_config, Action, Binding, Gesture};
 
+    fn keyboard_binding(id: &str, trigger: &str, action_type: &str, value: &str) -> Binding {
+        Binding {
+            id: id.into(),
+            enabled: true,
+            gesture: Gesture {
+                id: format!("key-{id}"),
+                name: trigger.into(),
+                trigger: trigger.into(),
+                steps: vec![],
+            },
+            action: Action {
+                id: format!("action-{id}"),
+                name: action_type.into(),
+                action_type: action_type.into(),
+                value: value.into(),
+            },
+        }
+    }
+
     #[test]
     fn test_default_key_remaps_not_emitted_when_disabled() {
         let cfg = default_app_config();
         let script = generate_ahk_script(&cfg, 1);
-        assert!(!script.contains("*Insert::return"));
-        assert!(!script.contains("*LAlt::LWin"));
-        assert!(!script.contains("*LWin::LAlt"));
+        assert!(!script.contains("Context-sensitive keyboard rules"));
+        assert!(!script.contains("#InputLevel 1"));
     }
 
     #[test]
     fn test_target_bindings_with_keyboard_triggers_emitted_when_enabled() {
         let mut cfg = default_app_config();
         if let Some(gt) = cfg.targets.iter_mut().find(|t| t.kind == "global") {
-            gt.bindings.push(Binding {
-                id: "test-insert".into(),
-                enabled: true,
-                gesture: Gesture {
-                    id: "key-insert".into(),
-                    name: "Insert".into(),
-                    trigger: "Insert".into(),
-                    steps: vec![],
-                },
-                action: Action {
-                    id: "act-noop".into(),
-                    name: "No-op".into(),
-                    action_type: "noop".into(),
-                    value: "".into(),
-                },
-            });
-            gt.bindings.push(Binding {
-                id: "test-lalt".into(),
-                enabled: true,
-                gesture: Gesture {
-                    id: "key-lalt".into(),
-                    name: "LAlt".into(),
-                    trigger: "LAlt".into(),
-                    steps: vec![],
-                },
-                action: Action {
-                    id: "act-lwin".into(),
-                    name: "Win".into(),
-                    action_type: "remap".into(),
-                    value: "LWin".into(),
-                },
-            });
+            gt.bindings
+                .push(keyboard_binding("insert", "Insert", "noop", ""));
+            gt.bindings
+                .push(keyboard_binding("lalt", "LAlt", "remap", "LWin"));
         }
         let script = generate_ahk_script(&cfg, 2);
+        assert!(script.contains("#InputLevel 1"));
         assert!(script.contains("*Insert::return"));
         assert!(script.contains("*LAlt::GeneratedRemapKeyDown(\"LAlt\", \"LWin\")"));
+        assert!(script.contains("~*LAlt up::GeneratedRemapKeyUp(\"LAlt\")"));
+        assert!(!script.contains("~*Insert up::"));
+    }
+
+    #[test]
+    fn test_scoped_hotkeys_emit_disabled_group_then_group_then_global() {
+        let mut cfg = default_app_config();
+        if let Some(group) = cfg.targets.iter_mut().find(|t| t.kind == "group") {
+            group.bindings.push(keyboard_binding(
+                "group-insert",
+                "Insert",
+                "keys",
+                "{Insert}",
+            ));
+        }
+        if let Some(global) = cfg.targets.iter_mut().find(|t| t.kind == "global") {
+            global
+                .bindings
+                .push(keyboard_binding("global-insert", "Insert", "noop", ""));
+        }
+
+        let script = generate_ahk_script(&cfg, 3);
+        let disabled_pos = script
+            .find("#HotIf WinActive(\"ahk_group GeneratedDisabledApps\")")
+            .expect("disabled variant should be generated");
+        let group_pos = script
+            .find("#HotIf WinActive(\"ahk_group GeneratedKeyboardGroup0\")")
+            .expect("group variant should be generated");
+        let global_pos = script[group_pos..]
+            .find("#HotIf\n*Insert::return")
+            .map(|position| position + group_pos)
+            .expect("global fallback should be generated");
+
+        assert!(disabled_pos < group_pos);
+        assert!(group_pos < global_pos);
+        assert!(script.contains("~*Insert::return"));
+        assert!(script.contains("*Insert::GeneratedSendKeys(\"{Insert}\")"));
+    }
+
+    #[test]
+    fn test_generated_key_commands_use_synthetic_input_isolation() {
+        let mut cfg = default_app_config();
+        if let Some(global) = cfg.targets.iter_mut().find(|t| t.kind == "global") {
+            global
+                .bindings
+                .push(keyboard_binding("alt-tab", "LAlt", "keys", "!{Tab}"));
+        }
+
+        let script = generate_ahk_script(&cfg, 4);
+        assert!(script.contains("#InputLevel 1"));
+        assert!(script.contains("previousLevel := SendLevel(0)"));
+        assert!(script.contains("*LAlt::GeneratedSendKeys(\"!{Tab}\")"));
+        assert!(!script.contains("*LAlt::Send("));
+    }
+
+    #[test]
+    fn test_rule_binding_takes_precedence_over_legacy_remap() {
+        let mut cfg = default_app_config();
+        if let Some(global) = cfg.targets.iter_mut().find(|t| t.kind == "global") {
+            global
+                .bindings
+                .push(keyboard_binding("lalt-rule", "LAlt", "remap", "LWin"));
+        }
+        if let Some(legacy) = cfg
+            .key_remaps
+            .iter_mut()
+            .find(|remap| remap.src_key == "LAlt")
+        {
+            legacy.enabled = true;
+            legacy.dst_key = "LCtrl".into();
+        }
+
+        let script = generate_ahk_script(&cfg, 5);
+        assert_eq!(script.matches("*LAlt::GeneratedRemapKeyDown").count(), 1);
+        assert!(script.contains("*LAlt::GeneratedRemapKeyDown(\"LAlt\", \"LWin\")"));
+        assert!(!script.contains("\"LAlt\", \"LCtrl\""));
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn test_generated_keyboard_script_passes_ahk_validation() {
+        use std::fs;
+        use std::process::Command;
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let mut cfg = default_app_config();
+        if let Some(group) = cfg.targets.iter_mut().find(|t| t.kind == "group") {
+            group.bindings.push(keyboard_binding(
+                "group-insert",
+                "Insert",
+                "keys",
+                "{Insert}",
+            ));
+        }
+        if let Some(global) = cfg.targets.iter_mut().find(|t| t.kind == "global") {
+            global
+                .bindings
+                .push(keyboard_binding("lalt", "LAlt", "remap", "LWin"));
+            global
+                .bindings
+                .push(keyboard_binding("lwin", "LWin", "remap", "LAlt"));
+        }
+
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after Unix epoch")
+            .as_nanos();
+        let temp_dir = std::env::temp_dir().join(format!(
+            "mouse-gesture-keyboard-test-{}-{timestamp}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&temp_dir).expect("temporary directory should be created");
+
+        let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let repo_dir = manifest_dir
+            .parent()
+            .expect("Tauri manifest should have a repository parent");
+        fs::copy(
+            repo_dir.join("engine/GestureEngine.ahk"),
+            temp_dir.join("GestureEngine.ahk"),
+        )
+        .expect("gesture engine should be copied");
+        let script_path = temp_dir.join("ActiveGestures.ahk");
+        fs::write(&script_path, generate_ahk_script(&cfg, 6))
+            .expect("generated script should be written");
+
+        let output = Command::new(repo_dir.join("vendor/autohotkey/AutoHotkey64.exe"))
+            .current_dir(&temp_dir)
+            .arg("/ErrorStdOut")
+            .arg("/validate")
+            .arg(&script_path)
+            .output()
+            .expect("AutoHotkey validator should run");
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let _ = fs::remove_dir_all(&temp_dir);
+
+        assert!(
+            output.status.success() && stdout.trim().is_empty() && stderr.trim().is_empty(),
+            "generated AHK validation failed:\nstdout: {stdout}\nstderr: {stderr}"
+        );
     }
 }
