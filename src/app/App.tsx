@@ -3,11 +3,11 @@ import { makeStyles, tokens } from "@fluentui/react-components";
 import { useTranslation } from "react-i18next";
 import { Sidebar, NavTabId } from "./Sidebar";
 import { ApplyBar } from "./ApplyBar";
-import { TargetsView } from "../features/scopes/TargetsView";
+import { ScopesView } from "../features/scopes/ScopesView";
 import { ExcludedView } from "../features/scopes/ExcludedView";
 import { GesturesView } from "../features/gestures/GesturesView";
 import { HotkeysView } from "../features/hotkeys/HotkeysView";
-import { ActionsView } from "../features/commands/ActionsView";
+import { CommandsView } from "../features/commands/CommandsView";
 import { SettingsView } from "../features/settings/SettingsView";
 import { DEFAULT_CONFIG } from "../domain/defaults";
 import { AppConfig, Target, Gesture, Action } from "../domain/types";
@@ -243,7 +243,7 @@ export const App: React.FC = () => {
       <div className={styles.mainArea}>
         <main className={styles.content}>
           {selectedTab === "targets" && (
-            <TargetsView
+            <ScopesView
               targets={config.targets}
               gestureTemplates={config.gestureTemplates}
               actionTemplates={config.actionTemplates}
@@ -273,7 +273,7 @@ export const App: React.FC = () => {
             />
           )}
           {selectedTab === "actions" && (
-            <ActionsView
+            <CommandsView
               actions={config.actionTemplates}
               onUpdateActions={handleUpdateActions}
             />

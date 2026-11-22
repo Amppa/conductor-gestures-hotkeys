@@ -38,7 +38,7 @@ const useStyles = makeStyles({
   },
 });
 
-interface EditActionDialogProps {
+interface EditCommandDialogProps {
   open: boolean;
   action: Action;
   onSave: (updated: Action) => void;
@@ -63,7 +63,7 @@ const COMMON_HOTKEYS: PresetItem[] = [
   { key: "presetVolDown", keys: "{Volume_Down}" },
 ];
 
-export const EditActionDialog: React.FC<EditActionDialogProps> = ({
+export const EditCommandDialog: React.FC<EditCommandDialogProps> = ({
   open,
   action,
   onSave,

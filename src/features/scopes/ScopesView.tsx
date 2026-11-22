@@ -38,7 +38,7 @@ import {
 import { Target, Binding, Gesture, Action } from "../../domain/types";
 import { formatGestureLabel } from "../gestures/gestureSymbols";
 import { EditGestureDialog } from "../gestures/EditGestureDialog";
-import { EditActionDialog } from "../commands/EditActionDialog";
+import { EditCommandDialog } from "../commands/EditCommandDialog";
 import { AddProcessDialog } from "./AddProcessDialog";
 
 const useStyles = makeStyles({
@@ -154,7 +154,7 @@ const useStyles = makeStyles({
   },
 });
 
-interface TargetsViewProps {
+interface ScopesViewProps {
   targets: Target[];
   gestureTemplates?: Gesture[];
   actionTemplates?: Action[];
@@ -166,7 +166,7 @@ interface TargetsViewProps {
   onOpenAddProcessDialog?: (targetId: string) => void;
 }
 
-export const TargetsView: React.FC<TargetsViewProps> = ({
+export const ScopesView: React.FC<ScopesViewProps> = ({
   targets,
   gestureTemplates = [],
   actionTemplates = [],
@@ -856,7 +856,7 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
       )}
 
       {editingAction && (
-        <EditActionDialog
+        <EditCommandDialog
           open={!!editingAction}
           action={editingAction.binding.action}
           onSave={handleSaveAction}

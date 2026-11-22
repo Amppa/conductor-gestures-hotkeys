@@ -12,7 +12,7 @@ import {
 } from "@fluentui/react-components";
 import { Add16Regular, Delete16Regular } from "@fluentui/react-icons";
 import { Action } from "../../domain/types";
-import { EditActionDialog } from "./EditActionDialog";
+import { EditCommandDialog } from "./EditCommandDialog";
 
 const useStyles = makeStyles({
   container: {
@@ -96,12 +96,12 @@ const useStyles = makeStyles({
   },
 });
 
-interface ActionsViewProps {
+interface CommandsViewProps {
   actions: Action[];
   onUpdateActions?: (updated: Action[]) => void;
 }
 
-export const ActionsView: React.FC<ActionsViewProps> = ({
+export const CommandsView: React.FC<CommandsViewProps> = ({
   actions,
   onUpdateActions,
 }) => {
@@ -214,7 +214,7 @@ export const ActionsView: React.FC<ActionsViewProps> = ({
       </Card>
 
       {editingAction && (
-        <EditActionDialog
+        <EditCommandDialog
           open={!!editingAction}
           action={editingAction}
           onSave={handleSaveAction}

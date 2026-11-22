@@ -8,9 +8,9 @@ Conductor 是一套專為 Windows 11 打造的手勢與熱鍵指揮工具。它�
 
 - **現代 Windows 11 視覺**：採用微軟官方 `@fluentui/react-components` 打造的原生 Fluent Design 磨砂質感介面。
 - **左側清晰導覽結構**：
-  - **目標清單 (Targets)**：精確區分 `3. 黑名單 > 2. 特定程式群組 > 1. 全域` 檢查層級。
+  - **應用範圍 (Scopes)**：精確區分 `3. 排除程式 > 2. 特定程式群組 > 1. 全域` 檢查層級。
   - **手勢清單 (Gestures)**：管理觸發鍵（RB、MB、X1、X2）與向量方向步進。
-  - **動作清單 (Actions)**：管理快速鍵、視窗控制與腳本動作。
+  - **指令清單 (Commands)**：管理快速鍵、視窗控制與腳本指令。
   - **系統設定 (Settings)**：配置手勢閥值、螢幕邊緣滾動與開機自啟動。
 - **多按鍵滑鼠支援**：支援滑鼠側鍵 `XButton1` (X1) 與 `XButton2` (X2) 作為獨立手勢觸發鍵或雙鍵修飾，產品定位不限定特定按鍵數量。
 - **鍵盤觸發範本**：可定義需要攔截的按鍵與修飾鍵，再以值複製方式綁定到各應用範圍的規則。
@@ -37,17 +37,15 @@ conductor-gestures-hotkeys/
 │       ├── main.rs              # Tauri 應用程式入口
 │       └── lib.rs               # IPC 指令、系統匣、AHK 動態腳本生成與重載管道
 ├── src/
-│   ├── components/
-│   │   ├── Sidebar.tsx          # 左側四項目導航 (目標、手勢、動作、設定)
-│   │   └── Header.tsx           # 頂部狀態列與即時套用按鈕
-│   ├── views/
-│   │   ├── TargetsView.tsx      # 目標清單檢視 (3. 黑名單 > 2. 群組 > 1. 全域)
-│   │   ├── GesturesView.tsx     # 手勢模板清單
-│   │   ├── ActionsView.tsx      # 動作模板清單
-│   │   └── SettingsView.tsx     # 系統與引擎設定 (邊緣滾輪、閥值、自啟)
-│   ├── types.ts                 # 核心型別契約 (Config Schema)
-│   ├── defaults.ts              # 開箱即用預設配置
-│   ├── App.tsx                  # 主應用程式控制器
+│   ├── app/                     # 應用程式外殼、導覽與套用列
+│   ├── domain/                  # Config 型別、預設值與 Trigger 判定
+│   ├── features/
+│   │   ├── scopes/              # 應用範圍、排除程式與規則
+│   │   ├── gestures/            # 手勢範本與軌跡錄製
+│   │   ├── hotkeys/             # 鍵盤觸發範本
+│   │   ├── commands/            # 指令範本
+│   │   └── settings/            # 系統設定與備份
+│   ├── shared/                  # 跨功能共用工具
 │   └── main.tsx                 # 前端進入點
 ├── vendor/
 │   └── autohotkey/              # 隨附免安裝 AutoHotkey v2 執行階段
