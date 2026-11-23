@@ -8,9 +8,10 @@
     "build": "tsc --noEmit && vite build",
     "test:engine": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-engine.ps1",
     "test:i18n": "node scripts/test-i18n.mjs",
+    "test:rules": "vitest run",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
     "check:rust": "cargo check --manifest-path src-tauri/Cargo.toml",
-    "verify": "npm run test:engine && npm run test:i18n && npm run build && npm run test:rust && npm run check:rust",
+    "verify": "npm run test:engine && npm run test:i18n && npm run test:rules && npm run build && npm run test:rust && npm run check:rust",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
@@ -33,6 +34,7 @@
     "@vitejs/plugin-react": "^6.3.0",
     "esbuild": "^0.28.2",
     "typescript": "^5.9.0",
-    "vite": "^8.3.8"
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
   }
 }

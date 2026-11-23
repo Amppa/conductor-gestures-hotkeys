@@ -36,6 +36,7 @@ import {
   Dismiss16Regular,
 } from "@fluentui/react-icons";
 import { Target, Binding, Gesture, Action } from "../../domain/types";
+import { hasEnabledGestureDuplicate } from "../../domain/ruleValidation";
 import { formatGestureLabel } from "../gestures/gestureSymbols";
 import { EditGestureDialog } from "../gestures/EditGestureDialog";
 import { EditCommandDialog } from "../commands/EditCommandDialog";
@@ -265,14 +266,10 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
   const isActionEmpty = (b: Binding): boolean => checkActionEmpty(b.action);
 
   const isDuplicateGesture = (target: Target, b: Binding): boolean => {
-    if (!b.enabled || isGestureEmpty(b)) return false;
-    const bKey = `${b.gesture.trigger}:${(b.gesture.steps || []).join(",")}`;
-    return target.bindings.some(
-      (other) =>
-        other.id !== b.id &&
-        other.enabled &&
-        !isGestureEmpty(other) &&
-        `${other.gesture.trigger}:${(other.gesture.steps || []).join(",")}` === bKey
+    return (
+      b.enabled &&
+      !isGestureEmpty(b) &&
+      hasEnabledGestureDuplicate(target.bindings, b.id, b.gesture)
     );
   };
 
@@ -309,14 +306,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
           const candidate = { ...b, gesture: updatedGesture };
           const emptyG = checkGestureEmpty(updatedGesture);
           const emptyA = checkActionEmpty(b.action);
-          const isDup = t.bindings.some(
-            (o) =>
-              o.id !== b.id &&
-              o.enabled &&
-              !checkGestureEmpty(o.gesture) &&
-              `${o.gesture.trigger}:${(o.gesture.steps || []).join(",")}` ===
-                `${updatedGesture.trigger}:${(updatedGesture.steps || []).join(",")}`
-          );
+          const isDup = hasEnabledGestureDuplicate(t.bindings, b.id, updatedGesture);
           const shouldEnable = !emptyG && !emptyA && !isDup;
           return {
             ...candidate,
@@ -338,14 +328,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
           const candidate = { ...b, action: updatedAction };
           const emptyG = checkGestureEmpty(b.gesture);
           const emptyA = checkActionEmpty(updatedAction);
-          const isDup = t.bindings.some(
-            (o) =>
-              o.id !== b.id &&
-              o.enabled &&
-              !checkGestureEmpty(o.gesture) &&
-              `${o.gesture.trigger}:${(o.gesture.steps || []).join(",")}` ===
-                `${b.gesture.trigger}:${(b.gesture.steps || []).join(",")}`
-          );
+          const isDup = hasEnabledGestureDuplicate(t.bindings, b.id, b.gesture);
           const shouldEnable = !emptyG && !emptyA && !isDup;
           return {
             ...candidate,
@@ -369,14 +352,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
           const candidate = { ...b, gesture: updatedGesture };
           const emptyG = checkGestureEmpty(updatedGesture);
           const emptyA = checkActionEmpty(b.action);
-          const isDup = t.bindings.some(
-            (o) =>
-              o.id !== b.id &&
-              o.enabled &&
-              !checkGestureEmpty(o.gesture) &&
-              `${o.gesture.trigger}:${(o.gesture.steps || []).join(",")}` ===
-                `${updatedGesture.trigger}:${(updatedGesture.steps || []).join(",")}`
-          );
+          const isDup = hasEnabledGestureDuplicate(t.bindings, b.id, updatedGesture);
           const shouldEnable = !emptyG && !emptyA && !isDup;
           return {
             ...candidate,
@@ -410,14 +386,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
           const candidate = { ...b, action: updatedAction };
           const emptyG = checkGestureEmpty(b.gesture);
           const emptyA = checkActionEmpty(updatedAction);
-          const isDup = t.bindings.some(
-            (o) =>
-              o.id !== b.id &&
-              o.enabled &&
-              !checkGestureEmpty(o.gesture) &&
-              `${o.gesture.trigger}:${(o.gesture.steps || []).join(",")}` ===
-                `${b.gesture.trigger}:${(b.gesture.steps || []).join(",")}`
-          );
+          const isDup = hasEnabledGestureDuplicate(t.bindings, b.id, b.gesture);
           const shouldEnable = !emptyG && !emptyA && !isDup;
           return {
             ...candidate,
@@ -442,14 +411,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
         bindings: t.bindings.map((b) => {
           if (b.id !== bindingId) return b;
           if (!checked) return { ...b, enabled: false };
-          const duplicateEnabled = t.bindings.some(
-            (other) =>
-              other.id !== b.id &&
-              other.enabled &&
-              !checkGestureEmpty(other.gesture) &&
-              `${other.gesture.trigger}:${(other.gesture.steps || []).join(",")}` ===
-                `${b.gesture.trigger}:${(b.gesture.steps || []).join(",")}`
-          );
+          const duplicateEnabled = hasEnabledGestureDuplicate(t.bindings, b.id, b.gesture);
           return duplicateEnabled ? b : { ...b, enabled: true };
         }),
       };
