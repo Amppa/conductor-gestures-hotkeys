@@ -60,6 +60,30 @@ fn normalize_trigger(t: &str) -> String {
     }
 }
 
+fn validate_enabled_binding_duplicates(config: &AppConfig) -> Result<(), String> {
+    for target in &config.targets {
+        let mut seen = HashSet::new();
+        for binding in target.bindings.iter().filter(|binding| binding.enabled) {
+            let trigger = normalize_trigger(binding.gesture.trigger.trim()).to_ascii_lowercase();
+            let steps = binding
+                .gesture
+                .steps
+                .iter()
+                .map(|step| step.trim().to_ascii_uppercase())
+                .collect::<Vec<_>>()
+                .join(",");
+            let signature = format!("{trigger}:{steps}");
+            if !seen.insert(signature.clone()) {
+                return Err(format!(
+                    "無法套用設定：Scope「{}」含有重複啟用的 Trigger「{}」。請先停用或修改其中一筆規則。",
+                    target.name, signature
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
 // -----------------------------------------------------------------------------
 // IPC Commands
 // -----------------------------------------------------------------------------
@@ -93,16 +117,19 @@ pub fn save_config(app: tauri::AppHandle, config: AppConfig) -> Result<(), Strin
 
 #[tauri::command]
 pub fn apply_config(app: tauri::AppHandle, config: AppConfig) -> Result<ApplyResult, String> {
-    // 0. Pre-flight check: ensure AutoHotkey executable exists
+    // 0. Validate enabled rules before writing any runtime or configuration files.
+    validate_enabled_binding_duplicates(&config)?;
+
+    // 1. Pre-flight check: ensure AutoHotkey executable exists
     let ahk_exe = autohotkey_exe_path(&app)?;
     if !ahk_exe.exists() {
         return Err(format!("找不到 AutoHotkey 執行檔: {}", ahk_exe.display()));
     }
 
-    // 1. Save config to disk
+    // 2. Save config to disk
     save_config(app.clone(), config.clone())?;
 
-    // 2. Prepare paths
+    // 3. Prepare paths
     let revision = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|e| e.to_string())?
@@ -120,11 +147,11 @@ pub fn apply_config(app: tauri::AppHandle, config: AppConfig) -> Result<ApplyRes
         return Err(format!("找不到核心 engine/GestureEngine.ahk 檔案 (路徑: {})", source_engine_path.display()));
     }
 
-    // 3. Generate script
+    // 4. Generate script
     let script_content = generate_ahk_script(&config, revision);
     fs::write(&script_path, script_content).map_err(|e| e.to_string())?;
 
-    // 4. Verify syntax with /ErrorStdOut and /validate before applying
+    // 5. Verify syntax with /ErrorStdOut and /validate before applying
     let check_output = Command::new(&ahk_exe)
         .arg("/ErrorStdOut")
         .arg("/validate")
@@ -140,7 +167,7 @@ pub fn apply_config(app: tauri::AppHandle, config: AppConfig) -> Result<ApplyRes
         return Err(format!("產生的 AHK 腳本語法錯誤:\n{}", combined_err));
     }
 
-    // 5. Run active script in background with runtime dir as current_dir
+    // 6. Run active script in background with runtime dir as current_dir
     Command::new(&ahk_exe)
         .current_dir(&runtime_dir)
         .arg(&script_path)
@@ -224,6 +251,59 @@ pub fn is_engine_paused(state: State<'_, AppState>) -> bool {
 #[tauri::command]
 pub fn set_engine_paused(state: State<'_, AppState>, paused: bool) {
     state.paused.store(paused, Ordering::SeqCst);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_enabled_binding_duplicates;
+    use crate::config::default_app_config;
+
+    #[test]
+    fn allows_a_duplicate_gesture_when_one_binding_is_disabled() {
+        let mut config = default_app_config();
+        let target = config
+            .targets
+            .iter_mut()
+            .find(|target| target.kind == "global")
+            .unwrap();
+        let mut duplicate = target.bindings[0].clone();
+        duplicate.enabled = false;
+        target.bindings.push(duplicate);
+
+        assert!(validate_enabled_binding_duplicates(&config).is_ok());
+    }
+
+    #[test]
+    fn rejects_two_enabled_duplicate_gestures_in_one_scope() {
+        let mut config = default_app_config();
+        let target = config
+            .targets
+            .iter_mut()
+            .find(|target| target.kind == "global")
+            .unwrap();
+        target.bindings.push(target.bindings[0].clone());
+        let target_name = target.name.clone();
+
+        let error = validate_enabled_binding_duplicates(&config).unwrap_err();
+
+        assert!(error.contains("重複啟用"));
+        assert!(error.contains(&target_name));
+    }
+
+    #[test]
+    fn normalizes_legacy_trigger_aliases_when_validating_duplicates() {
+        let mut config = default_app_config();
+        let target = config
+            .targets
+            .iter_mut()
+            .find(|target| target.kind == "global")
+            .unwrap();
+        let mut duplicate = target.bindings[0].clone();
+        duplicate.gesture.trigger = "RB".into();
+        target.bindings.push(duplicate);
+
+        assert!(validate_enabled_binding_duplicates(&config).is_err());
+    }
 }
 
 #[tauri::command]
