@@ -31,3 +31,18 @@ npm run check:rust                                 # Gate 5: Rust compilation ch
 npm run dev                                        # UI-only fast dev (Vite HMR)
 npm run tauri:dev                                  # Full desktop dev
 ```
+## 建置免安裝版
+
+在專案根目錄執行以下指令，即可使用目前的程式碼和版本建置 `release\Conductor-portable.zip`。
+
+```powershell
+npm run package:portable
+```
+
+如果 `src-tauri\target\release\conductor.exe` 已經建好，可直接打包。
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-portable.ps1
+```
+
+若 `release\Conductor-portable` 或同名 ZIP 已存在，請先移動或重新命名舊產物。已使用過的免安裝版可保留資料夾內的 `data` 設定。
