@@ -109,7 +109,7 @@
   },
   "hotkeys": {
     "title": "觸發熱鍵",
-    "description": "建立可供規則複製使用的鍵盤觸發範本。修改範本不會影響既有規則；沒有規則使用時不會攔截按鍵。",
+    "description": "設定自訂熱鍵。因為 Windows 系統限制，部分按鍵（如 Win、Alt）有時可能無法成功攔截，若需要更穩定的換鍵，推薦使用微軟官方的 PowerToys。",
     "tableName": "名稱",
     "tableKey": "按鍵",
     "add": "新增觸發熱鍵",

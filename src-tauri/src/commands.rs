@@ -1,7 +1,8 @@
 use std::{
     collections::HashSet,
+    env,
     fs,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Command,
     sync::atomic::Ordering,
     time::{SystemTime, UNIX_EPOCH},
@@ -16,14 +17,29 @@ use crate::AppState;
 // -----------------------------------------------------------------------------
 // Path Resolution Helpers
 // -----------------------------------------------------------------------------
+fn portable_data_dir_for_executable(executable: &Path) -> Option<PathBuf> {
+    let root = executable.parent()?;
+    root.join("portable.flag").is_file().then(|| root.join("data"))
+}
+
+fn app_data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    if let Ok(executable) = env::current_exe() {
+        if let Some(portable_dir) = portable_data_dir_for_executable(&executable) {
+            fs::create_dir_all(&portable_dir).map_err(|e| e.to_string())?;
+            return Ok(portable_dir);
+        }
+    }
+    app.path().app_config_dir().map_err(|e| e.to_string())
+}
+
 pub fn config_file_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
+    let dir = app_data_dir(app)?;
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir.join("config.json"))
 }
 
 pub fn runtime_dir_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let dir = app.path().app_config_dir().map_err(|e| e.to_string())?.join("runtime");
+    let dir = app_data_dir(app)?.join("runtime");
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir)
 }
@@ -44,8 +60,20 @@ pub fn autohotkey_exe_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Err("隨附的 AutoHotkey64.exe 不存在".into())
 }
 
-pub fn gesture_engine_template_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../engine/GestureEngine.ahk")
+pub fn gesture_engine_template_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let dev_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../engine/GestureEngine.ahk");
+    if dev_path.exists() {
+        return Ok(dev_path);
+    }
+    let release_path = app
+        .path()
+        .resource_dir()
+        .map_err(|e| e.to_string())?
+        .join("engine/GestureEngine.ahk");
+    if release_path.exists() {
+        return Ok(release_path);
+    }
+    Err("隨附的 GestureEngine.ahk 不存在".into())
 }
 
 fn normalize_trigger(t: &str) -> String {
@@ -160,14 +188,10 @@ pub fn apply_config(
     let runtime_dir = runtime_dir_path(&app)?;
     let script_path = runtime_dir.join("ActiveGestures.ahk");
     let target_engine_path = runtime_dir.join("GestureEngine.ahk");
-    let source_engine_path = gesture_engine_template_path();
+    let source_engine_path = gesture_engine_template_path(&app)?;
 
     // Ensure GestureEngine.ahk is copied right next to ActiveGestures.ahk in runtime dir
-    if source_engine_path.exists() {
-        fs::copy(&source_engine_path, &target_engine_path).map_err(|e| e.to_string())?;
-    } else {
-        return Err(format!("找不到核心 engine/GestureEngine.ahk 檔案 (路徑: {})", source_engine_path.display()));
-    }
+    fs::copy(&source_engine_path, &target_engine_path).map_err(|e| e.to_string())?;
 
     // 4. Generate script
     let script_content = generate_ahk_script(&config, revision);
@@ -282,8 +306,29 @@ pub fn set_engine_paused(state: State<'_, AppState>, paused: bool) {
 
 #[cfg(test)]
 mod tests {
-    use super::validate_enabled_binding_duplicates;
+    use super::{portable_data_dir_for_executable, validate_enabled_binding_duplicates};
     use crate::config::default_app_config;
+    use std::{env, fs, time::{SystemTime, UNIX_EPOCH}};
+
+    #[test]
+    fn portable_marker_places_data_next_to_the_executable() {
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after Unix epoch")
+            .as_nanos();
+        let root = env::temp_dir().join(format!("conductor-portable-test-{timestamp}"));
+        fs::create_dir_all(&root).expect("test directory should be created");
+        let executable = root.join("Conductor.exe");
+
+        assert_eq!(portable_data_dir_for_executable(&executable), None);
+        fs::write(root.join("portable.flag"), "").expect("portable marker should be created");
+        assert_eq!(
+            portable_data_dir_for_executable(&executable),
+            Some(root.join("data"))
+        );
+
+        fs::remove_dir_all(root).expect("test directory should be removed");
+    }
 
     #[test]
     fn allows_a_duplicate_gesture_when_one_binding_is_disabled() {

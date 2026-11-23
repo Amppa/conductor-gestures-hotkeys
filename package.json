@@ -1,40 +1,42 @@
 {
-  "name": "conductor",
-  "private": true,
-  "version": "0.0.2",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "test:engine": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-engine.ps1",
-    "test:i18n": "node scripts/test-i18n.mjs",
-    "test:rules": "vitest run",
-    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
-    "check:rust": "cargo check --manifest-path src-tauri/Cargo.toml",
-    "verify": "npm run test:engine && npm run test:i18n && npm run test:rules && npm run build && npm run test:rust && npm run check:rust",
-    "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
-  },
-  "dependencies": {
-    "@fluentui/react-components": "^9.75.2",
-    "@fluentui/react-icons": "^2.0.260",
-    "@tauri-apps/api": "^2.12.0",
-    "@tauri-apps/plugin-autostart": "^2.7.0",
-    "@tauri-apps/plugin-opener": "^2.5.0",
-    "i18next": "^27.2.2",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-i18next": "^18.0.3"
-  },
-  "devDependencies": {
-    "@tauri-apps/cli": "^2.12.0",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^6.3.0",
-    "esbuild": "^0.28.2",
-    "typescript": "^5.9.0",
-    "vite": "^8.3.8",
-    "vitest": "^5.1.1"
-  }
+    "name":  "conductor",
+    "private":  true,
+    "version":  "0.0.3",
+    "type":  "module",
+    "scripts":  {
+                    "dev":  "vite",
+                    "build":  "tsc --noEmit \u0026\u0026 vite build",
+                    "test:engine":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-engine.ps1",
+                    "test:i18n":  "node scripts/test-i18n.mjs",
+                    "test:rules":  "vitest run",
+                    "test:rust":  "cargo test --manifest-path src-tauri/Cargo.toml",
+                    "check:rust":  "cargo check --manifest-path src-tauri/Cargo.toml",
+                    "verify":  "npm run test:engine \u0026\u0026 npm run test:i18n \u0026\u0026 npm run test:rules \u0026\u0026 npm run build \u0026\u0026 npm run test:rust \u0026\u0026 npm run check:rust",
+                    "package:portable":  "npm run tauri -- build --no-bundle \u0026\u0026 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-portable.ps1",
+                    "release":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1",
+                    "tauri":  "tauri",
+                    "tauri:dev":  "tauri dev",
+                    "tauri:build":  "tauri build"
+                },
+    "dependencies":  {
+                         "@fluentui/react-components":  "^9.75.2",
+                         "@fluentui/react-icons":  "^2.0.260",
+                         "@tauri-apps/api":  "^2.12.0",
+                         "@tauri-apps/plugin-autostart":  "^2.7.0",
+                         "@tauri-apps/plugin-opener":  "^2.5.0",
+                         "i18next":  "^27.2.2",
+                         "react":  "^19.2.0",
+                         "react-dom":  "^19.2.0",
+                         "react-i18next":  "^18.0.3"
+                     },
+    "devDependencies":  {
+                            "@tauri-apps/cli":  "^2.12.0",
+                            "@types/react":  "^19.2.0",
+                            "@types/react-dom":  "^19.2.0",
+                            "@vitejs/plugin-react":  "^6.3.0",
+                            "esbuild":  "^0.28.2",
+                            "typescript":  "^5.9.0",
+                            "vite":  "^8.3.8",
+                            "vitest":  "^5.1.1"
+                        }
 }

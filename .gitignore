@@ -1,6 +1,7 @@
 # JavaScript build output
 node_modules/
 dist/
+release/
 coverage/
 
 # Rust and Tauri build output
