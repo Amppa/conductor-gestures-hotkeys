@@ -1,9 +1,13 @@
 [CmdletBinding()]
 param(
-    [string]$OutputDirectory = (Join-Path $PSScriptRoot "..\release\Conductor-portable")
+    [string]$OutputDirectory
 )
 
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+if ([string]::IsNullOrEmpty($OutputDirectory)) {
+    $OutputDirectory = Join-Path $projectRoot "release\Conductor-portable"
+}
+
 $releaseExecutable = Join-Path $projectRoot "src-tauri\target\release\conductor.exe"
 $autoHotkeySource = Join-Path $projectRoot "vendor\autohotkey"
 $engineSource = Join-Path $projectRoot "engine\GestureEngine.ahk"
