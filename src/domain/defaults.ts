@@ -107,38 +107,6 @@ export const DEFAULT_TARGETS: Target[] = [
         },
       },
       {
-        id: "g-edge-top-prev-tab",
-        enabled: true,
-        gesture: {
-          id: "edge-top-wu",
-          name: "Top Edge Wheel Up",
-          trigger: "EdgeTop",
-          steps: ["WU"],
-        },
-        action: {
-          id: "act-prev-tab",
-          name: "Previous Tab",
-          type: "keys",
-          value: "^{PgUp}",
-        },
-      },
-      {
-        id: "g-edge-top-next-tab",
-        enabled: true,
-        gesture: {
-          id: "edge-top-wd",
-          name: "Top Edge Wheel Down",
-          trigger: "EdgeTop",
-          steps: ["WD"],
-        },
-        action: {
-          id: "act-next-tab",
-          name: "Next Tab",
-          type: "keys",
-          value: "^{PgDn}",
-        },
-      },
-      {
         id: "g-corner-br",
         enabled: false,
         gesture: {
@@ -185,10 +153,10 @@ export const DEFAULT_TARGETS: Target[] = [
         id: "b-close-tab",
         enabled: true,
         gesture: {
-          id: "r-down-right",
-          name: "Down-Right",
+          id: "r-right-down",
+          name: "Right-Down",
           trigger: "R",
-          steps: ["D", "R"],
+          steps: ["R", "D"],
         },
         action: {
           id: "act-close-tab",
@@ -201,16 +169,48 @@ export const DEFAULT_TARGETS: Target[] = [
         id: "b-reopen-tab",
         enabled: true,
         gesture: {
-          id: "r-up-left",
-          name: "Up-Left",
+          id: "r-right-up",
+          name: "Right-Up",
           trigger: "R",
-          steps: ["U", "L"],
+          steps: ["R", "U"],
         },
         action: {
           id: "act-reopen-tab",
           name: "Reopen Closed Tab",
           type: "keys",
           value: "^+t",
+        },
+      },
+      {
+        id: "g-edge-top-prev-tab",
+        enabled: true,
+        gesture: {
+          id: "edge-top-wu",
+          name: "Top Edge Wheel Up",
+          trigger: "EdgeTop",
+          steps: ["WU"],
+        },
+        action: {
+          id: "act-prev-tab",
+          name: "Previous Tab",
+          type: "keys",
+          value: "^{PgUp}",
+        },
+      },
+      {
+        id: "g-edge-top-next-tab",
+        enabled: true,
+        gesture: {
+          id: "edge-top-wd",
+          name: "Top Edge Wheel Down",
+          trigger: "EdgeTop",
+          steps: ["WD"],
+        },
+        action: {
+          id: "act-next-tab",
+          name: "Next Tab",
+          type: "keys",
+          value: "^{PgDn}",
         },
       },
     ],

@@ -48,4 +48,24 @@ describe("DEFAULT_CONFIG", () => {
     expect(ids).not.toContain("g-lalt-to-lwin");
     expect(ids).not.toContain("g-lwin-to-lalt");
   });
+
+  it("assigns swapped top-edge tab rules to the browser group", () => {
+    const group = DEFAULT_CONFIG.targets.find((target) => target.id === "group01");
+    const globalTarget = DEFAULT_CONFIG.targets.find((target) => target.kind === "global");
+    const previousTab = group?.bindings.find((binding) => binding.id === "g-edge-top-prev-tab");
+    const nextTab = group?.bindings.find((binding) => binding.id === "g-edge-top-next-tab");
+    const closeTab = group?.bindings.find((binding) => binding.id === "b-close-tab");
+    const reopenTab = group?.bindings.find((binding) => binding.id === "b-reopen-tab");
+
+    expect(closeTab?.gesture.steps).toEqual(["R", "D"]);
+    expect(reopenTab?.gesture.steps).toEqual(["R", "U"]);
+    expect(previousTab?.gesture.steps).toEqual(["WU"]);
+    expect(nextTab?.gesture.steps).toEqual(["WD"]);
+    expect(globalTarget?.bindings.map((binding) => binding.id)).not.toContain(
+      "g-edge-top-prev-tab"
+    );
+    expect(globalTarget?.bindings.map((binding) => binding.id)).not.toContain(
+      "g-edge-top-next-tab"
+    );
+  });
 });

@@ -415,10 +415,10 @@ pub fn default_app_config() -> AppConfig {
                         id: "b-close-tab".into(),
                         enabled: true,
                         gesture: Gesture {
-                            id: "r-down-right".into(),
-                            name: "Down-Right".into(),
+                            id: "r-right-down".into(),
+                            name: "Right-Down".into(),
                             trigger: "R".into(),
-                            steps: vec!["D".into(), "R".into()],
+                            steps: vec!["R".into(), "D".into()],
                         },
                         action: Action {
                             id: "act-close-tab".into(),
@@ -431,16 +431,48 @@ pub fn default_app_config() -> AppConfig {
                         id: "b-reopen-tab".into(),
                         enabled: true,
                         gesture: Gesture {
-                            id: "r-up-left".into(),
-                            name: "Up-Left".into(),
+                            id: "r-right-up".into(),
+                            name: "Right-Up".into(),
                             trigger: "R".into(),
-                            steps: vec!["U".into(), "L".into()],
+                            steps: vec!["R".into(), "U".into()],
                         },
                         action: Action {
                             id: "act-reopen-tab".into(),
                             name: "Reopen Closed Tab".into(),
                             action_type: "keys".into(),
                             value: "^+t".into(),
+                        },
+                    },
+                    Binding {
+                        id: "g-edge-top-prev-tab".into(),
+                        enabled: true,
+                        gesture: Gesture {
+                            id: "edge-top-wu".into(),
+                            name: "Top Edge Wheel Up".into(),
+                            trigger: "EdgeTop".into(),
+                            steps: vec!["WU".into()],
+                        },
+                        action: Action {
+                            id: "act-prev-tab".into(),
+                            name: "Previous Tab".into(),
+                            action_type: "keys".into(),
+                            value: "^{PgUp}".into(),
+                        },
+                    },
+                    Binding {
+                        id: "g-edge-top-next-tab".into(),
+                        enabled: true,
+                        gesture: Gesture {
+                            id: "edge-top-wd".into(),
+                            name: "Top Edge Wheel Down".into(),
+                            trigger: "EdgeTop".into(),
+                            steps: vec!["WD".into()],
+                        },
+                        action: Action {
+                            id: "act-next-tab".into(),
+                            name: "Next Tab".into(),
+                            action_type: "keys".into(),
+                            value: "^{PgDn}".into(),
                         },
                     },
                 ],
@@ -514,38 +546,6 @@ pub fn default_app_config() -> AppConfig {
                             name: "Volume Down".into(),
                             action_type: "keys".into(),
                             value: "{Volume_Down}".into(),
-                        },
-                    },
-                    Binding {
-                        id: "g-edge-top-prev-tab".into(),
-                        enabled: true,
-                        gesture: Gesture {
-                            id: "edge-top-wu".into(),
-                            name: "Top Edge Wheel Up".into(),
-                            trigger: "EdgeTop".into(),
-                            steps: vec!["WU".into()],
-                        },
-                        action: Action {
-                            id: "act-prev-tab".into(),
-                            name: "Previous Tab".into(),
-                            action_type: "keys".into(),
-                            value: "^{PgUp}".into(),
-                        },
-                    },
-                    Binding {
-                        id: "g-edge-top-next-tab".into(),
-                        enabled: true,
-                        gesture: Gesture {
-                            id: "edge-top-wd".into(),
-                            name: "Top Edge Wheel Down".into(),
-                            trigger: "EdgeTop".into(),
-                            steps: vec!["WD".into()],
-                        },
-                        action: Action {
-                            id: "act-next-tab".into(),
-                            name: "Next Tab".into(),
-                            action_type: "keys".into(),
-                            value: "^{PgDn}".into(),
                         },
                     },
                     Binding {
@@ -636,6 +636,54 @@ mod tests {
 
         assert!(!ids.contains(&"g-lalt-to-lwin"));
         assert!(!ids.contains(&"g-lwin-to-lalt"));
+    }
+
+    #[test]
+    fn default_browser_group_has_swapped_top_edge_tab_rules() {
+        let config = default_app_config();
+        let browser_group = config
+            .targets
+            .iter()
+            .find(|target| target.id == "group01")
+            .expect("default config should have a browser group");
+        let global_target = config
+            .targets
+            .iter()
+            .find(|target| target.kind == "global")
+            .expect("default config should have a global target");
+        let previous_tab = browser_group
+            .bindings
+            .iter()
+            .find(|binding| binding.id == "g-edge-top-prev-tab")
+            .expect("browser group should have previous-tab rule");
+        let next_tab = browser_group
+            .bindings
+            .iter()
+            .find(|binding| binding.id == "g-edge-top-next-tab")
+            .expect("browser group should have next-tab rule");
+        let close_tab = browser_group
+            .bindings
+            .iter()
+            .find(|binding| binding.id == "b-close-tab")
+            .expect("browser group should have close-tab rule");
+        let reopen_tab = browser_group
+            .bindings
+            .iter()
+            .find(|binding| binding.id == "b-reopen-tab")
+            .expect("browser group should have reopen-tab rule");
+
+        assert_eq!(close_tab.gesture.steps, vec!["R", "D"]);
+        assert_eq!(reopen_tab.gesture.steps, vec!["R", "U"]);
+        assert_eq!(previous_tab.gesture.steps, vec!["WU"]);
+        assert_eq!(next_tab.gesture.steps, vec!["WD"]);
+        assert!(!global_target
+            .bindings
+            .iter()
+            .any(|binding| binding.id == "g-edge-top-prev-tab"));
+        assert!(!global_target
+            .bindings
+            .iter()
+            .any(|binding| binding.id == "g-edge-top-next-tab"));
     }
 
     #[test]
