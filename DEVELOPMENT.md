@@ -33,6 +33,19 @@ npm run tauri:dev                                  # Full desktop dev
 ```
 ## 建置免安裝版
 
+日常更新固定位置的免安裝版時，在專案根目錄執行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rebuild-portable.ps1
+```
+
+腳本會關閉該份 Conductor 與其 AHK，引擎建置與打包完成後會從
+`release\Conductor-portable\Conductor.exe` 啟動新版。原有 `data` 會沿用，
+舊版資料夾保留在 `release\previous-*`，ZIP 以乾淨設定打包。
+
+加上 `-EnableStartup` 可建立目前使用者的 Windows 登入啟動捷徑。
+加上 `-ConfigPath "D:\backup\config.json"` 可指定要帶入新版的設定檔。
+
 在專案根目錄執行以下指令，即可使用目前的程式碼和版本建置 `release\Conductor-portable.zip`。
 
 ```powershell
