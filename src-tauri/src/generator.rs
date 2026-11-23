@@ -604,7 +604,7 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
             .filter(|trigger| remap_trigger_keys.contains(&trigger.to_ascii_lowercase()))
         {
             s.push_str(&format!(
-                "~*{} up::GeneratedRemapKeyUp(\"{}\")\n",
+                "*{} up::GeneratedRemapKeyUp(\"{}\")\n",
                 trigger,
                 ahk_quote(trigger)
             ));
@@ -676,12 +676,18 @@ mod tests {
                 .push(keyboard_binding("insert", "Insert", "noop", ""));
             gt.bindings
                 .push(keyboard_binding("lalt", "LAlt", "remap", "LWin"));
+            gt.bindings
+                .push(keyboard_binding("lwin", "LWin", "remap", "LAlt"));
         }
         let script = generate_ahk_script(&cfg, 2);
         assert!(script.contains("#InputLevel 1"));
         assert!(script.contains("*Insert::return"));
         assert!(script.contains("*LAlt::GeneratedRemapKeyDown(\"LAlt\", \"LWin\")"));
-        assert!(script.contains("~*LAlt up::GeneratedRemapKeyUp(\"LAlt\")"));
+        assert!(script.contains("*LAlt up::GeneratedRemapKeyUp(\"LAlt\")"));
+        assert!(script.contains("*LWin::GeneratedRemapKeyDown(\"LWin\", \"LAlt\")"));
+        assert!(script.contains("*LWin up::GeneratedRemapKeyUp(\"LWin\")"));
+        assert!(!script.contains("~*LAlt up::"));
+        assert!(!script.contains("~*LWin up::"));
         assert!(!script.contains("~*Insert up::"));
 
         let dispatcher_start = script

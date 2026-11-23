@@ -84,6 +84,24 @@ fn validate_enabled_binding_duplicates(config: &AppConfig) -> Result<(), String>
     Ok(())
 }
 
+fn stop_active_engine(state: &AppState) -> Result<(), String> {
+    let mut active_engine = state
+        .engine_process
+        .lock()
+        .map_err(|_| "無法取得手勢引擎行程控制權".to_string())?;
+    let Some(mut process) = active_engine.take() else {
+        return Ok(());
+    };
+
+    if process.try_wait().map_err(|error| error.to_string())?.is_none() {
+        process
+            .kill()
+            .map_err(|error| format!("無法停止舊的手勢引擎: {error}"))?;
+        process.wait().map_err(|error| error.to_string())?;
+    }
+    Ok(())
+}
+
 // -----------------------------------------------------------------------------
 // IPC Commands
 // -----------------------------------------------------------------------------
@@ -116,7 +134,11 @@ pub fn save_config(app: tauri::AppHandle, config: AppConfig) -> Result<(), Strin
 }
 
 #[tauri::command]
-pub fn apply_config(app: tauri::AppHandle, config: AppConfig) -> Result<ApplyResult, String> {
+pub fn apply_config(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    config: AppConfig,
+) -> Result<ApplyResult, String> {
     // 0. Validate enabled rules before writing any runtime or configuration files.
     validate_enabled_binding_duplicates(&config)?;
 
@@ -167,12 +189,17 @@ pub fn apply_config(app: tauri::AppHandle, config: AppConfig) -> Result<ApplyRes
         return Err(format!("產生的 AHK 腳本語法錯誤:\n{}", combined_err));
     }
 
-    // 6. Run active script in background with runtime dir as current_dir
-    Command::new(&ahk_exe)
+    // 6. Replace the previous engine only after the new script validates successfully.
+    stop_active_engine(&state)?;
+    let engine_process = Command::new(&ahk_exe)
         .current_dir(&runtime_dir)
         .arg(&script_path)
         .spawn()
         .map_err(|e| format!("啟動手勢引擎失敗: {e}"))?;
+    *state
+        .engine_process
+        .lock()
+        .map_err(|_| "無法記錄新的手勢引擎行程".to_string())? = Some(engine_process);
 
     Ok(ApplyResult {
         success: true,

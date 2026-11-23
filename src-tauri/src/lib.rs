@@ -3,18 +3,23 @@ pub mod config;
 pub mod generator;
 pub mod tray;
 
-use std::sync::atomic::AtomicBool;
+use std::{
+    process::Child,
+    sync::{atomic::AtomicBool, Mutex},
+};
 use tauri::WindowEvent;
 use tauri_plugin_autostart::MacosLauncher;
 
 pub struct AppState {
     pub paused: AtomicBool,
+    pub engine_process: Mutex<Option<Child>>,
 }
 
 pub fn run() {
     tauri::Builder::default()
         .manage(AppState {
             paused: AtomicBool::new(false),
+            engine_process: Mutex::new(None),
         })
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_autostart::init(
