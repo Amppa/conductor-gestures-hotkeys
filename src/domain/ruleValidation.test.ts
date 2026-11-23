@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_CONFIG } from "./defaults";
 import { Binding, Gesture } from "./types";
 import { hasEnabledGestureDuplicate } from "./ruleValidation";
 
@@ -36,5 +37,15 @@ describe("hasEnabledGestureDuplicate", () => {
     const candidate = createBinding("new", false, { steps: ["R"] });
 
     expect(hasEnabledGestureDuplicate([existing], candidate.id, candidate.gesture)).toBe(false);
+  });
+});
+
+describe("DEFAULT_CONFIG", () => {
+  it("does not include default Left Alt or Left Win remap rules", () => {
+    const globalTarget = DEFAULT_CONFIG.targets.find((target) => target.kind === "global");
+    const ids = globalTarget?.bindings.map((binding) => binding.id) ?? [];
+
+    expect(ids).not.toContain("g-lalt-to-lwin");
+    expect(ids).not.toContain("g-lwin-to-lalt");
   });
 });

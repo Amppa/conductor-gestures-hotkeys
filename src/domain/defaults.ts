@@ -170,38 +170,6 @@ export const DEFAULT_TARGETS: Target[] = [
           value: "",
         },
       },
-      {
-        id: "g-lalt-to-lwin",
-        enabled: false,
-        gesture: {
-          id: "key-lalt",
-          name: "Left Alt",
-          trigger: "LAlt",
-          steps: [],
-        },
-        action: {
-          id: "act-lwin",
-          name: "Trigger Win",
-          type: "remap",
-          value: "LWin",
-        },
-      },
-      {
-        id: "g-lwin-to-lalt",
-        enabled: false,
-        gesture: {
-          id: "key-lwin",
-          name: "Left Win",
-          trigger: "LWin",
-          steps: [],
-        },
-        action: {
-          id: "act-lalt",
-          name: "Trigger Alt",
-          type: "remap",
-          value: "LAlt",
-        },
-      },
     ],
   },
 

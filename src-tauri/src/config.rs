@@ -580,38 +580,6 @@ pub fn default_app_config() -> AppConfig {
                             value: "".into(),
                         },
                     },
-                    Binding {
-                        id: "g-lalt-to-lwin".into(),
-                        enabled: false,
-                        gesture: Gesture {
-                            id: "key-lalt".into(),
-                            name: "Left Alt".into(),
-                            trigger: "LAlt".into(),
-                            steps: vec![],
-                        },
-                        action: Action {
-                            id: "act-lwin".into(),
-                            name: "Trigger Win".into(),
-                            action_type: "remap".into(),
-                            value: "LWin".into(),
-                        },
-                    },
-                    Binding {
-                        id: "g-lwin-to-lalt".into(),
-                        enabled: false,
-                        gesture: Gesture {
-                            id: "key-lwin".into(),
-                            name: "Left Win".into(),
-                            trigger: "LWin".into(),
-                            steps: vec![],
-                        },
-                        action: Action {
-                            id: "act-lalt".into(),
-                            name: "Trigger Alt".into(),
-                            action_type: "remap".into(),
-                            value: "LAlt".into(),
-                        },
-                    },
                 ],
             },
         ],
@@ -650,6 +618,24 @@ mod tests {
                 "key-lwin",
             ]
         );
+    }
+
+    #[test]
+    fn default_rules_do_not_include_left_alt_or_left_win_remaps() {
+        let config = default_app_config();
+        let global_target = config
+            .targets
+            .iter()
+            .find(|target| target.kind == "global")
+            .expect("default config should have a global target");
+        let ids = global_target
+            .bindings
+            .iter()
+            .map(|binding| binding.id.as_str())
+            .collect::<Vec<_>>();
+
+        assert!(!ids.contains(&"g-lalt-to-lwin"));
+        assert!(!ids.contains(&"g-lwin-to-lalt"));
     }
 
     #[test]
