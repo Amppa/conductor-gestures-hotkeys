@@ -16,6 +16,7 @@ import {
   Badge,
 } from "@fluentui/react-components";
 import { Search16Regular, Add16Regular } from "@fluentui/react-icons";
+import { invokeTauri } from "../../shared/tauri";
 
 const useStyles = makeStyles({
   content: {
@@ -99,8 +100,7 @@ export const AddProcessDialog: React.FC<AddProcessDialogProps> = ({
     if (!open) return;
     const fetchProcesses = async () => {
       try {
-        const { invoke } = await import("@tauri-apps/api/core");
-        const procs = await invoke<ProcessItem[]>("get_running_processes");
+        const procs = await invokeTauri<ProcessItem[]>("get_running_processes");
         if (procs && procs.length > 0) {
           setRunningProcesses(procs);
           return;

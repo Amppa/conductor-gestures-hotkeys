@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { makeStyles, tokens } from "@fluentui/react-components";
 import { useTranslation } from "react-i18next";
 import { Sidebar, NavTabId } from "./Sidebar";
@@ -11,67 +11,14 @@ import { CommandsView } from "../features/commands/CommandsView";
 import { SettingsView } from "../features/settings/SettingsView";
 import { DEFAULT_CONFIG } from "../domain/defaults";
 import { AppConfig, Target, Gesture, Action } from "../domain/types";
-import { normalizeTrigger } from "../features/gestures/gestureSymbols";
 import { isKeyboardTemplate, isScreenTemplate } from "../domain/triggerTypes";
-
-function migrateConfigTriggers(rawConfig: AppConfig): AppConfig {
-  // 1. Auto-merge missing action templates from defaults
-  const existingActionIds = new Set((rawConfig.actionTemplates || []).map((a) => a.id));
-  const mergedActions = [...(rawConfig.actionTemplates || [])];
-  for (const defA of DEFAULT_CONFIG.actionTemplates) {
-    if (!existingActionIds.has(defA.id)) {
-      mergedActions.push(defA);
-    }
-  }
-
-  // 2. Templates are user-owned; deleted factory templates must not reappear.
-  const gestureTemplates = rawConfig.gestureTemplates || [];
-
-  // 3. Auto-merge missing factory bindings into Global Target
-  const defGlobal = DEFAULT_CONFIG.targets.find((dt) => dt.kind === "global");
-  const updatedTargets = (rawConfig.targets || []).map((t) => {
-    if (t.kind === "global" && defGlobal) {
-      const existingBindingIds = new Set(t.bindings.map((b) => b.id));
-      const newBindings = [...t.bindings];
-      for (const defB of defGlobal.bindings) {
-        if (!existingBindingIds.has(defB.id)) {
-          newBindings.push(defB);
-        }
-      }
-      return {
-        ...t,
-        bindings: newBindings.map((b) => ({
-          ...b,
-          gesture: {
-            ...b.gesture,
-            trigger: normalizeTrigger(b.gesture.trigger) as any,
-          },
-        })),
-      };
-    }
-    return {
-      ...t,
-      bindings: (t.bindings || []).map((b) => ({
-        ...b,
-        gesture: {
-          ...b.gesture,
-          trigger: normalizeTrigger(b.gesture.trigger) as any,
-        },
-      })),
-    };
-  });
-
-  return {
-    ...rawConfig,
-    actionTemplates: mergedActions,
-    gestureTemplates: gestureTemplates.map((g) => ({
-      ...g,
-      trigger: normalizeTrigger(g.trigger) as any,
-      steps: [...(g.steps || [])],
-    })),
-    targets: updatedTargets,
-  };
-}
+import { migrateConfig } from "../domain/configNormalization";
+import {
+  applyConfig,
+  loadConfig,
+  readAutostartEnabled,
+  writeAutostartEnabled,
+} from "./configService";
 
 const useStyles = makeStyles({
   root: {
@@ -100,82 +47,75 @@ const useStyles = makeStyles({
   },
 });
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export const App: React.FC = () => {
   const styles = useStyles();
   const { t, i18n } = useTranslation();
   const [selectedTab, setSelectedTab] = useState<NavTabId>("targets");
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [savedConfig, setSavedConfig] = useState<AppConfig>(DEFAULT_CONFIG);
-  const [isPaused, setIsPaused] = useState(false);
   const [autostartEnabled, setAutostartEnabled] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
 
   const isDirty = JSON.stringify(config) !== JSON.stringify(savedConfig);
 
-  // Load config and sync runtime state on startup
   useEffect(() => {
     const initApp = async () => {
+      const loaded = await loadConfig();
+      if (!loaded) {
+        return;
+      }
+
+      const activeConfig = migrateConfig(loaded);
+      setConfig(activeConfig);
+      setSavedConfig(activeConfig);
+      if (activeConfig.language) {
+        i18n.changeLanguage(activeConfig.language);
+      }
+
       try {
-        const { invoke } = await import("@tauri-apps/api/core");
-        const rawLoaded = await invoke<AppConfig>("load_config");
-        const loaded = rawLoaded ? migrateConfigTriggers(rawLoaded) : null;
-        const activeConfig = loaded || config;
-        if (loaded) {
-          setConfig(loaded);
-          setSavedConfig(loaded);
-          if (loaded.language) {
-            i18n.changeLanguage(loaded.language);
-          }
+        const result = await applyConfig(activeConfig);
+        if (!result.success) {
+          setApplyError(
+            result.msg || t("app.applyFailed", { err: "Engine failed to start" }),
+          );
         }
-        // Auto-apply gesture engine on startup to guarantee active status
-        try {
-          const res = await invoke<{ success: boolean; msg: string }>("apply_config", {
-            config: activeConfig,
-          });
-          if (res && !res.success) {
-            setApplyError(res.msg || t("app.applyFailed", { err: "Engine failed to start" }));
-          }
-        } catch (e) {
-          console.warn("Auto-apply engine on startup warning:", e);
-          const errorText = e instanceof Error ? e.message : String(e);
-          setApplyError(t("app.applyFailed", { err: errorText }));
-        }
-        const autostart = await invoke<boolean>("autostart_enabled");
+      } catch (error) {
+        setApplyError(t("app.applyFailed", { err: errorMessage(error) }));
+      }
+
+      const autostart = await readAutostartEnabled();
+      if (autostart !== null) {
         setAutostartEnabled(autostart);
-        const paused = await invoke<boolean>("is_engine_paused");
-        setIsPaused(paused);
-      } catch {
-        // Fallback in browser dev mode
       }
     };
-    initApp();
+
+    void initApp();
   }, []);
 
   const handleToggleAutostart = async (enabled: boolean) => {
     setAutostartEnabled(enabled);
-    try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("set_autostart", { enabled });
-    } catch {
-      // Browser fallback
-    }
+    await writeAutostartEnabled(enabled);
   };
 
   const handleReload = async () => {
     setIsApplying(true);
     setApplyError(null);
     try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      const res = await invoke<{ success: boolean; msg: string }>("apply_config", { config });
-      if (res && !res.success) {
-        setApplyError(res.msg || t("app.applyFailed", { err: "Engine failed to reload" }));
+      const result = await applyConfig(config);
+      if (!result.success) {
+        setApplyError(
+          result.msg || t("app.applyFailed", { err: "Engine failed to reload" }),
+        );
       } else {
         setSavedConfig(config);
       }
-    } catch (err) {
-      const errorText = err instanceof Error ? err.message : String(err);
-      setApplyError(t("app.applyFailed", { err: errorText }));
+    } catch (error) {
+      setApplyError(t("app.applyFailed", { err: errorMessage(error) }));
     } finally {
       setIsApplying(false);
     }
@@ -189,52 +129,62 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleUpdateTargets = (newTargets: Target[]) => {
-    setConfig((prev) => ({
-      ...prev,
-      targets: newTargets,
-    }));
+  const handleUpdateTargets = (targets: Target[]) => {
+    setConfig((previous) => ({ ...previous, targets }));
   };
 
-  const handleUpdateGestures = (newGestures: Gesture[]) => {
-    setConfig((prev) => ({
-      ...prev,
+  const handleUpdateGestures = (gestures: Gesture[]) => {
+    setConfig((previous) => ({
+      ...previous,
       gestureTemplates: [
-        ...newGestures,
-        ...prev.gestureTemplates.filter((template) => isKeyboardTemplate(template) || isScreenTemplate(template)),
+        ...gestures,
+        ...previous.gestureTemplates.filter(
+          (template) => isKeyboardTemplate(template) || isScreenTemplate(template),
+        ),
       ],
     }));
   };
 
-  const handleUpdateHotkeys = (newHotkeys: Gesture[]) => {
-    setConfig((prev) => ({
-      ...prev,
+  const handleUpdateScreenTemplates = (templates: Gesture[]) => {
+    setConfig((previous) => ({
+      ...previous,
       gestureTemplates: [
-        ...prev.gestureTemplates.filter((template) => !isKeyboardTemplate(template)),
-        ...newHotkeys,
+        ...previous.gestureTemplates.filter(
+          (template) => !isScreenTemplate(template),
+        ),
+        ...templates,
       ],
     }));
   };
 
-  const handleAddGestureTemplate = (newTemplate: Gesture) => {
-    setConfig((prev) => ({
-      ...prev,
-      gestureTemplates: [...prev.gestureTemplates, newTemplate],
+  const handleUpdateHotkeys = (hotkeys: Gesture[]) => {
+    setConfig((previous) => ({
+      ...previous,
+      gestureTemplates: [
+        ...previous.gestureTemplates.filter(
+          (template) => !isKeyboardTemplate(template),
+        ),
+        ...hotkeys,
+      ],
     }));
   };
 
-  const handleAddActionTemplate = (newAction: Action) => {
-    setConfig((prev) => ({
-      ...prev,
-      actionTemplates: [...prev.actionTemplates, newAction],
+  const handleAddGestureTemplate = (template: Gesture) => {
+    setConfig((previous) => ({
+      ...previous,
+      gestureTemplates: [...previous.gestureTemplates, template],
     }));
   };
 
-  const handleUpdateActions = (newActions: Action[]) => {
-    setConfig((prev) => ({
-      ...prev,
-      actionTemplates: newActions,
+  const handleAddActionTemplate = (action: Action) => {
+    setConfig((previous) => ({
+      ...previous,
+      actionTemplates: [...previous.actionTemplates, action],
     }));
+  };
+
+  const handleUpdateActions = (actions: Action[]) => {
+    setConfig((previous) => ({ ...previous, actionTemplates: actions }));
   };
 
   return (
@@ -261,14 +211,17 @@ export const App: React.FC = () => {
           {selectedTab === "gestures" && (
             <GesturesView
               gestures={config.gestureTemplates.filter(
-                (template) => !isKeyboardTemplate(template) && !isScreenTemplate(template)
+                (template) => !isKeyboardTemplate(template) && !isScreenTemplate(template),
               )}
               onUpdateGestures={handleUpdateGestures}
             />
           )}
           {selectedTab === "screen" && (
-            <GesturesView screenMode gestures={config.gestureTemplates.filter(isScreenTemplate)}
-              onUpdateGestures={(updated) => setConfig((previous) => ({ ...previous, gestureTemplates: [...previous.gestureTemplates.filter((template) => !isScreenTemplate(template)), ...updated] }))} />
+            <GesturesView
+              screenMode
+              gestures={config.gestureTemplates.filter(isScreenTemplate)}
+              onUpdateGestures={handleUpdateScreenTemplates}
+            />
           )}
           {selectedTab === "hotkeys" && (
             <HotkeysView

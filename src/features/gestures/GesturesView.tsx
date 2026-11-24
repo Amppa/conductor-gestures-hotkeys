@@ -1,73 +1,19 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  makeStyles,
-  tokens,
-  Title3,
-  Divider,
-  Card,
-  Caption1,
-  Badge,
-  Button,
-} from "@fluentui/react-components";
+import { makeStyles, tokens, Card, Badge, Button } from "@fluentui/react-components";
 import { Add16Regular, Delete16Regular } from "@fluentui/react-icons";
 import { Gesture } from "../../domain/types";
-import { formatGestureLabel, formatTriggerSymbol, formatGestureName, normalizeTrigger } from "./gestureSymbols";
+import { normalizeTrigger } from "../../domain/triggerNormalization";
+import {
+  formatGestureLabel,
+  formatTemplateName,
+  formatTriggerSymbol,
+} from "./gestureSymbols";
 import { EditGestureDialog } from "./EditGestureDialog";
+import { PageHeader, usePageStyles } from "../../shared/pageStyles";
+import { createId } from "../../shared/ids";
 
 const useStyles = makeStyles({
-  container: {
-    padding: "16px 24px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    minHeight: "100%",
-    boxSizing: "border-box",
-    justifyContent: "flex-start",
-  },
-  pageHeader: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    flexShrink: 0,
-  },
-  pageTitle: {
-    fontSize: "20px",
-    lineHeight: "24px",
-    fontWeight: tokens.fontWeightSemibold,
-    margin: "0 !important",
-    padding: 0,
-  },
-  divider: {
-    margin: "0 !important",
-  },
-  card: {
-    padding: "16px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "14px",
-    backgroundColor: tokens.colorNeutralBackground1,
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    fontSize: tokens.fontSizeBase200,
-  },
-  th: {
-    textAlign: "left",
-    padding: "8px 12px",
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    color: tokens.colorNeutralForeground3,
-    fontWeight: 600,
-  },
-  tr: {
-    borderBottom: `1px solid ${tokens.colorNeutralStroke3}`,
-    cursor: "pointer",
-    transition: "background-color 0.15s ease",
-    ":hover": {
-      backgroundColor: tokens.colorNeutralBackground3Hover,
-    },
-  },
   tdName: {
     padding: "8px 12px",
     fontWeight: 600,
@@ -82,10 +28,9 @@ const useStyles = makeStyles({
     userSelect: "none",
     color: tokens.colorBrandForeground1,
   },
-  tdOps: {
-    width: "48px",
-    textAlign: "right",
-    padding: "6px 8px",
+  emptyStroke: {
+    color: tokens.colorNeutralForeground4,
+    fontStyle: "italic",
   },
 });
 
@@ -100,6 +45,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
   gestures,
   onUpdateGestures,
 }) => {
+  const page = usePageStyles();
   const styles = useStyles();
   const { t } = useTranslation();
   const [editingGesture, setEditingGesture] = useState<Gesture | null>(null);
@@ -108,7 +54,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
   const handleOpenAddDialog = () => {
     setIsCreating(true);
     setEditingGesture({
-      id: `gesture-${Date.now()}`,
+      id: createId("gesture"),
       name: t("gestures.newGestureName"),
       trigger: screenMode ? "EdgeTop" : "R",
       steps: screenMode ? ["WU"] : [],
@@ -121,82 +67,80 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
   };
 
   const handleSaveGesture = (saved: Gesture) => {
-    if (isCreating) {
-      onUpdateGestures([...gestures, saved]);
-    } else {
-      onUpdateGestures(
-        gestures.map((g) => (g.id === saved.id ? saved : g))
-      );
-    }
+    onUpdateGestures(
+      isCreating
+        ? [...gestures, saved]
+        : gestures.map((gesture) => (gesture.id === saved.id ? saved : gesture)),
+    );
     setEditingGesture(null);
     setIsCreating(false);
   };
 
   const handleDeleteGesture = (id: string) => {
-    onUpdateGestures(gestures.filter((g) => g.id !== id));
+    onUpdateGestures(gestures.filter((gesture) => gesture.id !== id));
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.pageHeader}>
-        <Title3 as="h1" className={styles.pageTitle}>{t(screenMode ? "nav.screen" : "nav.gestures")}</Title3>
-        <Divider className={styles.divider} />
-      </div>
+    <div className={page.container}>
+      <PageHeader title={t(screenMode ? "nav.screen" : "nav.gestures")} />
 
-      <Card className={styles.card}>
-        <table className={styles.table}>
+      <Card className={page.card}>
+        <table className={page.table}>
           <thead>
             <tr>
-              <th className={styles.th}>{t("gestures.tableName")}</th>
-              <th className={styles.th} style={{ width: "120px" }}>{t("gestures.tableTrigger")}</th>
-              <th className={styles.th}>{t("gestures.tableStroke")}</th>
-              <th className={styles.th} style={{ width: "48px" }}></th>
+              <th className={page.th}>{t("gestures.tableName")}</th>
+              <th className={page.th} style={{ width: "120px" }}>
+                {t("gestures.tableTrigger")}
+              </th>
+              <th className={page.th}>{t("gestures.tableStroke")}</th>
+              <th className={page.th} style={{ width: "48px" }}></th>
             </tr>
           </thead>
           <tbody>
-            {gestures.map((gesture) => (
-              <tr
-                key={gesture.id}
-                className={styles.tr}
-                onClick={() => handleEditGesture(gesture)}
-                title={t("targets.doubleClickGestureTip")}
-              >
-                <td className={styles.tdName}>
-                  {t(`gestureNames.${gesture.id}`, { defaultValue: "" }) ? formatGestureName(gesture.trigger, gesture.steps, t) : gesture.name}
-                </td>
-                <td className={styles.tdTrigger}>
-                  <Badge appearance="tint" color="brand">
-                    {formatTriggerSymbol(gesture.trigger, t)}
-                  </Badge>
-                </td>
-                <td className={styles.tdStroke}>
-                  {gesture.steps.length > 0 ? (
-                    formatGestureLabel(gesture.trigger, gesture.steps, t)
-                  ) : ["X1", "X2"].includes(normalizeTrigger(gesture.trigger)) ? (
-                    normalizeTrigger(gesture.trigger)
-                  ) : (
-                    <span style={{ color: tokens.colorNeutralForeground4, fontStyle: "italic" }}>
-                      {t("targets.noGesture")}
-                    </span>
-                  )}
-                </td>
-                <td className={styles.tdOps}>
-                  <Button
-                    size="small"
-                    appearance="subtle"
-                    icon={<Delete16Regular />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteGesture(gesture.id);
-                    }}
-                    title={t("gestures.delete")}
-                  />
-                </td>
-              </tr>
-            ))}
+            {gestures.map((gesture) => {
+              const trigger = normalizeTrigger(gesture.trigger);
+              return (
+                <tr
+                  key={gesture.id}
+                  className={`${page.row} ${page.clickableRow}`}
+                  onClick={() => handleEditGesture(gesture)}
+                  title={t("targets.doubleClickGestureTip")}
+                >
+                  <td className={styles.tdName}>{formatTemplateName(t, gesture)}</td>
+                  <td className={styles.tdTrigger}>
+                    <Badge appearance="tint" color="brand">
+                      {formatTriggerSymbol(gesture.trigger, t)}
+                    </Badge>
+                  </td>
+                  <td className={styles.tdStroke}>
+                    {gesture.steps.length > 0 ? (
+                      formatGestureLabel(gesture.trigger, gesture.steps, t)
+                    ) : trigger === "X1" || trigger === "X2" ? (
+                      trigger
+                    ) : (
+                      <span className={styles.emptyStroke}>
+                        {t("targets.noGesture")}
+                      </span>
+                    )}
+                  </td>
+                  <td className={page.opsCell}>
+                    <Button
+                      size="small"
+                      appearance="subtle"
+                      icon={<Delete16Regular />}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDeleteGesture(gesture.id);
+                      }}
+                      title={t("gestures.delete")}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
             {gestures.length === 0 && (
               <tr>
-                <td colSpan={4} style={{ padding: "16px", textAlign: "center", color: tokens.colorNeutralForeground4 }}>
+                <td colSpan={4} className={page.emptyCell}>
                   {t("targets.emptyBindings")}
                 </td>
               </tr>

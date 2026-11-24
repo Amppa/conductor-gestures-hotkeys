@@ -1,75 +1,14 @@
 import React, { useState } from "react";
-import {
-  Button,
-  Card,
-  Divider,
-  makeStyles,
-  tokens,
-  Title3,
-} from "@fluentui/react-components";
+import { Button, Card, makeStyles, tokens } from "@fluentui/react-components";
 import { Add16Regular, Delete16Regular } from "@fluentui/react-icons";
 import { useTranslation } from "react-i18next";
 import { EditHotkeyDialog } from "./EditHotkeyDialog";
 import { Gesture } from "../../domain/types";
 import { formatHotkeyTrigger } from "./hotkeyTrigger";
+import { PageHeader, usePageStyles } from "../../shared/pageStyles";
+import { createId } from "../../shared/ids";
 
 const useStyles = makeStyles({
-  container: {
-    padding: "16px 24px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    minHeight: "100%",
-    boxSizing: "border-box",
-  },
-  pageHeader: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    flexShrink: 0,
-  },
-  pageTitle: {
-    fontSize: "20px",
-    lineHeight: "24px",
-    fontWeight: tokens.fontWeightSemibold,
-    margin: "0 !important",
-    padding: 0,
-  },
-  divider: {
-    margin: "0 !important",
-  },
-  description: {
-    color: tokens.colorNeutralForeground3,
-    fontSize: tokens.fontSizeBase200,
-    lineHeight: tokens.lineHeightBase300,
-  },
-  card: {
-    padding: "16px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "14px",
-    backgroundColor: tokens.colorNeutralBackground1,
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    fontSize: tokens.fontSizeBase200,
-  },
-  th: {
-    textAlign: "left",
-    padding: "8px 12px",
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    color: tokens.colorNeutralForeground3,
-    fontWeight: tokens.fontWeightSemibold,
-  },
-  tr: {
-    borderBottom: `1px solid ${tokens.colorNeutralStroke3}`,
-    cursor: "pointer",
-    transition: "background-color 0.15s ease",
-    ":hover": {
-      backgroundColor: tokens.colorNeutralBackground3Hover,
-    },
-  },
   tdName: {
     padding: "8px 12px",
     fontWeight: tokens.fontWeightSemibold,
@@ -78,16 +17,6 @@ const useStyles = makeStyles({
     padding: "8px 12px",
     color: tokens.colorBrandForeground1,
     fontFamily: tokens.fontFamilyMonospace,
-  },
-  tdOps: {
-    width: "48px",
-    padding: "6px 8px",
-    textAlign: "right",
-  },
-  empty: {
-    padding: "16px",
-    textAlign: "center",
-    color: tokens.colorNeutralForeground4,
   },
 });
 
@@ -100,6 +29,7 @@ export const HotkeysView: React.FC<HotkeysViewProps> = ({
   hotkeys,
   onUpdateHotkeys,
 }) => {
+  const page = usePageStyles();
   const styles = useStyles();
   const { t } = useTranslation();
   const [editingHotkey, setEditingHotkey] = useState<Gesture | null>(null);
@@ -108,7 +38,7 @@ export const HotkeysView: React.FC<HotkeysViewProps> = ({
   const handleAdd = () => {
     setIsCreating(true);
     setEditingHotkey({
-      id: `hotkey-${Date.now()}`,
+      id: createId("hotkey"),
       name: "",
       trigger: "",
       steps: [],
@@ -121,13 +51,11 @@ export const HotkeysView: React.FC<HotkeysViewProps> = ({
   };
 
   const handleSave = (hotkey: Gesture) => {
-    if (isCreating) {
-      onUpdateHotkeys([...hotkeys, hotkey]);
-    } else {
-      onUpdateHotkeys(
-        hotkeys.map((item) => (item.id === hotkey.id ? hotkey : item))
-      );
-    }
+    onUpdateHotkeys(
+      isCreating
+        ? [...hotkeys, hotkey]
+        : hotkeys.map((item) => (item.id === hotkey.id ? hotkey : item)),
+    );
     setEditingHotkey(null);
     setIsCreating(false);
   };
@@ -142,37 +70,32 @@ export const HotkeysView: React.FC<HotkeysViewProps> = ({
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.pageHeader}>
-        <Title3 as="h1" className={styles.pageTitle}>
-          {t("nav.hotkeys")}
-        </Title3>
-        <Divider className={styles.divider} />
-        <div className={styles.description}>{t("hotkeys.description")}</div>
-      </div>
+    <div className={page.container}>
+      <PageHeader
+        title={t("nav.hotkeys")}
+        description={t("hotkeys.description")}
+      />
 
-      <Card className={styles.card}>
-        <table className={styles.table}>
+      <Card className={page.card}>
+        <table className={page.table}>
           <thead>
             <tr>
-              <th className={styles.th}>{t("hotkeys.tableName")}</th>
-              <th className={styles.th}>{t("hotkeys.tableKey")}</th>
-              <th className={styles.th}></th>
+              <th className={page.th}>{t("hotkeys.tableName")}</th>
+              <th className={page.th}>{t("hotkeys.tableKey")}</th>
+              <th className={page.th}></th>
             </tr>
           </thead>
           <tbody>
             {hotkeys.map((hotkey) => (
               <tr
                 key={hotkey.id}
-                className={styles.tr}
+                className={`${page.row} ${page.clickableRow}`}
                 onClick={() => handleEdit(hotkey)}
                 title={t("hotkeys.editTip")}
               >
                 <td className={styles.tdName}>{hotkey.name}</td>
-                <td className={styles.tdKey}>
-                  {formatHotkeyTrigger(hotkey.trigger)}
-                </td>
-                <td className={styles.tdOps}>
+                <td className={styles.tdKey}>{formatHotkeyTrigger(hotkey.trigger)}</td>
+                <td className={page.opsCell}>
                   <Button
                     size="small"
                     appearance="subtle"
@@ -188,7 +111,7 @@ export const HotkeysView: React.FC<HotkeysViewProps> = ({
             ))}
             {hotkeys.length === 0 && (
               <tr>
-                <td colSpan={3} className={styles.empty}>
+                <td colSpan={3} className={page.emptyCell}>
                   {t("hotkeys.empty")}
                 </td>
               </tr>

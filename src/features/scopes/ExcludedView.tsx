@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Title3,
-  Divider,
   Card,
   Subtitle2,
   Tag,
@@ -12,34 +10,13 @@ import {
 } from "@fluentui/react-components";
 import { Add16Regular } from "@fluentui/react-icons";
 import { Target } from "../../domain/types";
+import { addExecutable, removeExecutable } from "../../domain/targetMutations";
 import { AddProcessDialog } from "./AddProcessDialog";
+import { PageHeader, usePageStyles } from "../../shared/pageStyles";
+
+const DISABLED_TARGET_ID = "disabled";
 
 const useStyles = makeStyles({
-  container: {
-    padding: "16px 24px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    minHeight: "100%",
-    boxSizing: "border-box",
-    justifyContent: "flex-start",
-  },
-  pageHeader: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    flexShrink: 0,
-  },
-  pageTitle: {
-    fontSize: "20px",
-    lineHeight: "24px",
-    fontWeight: tokens.fontWeightSemibold,
-    margin: "0 !important",
-    padding: 0,
-  },
-  divider: {
-    margin: "0 !important",
-  },
   hintBanner: {
     padding: "8px 14px",
     backgroundColor: tokens.colorNeutralBackground3,
@@ -84,14 +61,15 @@ export const ExcludedView: React.FC<ExcludedViewProps> = ({
   targets,
   onUpdateTargets,
 }) => {
+  const page = usePageStyles();
   const styles = useStyles();
   const { t } = useTranslation();
-
   const [isAddProcessOpen, setIsAddProcessOpen] = useState(false);
 
-  // Find or create disabled target
-  const disabledTarget = targets.find((t) => t.kind === "disabled") || {
-    id: "target-disabled",
+  const disabledTarget: Target = targets.find(
+    (target) => target.kind === "disabled",
+  ) ?? {
+    id: DISABLED_TARGET_ID,
     name: t("targets.excludedApps"),
     kind: "disabled",
     enabled: true,
@@ -100,42 +78,30 @@ export const ExcludedView: React.FC<ExcludedViewProps> = ({
   };
 
   const handleAddExe = (processName: string) => {
-    const trimmed = processName.trim();
-    if (!trimmed) return;
-    const exists = targets.some((t) => t.id === disabledTarget.id);
-    let updated: Target[];
-    if (exists) {
-      updated = targets.map((t) =>
-        t.id === disabledTarget.id && !t.executables.includes(trimmed)
-          ? { ...t, executables: [...t.executables, trimmed] }
-          : t
-      );
-    } else {
-      updated = [...targets, { ...disabledTarget, executables: [trimmed] }];
+    const executable = processName.trim().toLowerCase();
+    if (!executable) {
+      return;
     }
-    onUpdateTargets(updated);
+    const exists = targets.some((target) => target.id === disabledTarget.id);
+    onUpdateTargets(
+      exists
+        ? addExecutable(targets, disabledTarget.id, executable)
+        : [...targets, { ...disabledTarget, executables: [executable] }],
+    );
     setIsAddProcessOpen(false);
   };
 
-  const handleDeleteExe = (exeName: string) => {
-    const updated = targets.map((t) =>
-      t.id === disabledTarget.id
-        ? { ...t, executables: t.executables.filter((e) => e !== exeName) }
-        : t
+  const handleDeleteExe = (executable: string) => {
+    onUpdateTargets(
+      removeExecutable(targets, disabledTarget.id, executable),
     );
-    onUpdateTargets(updated);
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.pageHeader}>
-        <Title3 as="h1" className={styles.pageTitle}>{t("nav.excluded")}</Title3>
-        <Divider className={styles.divider} />
-      </div>
+    <div className={page.container}>
+      <PageHeader title={t("nav.excluded")} />
 
-      <div className={styles.hintBanner}>
-        {t("targets.disabledDesc")}
-      </div>
+      <div className={styles.hintBanner}>{t("targets.disabledDesc")}</div>
 
       <Card className={styles.card}>
         <div className={styles.cardHeader}>
@@ -151,21 +117,19 @@ export const ExcludedView: React.FC<ExcludedViewProps> = ({
         </div>
 
         <div className={styles.tagList}>
-          {disabledTarget.executables.map((exe) => (
+          {disabledTarget.executables.map((executable) => (
             <Tag
-              key={exe}
+              key={executable}
               size="medium"
               dismissible
               dismissIcon={{ "aria-label": "remove" }}
-              onClick={() => handleDeleteExe(exe)}
+              onClick={() => handleDeleteExe(executable)}
             >
-              {exe}
+              {executable}
             </Tag>
           ))}
           {disabledTarget.executables.length === 0 && (
-            <span className={styles.emptyText}>
-              {t("targets.noExcludedApps")}
-            </span>
+            <span className={styles.emptyText}>{t("targets.noExcludedApps")}</span>
           )}
         </div>
       </Card>

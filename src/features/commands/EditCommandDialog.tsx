@@ -63,6 +63,16 @@ const COMMON_HOTKEYS: PresetItem[] = [
   { key: "presetVolDown", keys: "{Volume_Down}" },
 ];
 
+const ACTION_TYPE_LABEL_KEYS: Record<ActionType, string> = {
+  keys: "dialogs.typeKeys",
+  ahk: "dialogs.typeAhk",
+  run: "dialogs.typeRun",
+  noop: "dialogs.typeNoop",
+  remap: "dialogs.typeRemap",
+  mouse: "dialogs.typeMouse",
+  wheel: "dialogs.typeWheel",
+};
+
 export const EditCommandDialog: React.FC<EditCommandDialogProps> = ({
   open,
   action,
@@ -139,17 +149,7 @@ export const EditCommandDialog: React.FC<EditCommandDialogProps> = ({
             <div className={styles.section}>
               <Subtitle2>{t("dialogs.actionType")}：</Subtitle2>
               <Dropdown
-                value={
-                  type === "keys"
-                    ? t("dialogs.typeKeys")
-                    : type === "ahk"
-                    ? t("dialogs.typeAhk")
-                    : type === "run"
-                    ? t("dialogs.typeRun")
-                    : type === "noop"
-                    ? t("dialogs.typeNoop")
-                    : t("dialogs.typeRemap")
-                }
+                value={t(ACTION_TYPE_LABEL_KEYS[type])}
                 onOptionSelect={(_, data) => setType(data.optionValue as ActionType)}
               >
                 <Option value="keys">{t("dialogs.typeKeys")}</Option>

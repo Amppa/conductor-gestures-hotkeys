@@ -10,7 +10,10 @@ use std::{
 use tauri::{Manager, State};
 use tauri_plugin_autostart::ManagerExt;
 
-use crate::config::{default_app_config, AppConfig, ApplyResult, ProcessItem, RuntimeStatus};
+use crate::config::{
+    default_app_config, normalize_config_triggers, normalize_trigger, AppConfig, ApplyResult,
+    ProcessItem, RuntimeStatus,
+};
 use crate::generator::generate_ahk_script;
 use crate::AppState;
 
@@ -76,18 +79,6 @@ pub fn gesture_engine_template_path(app: &tauri::AppHandle) -> Result<PathBuf, S
     Err("隨附的 GestureEngine.ahk 不存在".into())
 }
 
-fn normalize_trigger(t: &str) -> String {
-    match t {
-        "RB" => "R".into(),
-        "MB" => "M".into(),
-        "LB" => "L".into(),
-        "X1B" => "X1".into(),
-        "X2B" => "X2".into(),
-        "EdgeTopL" | "EdgeTopR" => "EdgeTop".into(),
-        other => other.to_string(),
-    }
-}
-
 fn validate_enabled_binding_duplicates(config: &AppConfig) -> Result<(), String> {
     for target in &config.targets {
         let mut seen = HashSet::new();
@@ -140,16 +131,9 @@ pub fn load_config(app: tauri::AppHandle) -> Result<AppConfig, String> {
         return Ok(default_app_config());
     }
     let content = fs::read_to_string(path).map_err(|e| e.to_string())?;
-    let mut config: AppConfig = serde_json::from_str(&content).map_err(|e| format!("解析設定檔失敗: {e}"))?;
-
-    for gt in &mut config.gesture_templates {
-        gt.trigger = normalize_trigger(&gt.trigger);
-    }
-    for t in &mut config.targets {
-        for b in &mut t.bindings {
-            b.gesture.trigger = normalize_trigger(&b.gesture.trigger);
-        }
-    }
+    let mut config: AppConfig =
+        serde_json::from_str(&content).map_err(|e| format!("解析設定檔失敗: {e}"))?;
+    normalize_config_triggers(&mut config);
 
     Ok(config)
 }
@@ -159,6 +143,25 @@ pub fn save_config(app: tauri::AppHandle, config: AppConfig) -> Result<(), Strin
     let path = config_file_path(&app)?;
     let content = serde_json::to_string_pretty(&config).map_err(|e| e.to_string())?;
     fs::write(path, content).map_err(|e| e.to_string())
+}
+
+/// Runs AutoHotkey in validation mode and reports any syntax diagnostics.
+fn validate_script(ahk_exe: &Path, script_path: &Path) -> Result<(), String> {
+    let output = Command::new(ahk_exe)
+        .arg("/ErrorStdOut")
+        .arg("/validate")
+        .arg(script_path)
+        .output()
+        .map_err(|e| format!("無法啟動 AutoHotkey 進行語法檢查: {e}"))?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let diagnostics = format!("{}{}", stdout.trim(), stderr.trim());
+
+    if output.status.success() && diagnostics.is_empty() {
+        return Ok(());
+    }
+    Err(format!("產生的 AHK 腳本語法錯誤:\n{}", diagnostics))
 }
 
 #[tauri::command]
@@ -197,21 +200,8 @@ pub fn apply_config(
     let script_content = generate_ahk_script(&config, revision);
     fs::write(&script_path, script_content).map_err(|e| e.to_string())?;
 
-    // 5. Verify syntax with /ErrorStdOut and /validate before applying
-    let check_output = Command::new(&ahk_exe)
-        .arg("/ErrorStdOut")
-        .arg("/validate")
-        .arg(&script_path)
-        .output()
-        .map_err(|e| format!("無法啟動 AutoHotkey 進行語法檢查: {e}"))?;
-
-    let stdout_err = String::from_utf8_lossy(&check_output.stdout);
-    let stderr_err = String::from_utf8_lossy(&check_output.stderr);
-    let combined_err = format!("{}{}", stdout_err.trim(), stderr_err.trim());
-
-    if !check_output.status.success() || !combined_err.is_empty() {
-        return Err(format!("產生的 AHK 腳本語法錯誤:\n{}", combined_err));
-    }
+    // 5. Verify syntax before applying
+    validate_script(&ahk_exe, &script_path)?;
 
     // 6. Replace the previous engine only after the new script validates successfully.
     stop_active_engine(&state)?;

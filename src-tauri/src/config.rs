@@ -184,420 +184,313 @@ pub struct ProcessItem {
     pub exe: String,
 }
 
+fn default_engine_config() -> EngineConfig {
+    EngineConfig {
+        enabled: true,
+        debug: false,
+        threshold_px: 10,
+        osd_duration_ms: default_osd_duration_ms(),
+        osd_font_size_px: default_osd_font_size_px(),
+        osd_opacity_pct: default_osd_opacity_pct(),
+    }
+}
+
+fn default_edge_scroll_config() -> EdgeScrollConfig {
+    EdgeScrollConfig {
+        enabled: true,
+        top_edge: true,
+        action: "volume".into(),
+    }
+}
+
+fn gesture_template(id: &str, name: &str, trigger: &str, steps: &[&str]) -> GestureTemplate {
+    GestureTemplate {
+        id: id.into(),
+        name: name.into(),
+        trigger: trigger.into(),
+        steps: steps.iter().map(|step| (*step).into()).collect(),
+    }
+}
+
+fn default_gesture_templates() -> Vec<GestureTemplate> {
+    vec![
+        gesture_template("edge-top-wu", "Top Edge Wheel Up", "EdgeTop", &["WU"]),
+        gesture_template("edge-top-wd", "Top Edge Wheel Down", "EdgeTop", &["WD"]),
+        gesture_template(
+            "edge-bottom-wu",
+            "Bottom Edge Wheel Up",
+            "EdgeBottom",
+            &["WU"],
+        ),
+        gesture_template(
+            "edge-bottom-wd",
+            "Bottom Edge Wheel Down",
+            "EdgeBottom",
+            &["WD"],
+        ),
+        gesture_template("edge-left-wu", "Left Edge Wheel Up", "EdgeLeft", &["WU"]),
+        gesture_template("edge-left-wd", "Left Edge Wheel Down", "EdgeLeft", &["WD"]),
+        gesture_template("edge-right-wu", "Right Edge Wheel Up", "EdgeRight", &["WU"]),
+        gesture_template(
+            "edge-right-wd",
+            "Right Edge Wheel Down",
+            "EdgeRight",
+            &["WD"],
+        ),
+        gesture_template("corner-tl", "Corner TL", "CornerTL", &[]),
+        gesture_template("corner-tr", "Corner TR", "CornerTR", &[]),
+        gesture_template("corner-bl", "Corner BL", "CornerBL", &[]),
+        gesture_template("r-diagonal-ul", "Right Button Up-Left", "R", &["UL"]),
+        gesture_template("r-diagonal-ur", "Right Button Up-Right", "R", &["UR"]),
+        gesture_template("r-diagonal-dr", "Right Button Down-Right", "R", &["DR"]),
+        gesture_template("r-diagonal-dl", "Right Button Down-Left", "R", &["DL"]),
+        gesture_template("r-left", "Left", "R", &["L"]),
+        gesture_template("r-right", "Right", "R", &["R"]),
+        gesture_template("r-up", "Up", "R", &["U"]),
+        gesture_template("r-down", "Down", "R", &["D"]),
+        gesture_template("r-down-right", "Down-Right", "R", &["D", "R"]),
+        gesture_template("r-up-left", "Up-Left", "R", &["U", "L"]),
+        gesture_template("x1-click", "X1 Click", "X1", &[]),
+        gesture_template("x2-click", "X2 Click", "X2", &[]),
+        gesture_template("r-wu", "R + Wheel Up", "R", &["WU"]),
+        gesture_template("r-wd", "R + Wheel Down", "R", &["WD"]),
+        gesture_template("corner-br", "Bottom-Right Corner", "CornerBR", &[]),
+        gesture_template("key-insert", "Insert Key", "Insert", &[]),
+        gesture_template("key-lalt", "Left Alt", "LAlt", &[]),
+        gesture_template("key-lwin", "Left Win", "LWin", &[]),
+    ]
+}
+
+fn action_template(id: &str, name: &str, action_type: &str, value: &str) -> ActionTemplate {
+    ActionTemplate {
+        id: id.into(),
+        name: name.into(),
+        action_type: action_type.into(),
+        value: value.into(),
+    }
+}
+
+fn default_action_templates() -> Vec<ActionTemplate> {
+    vec![
+        action_template("act-back", "Back", "keys", "!{Left}"),
+        action_template("act-forward", "Forward", "keys", "!{Right}"),
+        action_template("act-close-tab", "Close Tab", "keys", "^w"),
+        action_template("act-reopen-tab", "Reopen Closed Tab", "keys", "^+t"),
+        action_template("act-minimize", "Minimize Window", "ahk", "WinMinimize('A')"),
+        action_template("act-show-desktop", "Show Desktop", "keys", "#d"),
+        action_template("act-vol-up", "Volume Up", "keys", "{Volume_Up}"),
+        action_template("act-vol-down", "Volume Down", "keys", "{Volume_Down}"),
+        action_template("act-prev-tab", "Previous Tab", "keys", "^{PgUp}"),
+        action_template("act-next-tab", "Next Tab", "keys", "^{PgDn}"),
+        action_template("act-noop", "No-op (Mute)", "noop", ""),
+        action_template("act-lwin", "Trigger Win", "remap", "LWin"),
+        action_template("act-lalt", "Trigger Alt", "remap", "LAlt"),
+    ]
+}
+
+fn key_remap(id: &str, name: &str, enabled: bool, src_key: &str, dst_key: &str) -> KeyRemap {
+    KeyRemap {
+        id: id.into(),
+        name: name.into(),
+        enabled,
+        src_key: src_key.into(),
+        dst_key: dst_key.into(),
+    }
+}
+
+fn default_key_remaps() -> Vec<KeyRemap> {
+    vec![
+        key_remap(
+            "remap-disable-insert",
+            "停用 Insert 鍵 (靜音)",
+            false,
+            "Insert",
+            "none",
+        ),
+        key_remap(
+            "remap-lalt-lwin",
+            "左 Alt 映射為 Win",
+            false,
+            "LAlt",
+            "LWin",
+        ),
+        key_remap(
+            "remap-lwin-lalt",
+            "左 Win 映射為 Alt",
+            false,
+            "LWin",
+            "LAlt",
+        ),
+    ]
+}
+
+fn gesture(id: &str, name: &str, trigger: &str, steps: &[&str]) -> Gesture {
+    Gesture {
+        id: id.into(),
+        name: name.into(),
+        trigger: trigger.into(),
+        steps: steps.iter().map(|step| (*step).into()).collect(),
+    }
+}
+
+fn action(id: &str, name: &str, action_type: &str, value: &str) -> Action {
+    Action {
+        id: id.into(),
+        name: name.into(),
+        action_type: action_type.into(),
+        value: value.into(),
+    }
+}
+
+fn binding(id: &str, enabled: bool, gesture: Gesture, action: Action) -> Binding {
+    Binding {
+        id: id.into(),
+        enabled,
+        gesture,
+        action,
+    }
+}
+
+fn target(
+    id: &str,
+    name: &str,
+    kind: &str,
+    executables: &[&str],
+    bindings: Vec<Binding>,
+) -> Target {
+    Target {
+        id: id.into(),
+        name: name.into(),
+        enabled: true,
+        kind: kind.into(),
+        executables: executables.iter().map(|exe| (*exe).into()).collect(),
+        bindings,
+    }
+}
+
+fn default_targets() -> Vec<Target> {
+    vec![
+        target(
+            "disabled",
+            "Disabled List (Bypass)",
+            "disabled",
+            &["conductor.exe", "photoshop.exe"],
+            vec![],
+        ),
+        target(
+            "group01",
+            "Group 01",
+            "group",
+            &["chrome.exe", "msedge.exe", "firefox.exe", "brave.exe"],
+            vec![
+                binding(
+                    "b-close-tab",
+                    true,
+                    gesture("r-right-down", "Right-Down", "R", &["R", "D"]),
+                    action("act-close-tab", "Close Tab", "keys", "^w"),
+                ),
+                binding(
+                    "b-reopen-tab",
+                    true,
+                    gesture("r-right-up", "Right-Up", "R", &["R", "U"]),
+                    action("act-reopen-tab", "Reopen Closed Tab", "keys", "^+t"),
+                ),
+                binding(
+                    "g-edge-top-prev-tab",
+                    true,
+                    gesture("edge-top-wu", "Top Edge Wheel Up", "EdgeTop", &["WU"]),
+                    action("act-prev-tab", "Previous Tab", "keys", "^{PgUp}"),
+                ),
+                binding(
+                    "g-edge-top-next-tab",
+                    true,
+                    gesture("edge-top-wd", "Top Edge Wheel Down", "EdgeTop", &["WD"]),
+                    action("act-next-tab", "Next Tab", "keys", "^{PgDn}"),
+                ),
+            ],
+        ),
+        target(
+            "global",
+            "Global Default",
+            "global",
+            &[],
+            vec![
+                binding(
+                    "g-back",
+                    true,
+                    gesture("r-left", "Left", "R", &["L"]),
+                    action("act-back", "Back", "keys", "!{Left}"),
+                ),
+                binding(
+                    "g-forward",
+                    true,
+                    gesture("r-right", "Right", "R", &["R"]),
+                    action("act-forward", "Forward", "keys", "!{Right}"),
+                ),
+                binding(
+                    "g-edge-left-vol-up",
+                    true,
+                    gesture("edge-left-wu", "Left Edge Wheel Up", "EdgeLeft", &["WU"]),
+                    action("act-vol-up", "Volume Up", "keys", "{Volume_Up}"),
+                ),
+                binding(
+                    "g-edge-left-vol-down",
+                    true,
+                    gesture("edge-left-wd", "Left Edge Wheel Down", "EdgeLeft", &["WD"]),
+                    action("act-vol-down", "Volume Down", "keys", "{Volume_Down}"),
+                ),
+                binding(
+                    "g-corner-br",
+                    false,
+                    gesture("corner-br", "Bottom-Right Corner", "CornerBR", &[]),
+                    action("act-show-desktop", "Show Desktop", "keys", "#d"),
+                ),
+                binding(
+                    "g-insert-mute",
+                    false,
+                    gesture("key-insert", "Insert", "Insert", &[]),
+                    action("act-noop", "No-op (Mute)", "noop", ""),
+                ),
+            ],
+        ),
+    ]
+}
+
 pub fn default_app_config() -> AppConfig {
     AppConfig {
         version: 1,
         language: "zh-TW".into(),
-        engine: EngineConfig {
-            enabled: true,
-            debug: false,
-            threshold_px: 10,
-            osd_duration_ms: default_osd_duration_ms(),
-            osd_font_size_px: default_osd_font_size_px(),
-            osd_opacity_pct: default_osd_opacity_pct(),
-        },
-        edge_scroll: EdgeScrollConfig {
-            enabled: true,
-            top_edge: true,
-            action: "volume".into(),
-        },
-        gesture_templates: vec![
-            GestureTemplate { id: "edge-top-wu".into(), name: "Top Edge Wheel Up".into(), trigger: "EdgeTop".into(), steps: vec!["WU".into()] },
-            GestureTemplate { id: "edge-top-wd".into(), name: "Top Edge Wheel Down".into(), trigger: "EdgeTop".into(), steps: vec!["WD".into()] },
-            GestureTemplate { id: "edge-bottom-wu".into(), name: "Bottom Edge Wheel Up".into(), trigger: "EdgeBottom".into(), steps: vec!["WU".into()] },
-            GestureTemplate { id: "edge-bottom-wd".into(), name: "Bottom Edge Wheel Down".into(), trigger: "EdgeBottom".into(), steps: vec!["WD".into()] },
-            GestureTemplate { id: "edge-left-wu".into(), name: "Left Edge Wheel Up".into(), trigger: "EdgeLeft".into(), steps: vec!["WU".into()] },
-            GestureTemplate { id: "edge-left-wd".into(), name: "Left Edge Wheel Down".into(), trigger: "EdgeLeft".into(), steps: vec!["WD".into()] },
-            GestureTemplate { id: "edge-right-wu".into(), name: "Right Edge Wheel Up".into(), trigger: "EdgeRight".into(), steps: vec!["WU".into()] },
-            GestureTemplate { id: "edge-right-wd".into(), name: "Right Edge Wheel Down".into(), trigger: "EdgeRight".into(), steps: vec!["WD".into()] },
-            GestureTemplate { id: "corner-tl".into(), name: "Corner TL".into(), trigger: "CornerTL".into(), steps: vec![] },
-            GestureTemplate { id: "corner-tr".into(), name: "Corner TR".into(), trigger: "CornerTR".into(), steps: vec![] },
-            GestureTemplate { id: "corner-bl".into(), name: "Corner BL".into(), trigger: "CornerBL".into(), steps: vec![] },
-            GestureTemplate { id: "r-diagonal-ul".into(), name: "Right Button Up-Left".into(), trigger: "R".into(), steps: vec!["UL".into()] },
-            GestureTemplate { id: "r-diagonal-ur".into(), name: "Right Button Up-Right".into(), trigger: "R".into(), steps: vec!["UR".into()] },
-            GestureTemplate { id: "r-diagonal-dr".into(), name: "Right Button Down-Right".into(), trigger: "R".into(), steps: vec!["DR".into()] },
-            GestureTemplate { id: "r-diagonal-dl".into(), name: "Right Button Down-Left".into(), trigger: "R".into(), steps: vec!["DL".into()] },
-            GestureTemplate {
-                id: "r-left".into(),
-                name: "Left".into(),
-                trigger: "R".into(),
-                steps: vec!["L".into()],
-            },
-            GestureTemplate {
-                id: "r-right".into(),
-                name: "Right".into(),
-                trigger: "R".into(),
-                steps: vec!["R".into()],
-            },
-            GestureTemplate {
-                id: "r-up".into(),
-                name: "Up".into(),
-                trigger: "R".into(),
-                steps: vec!["U".into()],
-            },
-            GestureTemplate {
-                id: "r-down".into(),
-                name: "Down".into(),
-                trigger: "R".into(),
-                steps: vec!["D".into()],
-            },
-            GestureTemplate {
-                id: "r-down-right".into(),
-                name: "Down-Right".into(),
-                trigger: "R".into(),
-                steps: vec!["D".into(), "R".into()],
-            },
-            GestureTemplate {
-                id: "r-up-left".into(),
-                name: "Up-Left".into(),
-                trigger: "R".into(),
-                steps: vec!["U".into(), "L".into()],
-            },
-            GestureTemplate {
-                id: "x1-click".into(),
-                name: "X1 Click".into(),
-                trigger: "X1".into(),
-                steps: vec![],
-            },
-            GestureTemplate {
-                id: "x2-click".into(),
-                name: "X2 Click".into(),
-                trigger: "X2".into(),
-                steps: vec![],
-            },
-            GestureTemplate {
-                id: "r-wu".into(),
-                name: "R + Wheel Up".into(),
-                trigger: "R".into(),
-                steps: vec!["WU".into()],
-            },
-            GestureTemplate {
-                id: "r-wd".into(),
-                name: "R + Wheel Down".into(),
-                trigger: "R".into(),
-                steps: vec!["WD".into()],
-            },
-            GestureTemplate {
-                id: "corner-br".into(),
-                name: "Bottom-Right Corner".into(),
-                trigger: "CornerBR".into(),
-                steps: vec![],
-            },
-            GestureTemplate {
-                id: "key-insert".into(),
-                name: "Insert Key".into(),
-                trigger: "Insert".into(),
-                steps: vec![],
-            },
-            GestureTemplate {
-                id: "key-lalt".into(),
-                name: "Left Alt".into(),
-                trigger: "LAlt".into(),
-                steps: vec![],
-            },
-            GestureTemplate {
-                id: "key-lwin".into(),
-                name: "Left Win".into(),
-                trigger: "LWin".into(),
-                steps: vec![],
-            },
-        ],
-        action_templates: vec![
-            ActionTemplate {
-                id: "act-back".into(),
-                name: "Back".into(),
-                action_type: "keys".into(),
-                value: "!{Left}".into(),
-            },
-            ActionTemplate {
-                id: "act-forward".into(),
-                name: "Forward".into(),
-                action_type: "keys".into(),
-                value: "!{Right}".into(),
-            },
-            ActionTemplate {
-                id: "act-close-tab".into(),
-                name: "Close Tab".into(),
-                action_type: "keys".into(),
-                value: "^w".into(),
-            },
-            ActionTemplate {
-                id: "act-reopen-tab".into(),
-                name: "Reopen Closed Tab".into(),
-                action_type: "keys".into(),
-                value: "^+t".into(),
-            },
-            ActionTemplate {
-                id: "act-minimize".into(),
-                name: "Minimize Window".into(),
-                action_type: "ahk".into(),
-                value: "WinMinimize('A')".into(),
-            },
-            ActionTemplate {
-                id: "act-show-desktop".into(),
-                name: "Show Desktop".into(),
-                action_type: "keys".into(),
-                value: "#d".into(),
-            },
-            ActionTemplate {
-                id: "act-vol-up".into(),
-                name: "Volume Up".into(),
-                action_type: "keys".into(),
-                value: "{Volume_Up}".into(),
-            },
-            ActionTemplate {
-                id: "act-vol-down".into(),
-                name: "Volume Down".into(),
-                action_type: "keys".into(),
-                value: "{Volume_Down}".into(),
-            },
-            ActionTemplate {
-                id: "act-prev-tab".into(),
-                name: "Previous Tab".into(),
-                action_type: "keys".into(),
-                value: "^{PgUp}".into(),
-            },
-            ActionTemplate {
-                id: "act-next-tab".into(),
-                name: "Next Tab".into(),
-                action_type: "keys".into(),
-                value: "^{PgDn}".into(),
-            },
-            ActionTemplate {
-                id: "act-noop".into(),
-                name: "No-op (Mute)".into(),
-                action_type: "noop".into(),
-                value: "".into(),
-            },
-            ActionTemplate {
-                id: "act-lwin".into(),
-                name: "Trigger Win".into(),
-                action_type: "remap".into(),
-                value: "LWin".into(),
-            },
-            ActionTemplate {
-                id: "act-lalt".into(),
-                name: "Trigger Alt".into(),
-                action_type: "remap".into(),
-                value: "LAlt".into(),
-            },
-        ],
-        key_remaps: vec![
-            KeyRemap {
-                id: "remap-disable-insert".into(),
-                name: "停用 Insert 鍵 (靜音)".into(),
-                enabled: false,
-                src_key: "Insert".into(),
-                dst_key: "none".into(),
-            },
-            KeyRemap {
-                id: "remap-lalt-lwin".into(),
-                name: "左 Alt 映射為 Win".into(),
-                enabled: false,
-                src_key: "LAlt".into(),
-                dst_key: "LWin".into(),
-            },
-            KeyRemap {
-                id: "remap-lwin-lalt".into(),
-                name: "左 Win 映射為 Alt".into(),
-                enabled: false,
-                src_key: "LWin".into(),
-                dst_key: "LAlt".into(),
-            },
-        ],
-        targets: vec![
-            Target {
-                id: "disabled".into(),
-                name: "Disabled List (Bypass)".into(),
-                enabled: true,
-                kind: "disabled".into(),
-                executables: vec!["conductor.exe".into(), "photoshop.exe".into()],
-                bindings: vec![],
-            },
-            Target {
-                id: "group01".into(),
-                name: "Group 01".into(),
-                enabled: true,
-                kind: "group".into(),
-                executables: vec![
-                    "chrome.exe".into(),
-                    "msedge.exe".into(),
-                    "firefox.exe".into(),
-                    "brave.exe".into(),
-                ],
-                bindings: vec![
-                    Binding {
-                        id: "b-close-tab".into(),
-                        enabled: true,
-                        gesture: Gesture {
-                            id: "r-right-down".into(),
-                            name: "Right-Down".into(),
-                            trigger: "R".into(),
-                            steps: vec!["R".into(), "D".into()],
-                        },
-                        action: Action {
-                            id: "act-close-tab".into(),
-                            name: "Close Tab".into(),
-                            action_type: "keys".into(),
-                            value: "^w".into(),
-                        },
-                    },
-                    Binding {
-                        id: "b-reopen-tab".into(),
-                        enabled: true,
-                        gesture: Gesture {
-                            id: "r-right-up".into(),
-                            name: "Right-Up".into(),
-                            trigger: "R".into(),
-                            steps: vec!["R".into(), "U".into()],
-                        },
-                        action: Action {
-                            id: "act-reopen-tab".into(),
-                            name: "Reopen Closed Tab".into(),
-                            action_type: "keys".into(),
-                            value: "^+t".into(),
-                        },
-                    },
-                    Binding {
-                        id: "g-edge-top-prev-tab".into(),
-                        enabled: true,
-                        gesture: Gesture {
-                            id: "edge-top-wu".into(),
-                            name: "Top Edge Wheel Up".into(),
-                            trigger: "EdgeTop".into(),
-                            steps: vec!["WU".into()],
-                        },
-                        action: Action {
-                            id: "act-prev-tab".into(),
-                            name: "Previous Tab".into(),
-                            action_type: "keys".into(),
-                            value: "^{PgUp}".into(),
-                        },
-                    },
-                    Binding {
-                        id: "g-edge-top-next-tab".into(),
-                        enabled: true,
-                        gesture: Gesture {
-                            id: "edge-top-wd".into(),
-                            name: "Top Edge Wheel Down".into(),
-                            trigger: "EdgeTop".into(),
-                            steps: vec!["WD".into()],
-                        },
-                        action: Action {
-                            id: "act-next-tab".into(),
-                            name: "Next Tab".into(),
-                            action_type: "keys".into(),
-                            value: "^{PgDn}".into(),
-                        },
-                    },
-                ],
-            },
-            Target {
-                id: "global".into(),
-                name: "Global Default".into(),
-                enabled: true,
-                kind: "global".into(),
-                executables: vec![],
-                bindings: vec![
-                    Binding {
-                        id: "g-back".into(),
-                        enabled: true,
-                        gesture: Gesture {
-                            id: "r-left".into(),
-                            name: "Left".into(),
-                            trigger: "R".into(),
-                            steps: vec!["L".into()],
-                        },
-                        action: Action {
-                            id: "act-back".into(),
-                            name: "Back".into(),
-                            action_type: "keys".into(),
-                            value: "!{Left}".into(),
-                        },
-                    },
-                    Binding {
-                        id: "g-forward".into(),
-                        enabled: true,
-                        gesture: Gesture {
-                            id: "r-right".into(),
-                            name: "Right".into(),
-                            trigger: "R".into(),
-                            steps: vec!["R".into()],
-                        },
-                        action: Action {
-                            id: "act-forward".into(),
-                            name: "Forward".into(),
-                            action_type: "keys".into(),
-                            value: "!{Right}".into(),
-                        },
-                    },
-                    Binding {
-                        id: "g-edge-left-vol-up".into(),
-                        enabled: true,
-                        gesture: Gesture {
-                            id: "edge-left-wu".into(),
-                            name: "Left Edge Wheel Up".into(),
-                            trigger: "EdgeLeft".into(),
-                            steps: vec!["WU".into()],
-                        },
-                        action: Action {
-                            id: "act-vol-up".into(),
-                            name: "Volume Up".into(),
-                            action_type: "keys".into(),
-                            value: "{Volume_Up}".into(),
-                        },
-                    },
-                    Binding {
-                        id: "g-edge-left-vol-down".into(),
-                        enabled: true,
-                        gesture: Gesture {
-                            id: "edge-left-wd".into(),
-                            name: "Left Edge Wheel Down".into(),
-                            trigger: "EdgeLeft".into(),
-                            steps: vec!["WD".into()],
-                        },
-                        action: Action {
-                            id: "act-vol-down".into(),
-                            name: "Volume Down".into(),
-                            action_type: "keys".into(),
-                            value: "{Volume_Down}".into(),
-                        },
-                    },
-                    Binding {
-                        id: "g-corner-br".into(),
-                        enabled: false,
-                        gesture: Gesture {
-                            id: "corner-br".into(),
-                            name: "Bottom-Right Corner".into(),
-                            trigger: "CornerBR".into(),
-                            steps: vec![],
-                        },
-                        action: Action {
-                            id: "act-show-desktop".into(),
-                            name: "Show Desktop".into(),
-                            action_type: "keys".into(),
-                            value: "#d".into(),
-                        },
-                    },
-                    Binding {
-                        id: "g-insert-mute".into(),
-                        enabled: false,
-                        gesture: Gesture {
-                            id: "key-insert".into(),
-                            name: "Insert".into(),
-                            trigger: "Insert".into(),
-                            steps: vec![],
-                        },
-                        action: Action {
-                            id: "act-noop".into(),
-                            name: "No-op (Mute)".into(),
-                            action_type: "noop".into(),
-                            value: "".into(),
-                        },
-                    },
-                ],
-            },
-        ],
+        engine: default_engine_config(),
+        edge_scroll: default_edge_scroll_config(),
+        gesture_templates: default_gesture_templates(),
+        action_templates: default_action_templates(),
+        key_remaps: default_key_remaps(),
+        targets: default_targets(),
+    }
+}
+
+/// Maps legacy trigger aliases to their canonical token.
+pub(crate) fn normalize_trigger(trigger: &str) -> String {
+    match trigger {
+        "RB" => "R".into(),
+        "MB" => "M".into(),
+        "LB" => "L".into(),
+        "X1B" => "X1".into(),
+        "X2B" => "X2".into(),
+        "EdgeTopL" | "EdgeTopR" => "EdgeTop".into(),
+        other => other.to_string(),
+    }
+}
+
+/// Normalizes every persisted trigger without changing template or rule identity.
+pub(crate) fn normalize_config_triggers(config: &mut AppConfig) {
+    for template in &mut config.gesture_templates {
+        template.trigger = normalize_trigger(&template.trigger);
+    }
+    for target in &mut config.targets {
+        for binding in &mut target.bindings {
+            binding.gesture.trigger = normalize_trigger(&binding.gesture.trigger);
+        }
     }
 }
 

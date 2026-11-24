@@ -1,16 +1,102 @@
 /**
- * Gesture and Trigger Display Helpers
- * Formats mouse triggers and direction arrows cleanly with i18n support.
+ * Gesture and trigger display helpers.
+ * Formats mouse triggers and direction arrows with i18n support.
  */
+import type { TFunction } from "i18next";
+import { Gesture, GestureTrigger } from "../../domain/types";
+import { normalizeTrigger } from "../../domain/triggerNormalization";
 
-export function formatGestureName(trigger: string, steps: string[], t: any): string {
+const ARROW_ALIASES: Record<string, string> = {
+  "🡐": "←",
+  "🡑": "↑",
+  "🡒": "→",
+  "🡓": "↓",
+  "🡔": "↖",
+  "🡕": "↗",
+  "🡖": "↘",
+  "🡗": "↙",
+  "🡠": "←",
+  "🡡": "↑",
+  "🡢": "→",
+  "🡣": "↓",
+  "🡤": "↖",
+  "🡥": "↗",
+  "🡦": "↘",
+  "🡧": "↙",
+  "⭠": "←",
+  "⭡": "↑",
+  "⭢": "→",
+  "⭣": "↓",
+};
+
+const ARROW_STEPS: Record<string, string> = {
+  "←": "L",
+  "↑": "U",
+  "→": "R",
+  "↓": "D",
+  "↖": "UL",
+  "↗": "UR",
+  "↙": "DL",
+  "↘": "DR",
+};
+
+const LETTER_STEPS: Record<string, string> = {
+  U: "U",
+  D: "D",
+  L: "L",
+  R: "R",
+};
+
+const KNOWN_TRIGGERS: GestureTrigger[] = [
+  "CornerTL",
+  "CornerTR",
+  "CornerBL",
+  "CornerBR",
+  "EdgeTop",
+  "EdgeBottom",
+  "EdgeLeft",
+  "EdgeRight",
+  "X1",
+  "X2",
+  "R",
+  "M",
+  "L",
+];
+
+const MOUSE_TRIGGERS = ["R", "M", "L", "X1", "X2"];
+
+function normalizeArrows(text: string): string {
+  return Array.from(text, (character) => ARROW_ALIASES[character] ?? character).join(
+    "",
+  );
+}
+
+export function formatGestureName(
+  trigger: string,
+  steps: string[],
+  t: TFunction,
+): string {
   const key = normalizeTrigger(trigger);
   const label = t(`triggers.${key}`, { defaultValue: key });
   const button = label.replace(/^[RML] \((.*)\)$/, "$1");
-  return button + (steps.length ? " " + steps.map((step) => formatStepSymbol(step, t)).join("") : "");
+  return (
+    button +
+    (steps.length ? " " + steps.map((step) => formatStepSymbol(step, t)).join("") : "")
+  );
 }
 
-export function formatStepSymbol(step: string, t?: any): string {
+/**
+ * Uses the translated template name when it exists, otherwise keeps the
+ * user-provided name stored on the template.
+ */
+export function formatTemplateName(t: TFunction, gesture: Gesture): string {
+  const translated = t(`gestureNames.${gesture.id}`, { defaultValue: "" });
+  return translated
+    ? formatGestureName(gesture.trigger, gesture.steps, t)
+    : gesture.name;
+}
+
+export function formatStepSymbol(step: string, t?: TFunction): string {
   switch (step.toUpperCase()) {
     case "U":
     case "UP":
@@ -47,39 +133,13 @@ export function formatStepSymbol(step: string, t?: any): string {
   }
 }
 
-/**
- * Normalizes legacy trigger aliases (e.g. RB, MB, LB, EdgeTopR) to canonical trigger names.
- */
-export function normalizeTrigger(trigger: string): string {
-  switch (trigger) {
-    case "RB":
-      return "R";
-    case "MB":
-      return "M";
-    case "LB":
-      return "L";
-    case "X1B":
-      return "X1";
-    case "X2B":
-      return "X2";
-    case "EdgeTopL":
-    case "EdgeTopR":
-      return "EdgeTop";
-    default:
-      return trigger;
-  }
-}
-
-export function formatTriggerSymbol(
-  trigger: string,
-  t?: any
-): string {
-  const trig = normalizeTrigger(trigger);
+export function formatTriggerSymbol(trigger: string, t?: TFunction): string {
+  const normalized = normalizeTrigger(trigger);
   if (t) {
-    return t(`triggers.${trig}`, { defaultValue: trig });
+    return t(`triggers.${normalized}`, { defaultValue: normalized });
   }
 
-  switch (trig) {
+  switch (normalized) {
     case "R":
       return "R";
     case "M":
@@ -91,160 +151,90 @@ export function formatTriggerSymbol(
     case "X2":
       return "X2";
     default:
-      return trig;
+      return normalized;
   }
 }
 
 export function formatGestureLabel(
   trigger: string,
   steps: string[],
-  t?: any
+  t?: TFunction,
 ): string {
-  const normTrig = normalizeTrigger(trigger);
-  const isMouse = ["R", "M", "L", "X1", "X2"].includes(normTrig);
-  const trig = isMouse ? normTrig : formatTriggerSymbol(normTrig, t);
+  const normalized = normalizeTrigger(trigger);
+  const isMouse = MOUSE_TRIGGERS.includes(normalized);
+  const label = isMouse ? normalized : formatTriggerSymbol(normalized, t);
 
   if (steps.length === 0) {
     if (isMouse) {
       const clickText = t ? t("triggers.click") : "Click";
-      return `${trig} (${clickText})`;
+      return `${label} (${clickText})`;
     }
-    return trig;
+    return label;
   }
 
-  // Chord wheel or edge wheel
   if (steps[0] === "WU" || steps[0] === "WD") {
-    const wheelText = formatStepSymbol(steps[0], t);
-    return `${trig} + ${wheelText}`;
+    return `${label} + ${formatStepSymbol(steps[0], t)}`;
   }
 
-  // Direction arrows without space for mouse triggers (e.g. R←, R↓→)
   const stepArrows = steps.map((step) => formatStepSymbol(step, t)).join("");
-  return isMouse ? `${trig}${stepArrows}` : `${trig} ${stepArrows}`;
+  return isMouse ? `${label}${stepArrows}` : `${label} ${stepArrows}`;
 }
 
 /**
  * Parses user-input gesture text (e.g. "R→↘", "→↘", "DR", "R↓→", "R + W↑")
- * into normalized trigger and step array.
+ * into a normalized trigger and step array.
  */
 export function parseStrokeInput(
   rawInput: string,
-  fallbackTrigger: string = "R"
-): { trigger: string; steps: string[] } {
-  let text = rawInput.trim();
-  text = text.replace(/滾輪|wheel/gi, "W");
-  const previousArrows = ["🡐", "🡑", "🡒", "🡓", "🡔", "🡕", "🡖", "🡗"];
-  const standardArrows = ["←", "↑", "→", "↓", "↖", "↗", "↘", "↙"];
-  text = Array.from(text, (character) => {
-    const index = previousArrows.indexOf(character);
-    return index < 0 ? character : standardArrows[index];
-  }).join("");
-  const arrowAliases: Record<string, string> = { "🡠": "←", "🡡": "↑", "🡢": "→", "🡣": "↓", "🡤": "↖", "🡥": "↗", "🡦": "↘", "🡧": "↙", "⭠": "←", "⭡": "↑", "⭢": "→", "⭣": "↓" };
-  text = Array.from(text, (character) => arrowAliases[character] ?? character).join("");
-  let trigger = fallbackTrigger;
+  fallbackTrigger: string = "R",
+): { trigger: GestureTrigger; steps: string[] } {
+  let text = normalizeArrows(rawInput.trim().replace(/滾輪|wheel/gi, "W"));
+  let trigger: GestureTrigger = fallbackTrigger;
 
-  // 1. Check for leading trigger (e.g. "X1:", "X2 ", "R→", "M", etc.)
-  const knownTriggers = [
-    "CornerTL",
-    "CornerTR",
-    "CornerBL",
-    "CornerBR",
-    "EdgeTop",
-    "EdgeBottom",
-    "EdgeLeft",
-    "EdgeRight",
-    "X1",
-    "X2",
-    "R",
-    "M",
-    "L",
-  ];
-  for (const kt of knownTriggers) {
-    if (text.startsWith(kt)) {
-      trigger = kt;
-      text = text.slice(kt.length).replace(/^[:\s+]+/, "");
+  for (const knownTrigger of KNOWN_TRIGGERS) {
+    if (text.startsWith(knownTrigger)) {
+      trigger = knownTrigger;
+      text = text.slice(knownTrigger.length).replace(/^[:\s+]+/, "");
       break;
     }
   }
 
-  // 2. Parse remaining steps
   const steps: string[] = [];
-  let i = 0;
-  while (i < text.length) {
-    // Skip whitespace, colons, plus, commas
-    if (/[\s,:+]/.test(text[i])) {
-      i++;
+  let index = 0;
+  while (index < text.length) {
+    if (/[\s,:+]/.test(text[index])) {
+      index += 1;
       continue;
     }
 
-    // Check two-character tokens first: UL, UR, DL, DR, WU, WD, W↑, W↓
-    const twoChars = text.slice(i, i + 2).toUpperCase();
-    if (twoChars === "W↑" || twoChars === "WU") {
+    const token = text.slice(index, index + 2).toUpperCase();
+    if (token === "W↑" || token === "WU") {
       steps.push("WU");
-      i += 2;
+      index += 2;
       continue;
     }
-    if (twoChars === "W↓" || twoChars === "WD") {
+    if (token === "W↓" || token === "WD") {
       steps.push("WD");
-      i += 2;
+      index += 2;
       continue;
     }
-    if (
-      twoChars === "UL" ||
-      twoChars === "UR" ||
-      twoChars === "DL" ||
-      twoChars === "DR"
-    ) {
-      steps.push(twoChars);
-      i += 2;
+    if (["UL", "UR", "DL", "DR"].includes(token)) {
+      steps.push(token);
+      index += 2;
       continue;
     }
 
-    // Single character tokens: arrows and letters
-    const ch = text[i];
-    switch (ch) {
-      case "↑":
-        steps.push("U");
-        break;
-      case "↓":
-        steps.push("D");
-        break;
-      case "←":
-        steps.push("L");
-        break;
-      case "→":
-        steps.push("R");
-        break;
-      case "↖":
-        steps.push("UL");
-        break;
-      case "↗":
-        steps.push("UR");
-        break;
-      case "↙":
-        steps.push("DL");
-        break;
-      case "↘":
-        steps.push("DR");
-        break;
-      case "U":
-      case "u":
-        steps.push("U");
-        break;
-      case "D":
-      case "d":
-        steps.push("D");
-        break;
-      case "L":
-      case "l":
-        steps.push("L");
-        break;
-      case "R":
-      case "r":
-        steps.push("R");
-        break;
+    const character = text[index];
+    const arrowStep = ARROW_STEPS[character];
+    if (arrowStep) {
+      steps.push(arrowStep);
+    } else {
+      const letterStep = LETTER_STEPS[character.toUpperCase()];
+      if (letterStep) {
+        steps.push(letterStep);
+      }
     }
-    i++;
+    index += 1;
   }
 
   return { trigger, steps };

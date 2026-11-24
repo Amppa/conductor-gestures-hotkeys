@@ -182,6 +182,8 @@
     "typeRun": "啟動程式 / 網址 (run)",
     "typeNoop": "停用按鍵 (無動作)",
     "typeRemap": "按鍵映射 (改鍵)",
+    "typeMouse": "滑鼠動作 (mouse)",
+    "typeWheel": "滾輪動作 (wheel)",
     "noopHint": "攔截該按鍵事件並直接忽略，不執行任何動作（徹底停用該鍵）。",
     "remapHint": "目標鍵位名稱（如 LWin, LAlt, LCtrl, CapsLock 等）。",
     "keysTitle": "按鍵組合 (聚焦後直接在鍵盤按下)：",

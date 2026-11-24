@@ -38,6 +38,13 @@ describe("hasEnabledGestureDuplicate", () => {
 
     expect(hasEnabledGestureDuplicate([existing], candidate.id, candidate.gesture)).toBe(false);
   });
+
+  it("normalizes legacy trigger aliases and step casing before comparing", () => {
+    const existing = createBinding("existing", true, { trigger: "RB", steps: ["l"] });
+    const candidate = createBinding("new", false, { trigger: "R", steps: ["L"] });
+
+    expect(hasEnabledGestureDuplicate([existing], candidate.id, candidate.gesture)).toBe(true);
+  });
 });
 
 describe("DEFAULT_CONFIG", () => {

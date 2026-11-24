@@ -182,6 +182,8 @@
     "typeRun": "Launch Program / URL (run)",
     "typeNoop": "Disable Key (No-op)",
     "typeRemap": "Key Remap",
+    "typeMouse": "Mouse Action (mouse)",
+    "typeWheel": "Wheel Action (wheel)",
     "noopHint": "Intercepts this key event and ignores it completely (disables the key).",
     "remapHint": "Target destination key name (e.g. LWin, LAlt, LCtrl, CapsLock).",
     "keysTitle": "Key combination (Focus and press keys directly):",

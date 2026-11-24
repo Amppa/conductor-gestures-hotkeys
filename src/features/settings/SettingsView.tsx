@@ -2,8 +2,6 @@ import React from "react";
 import {
   makeStyles,
   tokens,
-  Title3,
-  Divider,
   Switch,
   Slider,
   Select,
@@ -11,33 +9,9 @@ import {
 import { useTranslation } from "react-i18next";
 import { AppConfig, Language } from "../../domain/types";
 import { BackupSection } from "./BackupView";
+import { PageHeader, usePageStyles } from "../../shared/pageStyles";
 
 const useStyles = makeStyles({
-  container: {
-    padding: "16px 24px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    minHeight: "100%",
-    boxSizing: "border-box",
-    justifyContent: "flex-start",
-  },
-  pageHeader: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    flexShrink: 0,
-  },
-  pageTitle: {
-    fontSize: "20px",
-    lineHeight: "24px",
-    fontWeight: tokens.fontWeightSemibold,
-    margin: "0 !important",
-    padding: 0,
-  },
-  divider: {
-    margin: "0 !important",
-  },
   settingsList: {
     width: "100%",
     maxWidth: "680px",
@@ -103,6 +77,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateConfig,
   onToggleAutostart,
 }) => {
+  const page = usePageStyles();
   const styles = useStyles();
   const { t, i18n } = useTranslation();
 
@@ -165,11 +140,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.pageHeader}>
-        <Title3 as="h1" className={styles.pageTitle}>{t("nav.settings")}</Title3>
-        <Divider className={styles.divider} />
-      </div>
+    <div className={page.container}>
+      <PageHeader title={t("nav.settings")} />
       <div className={styles.settingsList}>
         <div className={styles.row}>
           <span className={styles.itemLabel}>{t("settings.languageTitle")}</span>

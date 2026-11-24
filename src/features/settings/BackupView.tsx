@@ -19,13 +19,9 @@ import {
 } from "@fluentui/react-icons";
 import { useTranslation } from "react-i18next";
 import { AppConfig, BackupData } from "../../domain/types";
-import {
-  DEFAULT_CONFIG,
-  normalizeOsdDurationMs,
-  normalizeOsdFontSizePx,
-  normalizeOsdOpacityPct,
-} from "../../domain/defaults";
-import { normalizeTrigger } from "../gestures/gestureSymbols";
+import { DEFAULT_CONFIG } from "../../domain/defaults";
+import { normalizeImportedConfig } from "../../domain/configNormalization";
+import { invokeTauri } from "../../shared/tauri";
 
 const useStyles = makeStyles({
   controls: {
@@ -73,49 +69,25 @@ const useStyles = makeStyles({
   },
 });
 
+interface SaveFileHandle {
+  name: string;
+  createWritable(): Promise<{
+    write(data: string): Promise<void>;
+    close(): Promise<void>;
+  }>;
+}
+
+type SaveFilePicker = (options: {
+  suggestedName: string;
+  types: Array<{
+    description: string;
+    accept: Record<string, string[]>;
+  }>;
+}) => Promise<SaveFileHandle>;
+
 interface BackupSectionProps {
   config: AppConfig;
   onUpdateConfig: (newConfig: AppConfig) => void;
-}
-
-function normalizeImportedConfig(rawConfig: AppConfig): AppConfig {
-  const engine = rawConfig.engine as
-    | (Partial<AppConfig["engine"]> & { osdFontSizePt?: number })
-    | undefined;
-
-  return {
-    ...rawConfig,
-    engine: {
-      ...engine,
-      osdDurationMs: normalizeOsdDurationMs(
-        engine?.osdDurationMs ?? DEFAULT_CONFIG.engine.osdDurationMs,
-      ),
-      osdFontSizePx: normalizeOsdFontSizePx(
-        engine?.osdFontSizePx ?? engine?.osdFontSizePt ?? DEFAULT_CONFIG.engine.osdFontSizePx,
-      ),
-      osdOpacityPct: normalizeOsdOpacityPct(
-        engine?.osdOpacityPct ?? DEFAULT_CONFIG.engine.osdOpacityPct,
-      ),
-      enabled: engine?.enabled ?? DEFAULT_CONFIG.engine.enabled,
-      debug: engine?.debug ?? DEFAULT_CONFIG.engine.debug,
-      thresholdPx: engine?.thresholdPx ?? DEFAULT_CONFIG.engine.thresholdPx,
-    },
-    keyRemaps: rawConfig.keyRemaps || [],
-    gestureTemplates: (rawConfig.gestureTemplates || []).map((g) => ({
-      ...g,
-      trigger: normalizeTrigger(g.trigger) as any,
-    })),
-    targets: (rawConfig.targets || []).map((t) => ({
-      ...t,
-      bindings: (t.bindings || []).map((b) => ({
-        ...b,
-        gesture: {
-          ...b.gesture,
-          trigger: normalizeTrigger(b.gesture.trigger) as any,
-        },
-      })),
-    })),
-  };
 }
 
 export const BackupSection: React.FC<BackupSectionProps> = ({
@@ -157,8 +129,7 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
 
     // 1. Priority: Tauri native system save dialog
     try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      const savedPath = await invoke<string | null>("export_config_dialog", {
+      const savedPath = await invokeTauri<string | null>("export_config_dialog", {
         content: jsonStr,
         defaultFileName: fileName,
       });
@@ -169,15 +140,19 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
           msg: t("backup.exportSuccess", { fileName: savedPath }),
         });
       }
+      // A null path means the native dialog was cancelled.
       return;
     } catch {
       // Fallback for browser environment
     }
 
     // 2. Browser fallback: modern showSaveFilePicker
-    if ("showSaveFilePicker" in window) {
+    const windowWithPicker = window as Window & {
+      showSaveFilePicker?: SaveFilePicker;
+    };
+    if (windowWithPicker.showSaveFilePicker) {
       try {
-        const handle = await (window as any).showSaveFilePicker({
+        const handle = await windowWithPicker.showSaveFilePicker({
           suggestedName: fileName,
           types: [
             {
@@ -194,8 +169,8 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
           msg: t("backup.exportSuccess", { fileName: handle.name || fileName }),
         });
         return;
-      } catch (err: any) {
-        if (err.name === "AbortError") {
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
           return;
         }
       }

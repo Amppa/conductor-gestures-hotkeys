@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
 use crate::config::{
-    normalize_osd_duration_ms, normalize_osd_font_size_px, normalize_osd_opacity_pct, AppConfig,
-    Binding, Target,
+    normalize_osd_duration_ms, normalize_osd_font_size_px, normalize_osd_opacity_pct, Action,
+    AppConfig, Binding, Target,
 };
 
 const KEYBOARD_RUNTIME_HELPERS: &str = r#"global gGeneratedRemapState := Map()
@@ -55,6 +55,64 @@ GeneratedRemapKeyUp(source) {
 
 "#;
 
+const MOUSE_OR_SPATIAL_TRIGGERS: &[&str] = &[
+    "R",
+    "RB",
+    "RButton",
+    "M",
+    "MB",
+    "MButton",
+    "L",
+    "LB",
+    "LButton",
+    "X1",
+    "X1B",
+    "XButton1",
+    "X2",
+    "X2B",
+    "XButton2",
+    "CornerTL",
+    "CornerTR",
+    "CornerBL",
+    "CornerBR",
+    "EdgeTop",
+    "EdgeBottom",
+    "EdgeLeft",
+    "EdgeRight",
+];
+
+const ACTION_NAMES_ZH_TW: &[(&str, &str)] = &[
+    ("act-back", "上一頁"),
+    ("act-forward", "下一頁"),
+    ("act-close-tab", "關閉分頁"),
+    ("act-reopen-tab", "回復關閉分頁"),
+    ("act-prev-tab", "切換上一分頁"),
+    ("act-next-tab", "切換下一分頁"),
+    ("act-minimize", "最小化視窗"),
+    ("act-show-desktop", "顯示桌面"),
+    ("act-vol-up", "提高音量"),
+    ("act-vol-down", "降低音量"),
+    ("act-noop", "停用按鍵 (無動作)"),
+    ("act-lwin", "觸發 Win 鍵"),
+    ("act-lalt", "觸發 Alt 鍵"),
+];
+
+const ACTION_NAMES_EN: &[(&str, &str)] = &[
+    ("act-back", "Back"),
+    ("act-forward", "Forward"),
+    ("act-close-tab", "Close Tab"),
+    ("act-reopen-tab", "Reopen Closed Tab"),
+    ("act-prev-tab", "Previous Tab"),
+    ("act-next-tab", "Next Tab"),
+    ("act-minimize", "Minimize Window"),
+    ("act-show-desktop", "Show Desktop"),
+    ("act-vol-up", "Volume Up"),
+    ("act-vol-down", "Volume Down"),
+    ("act-noop", "No-op (Mute)"),
+    ("act-lwin", "Trigger Win"),
+    ("act-lalt", "Trigger Alt"),
+];
+
 pub fn trigger_to_ahk_name(t: &str) -> &str {
     match t {
         "RB" | "R" => "RButton",
@@ -67,31 +125,7 @@ pub fn trigger_to_ahk_name(t: &str) -> &str {
 }
 
 pub fn is_mouse_or_spatial_trigger(trig: &str) -> bool {
-    matches!(
-        trig,
-        "R" | "RB"
-            | "RButton"
-            | "M"
-            | "MB"
-            | "MButton"
-            | "L"
-            | "LB"
-            | "LButton"
-            | "X1"
-            | "X1B"
-            | "XButton1"
-            | "X2"
-            | "X2B"
-            | "XButton2"
-            | "CornerTL"
-            | "CornerTR"
-            | "CornerBL"
-            | "CornerBR"
-            | "EdgeTop"
-            | "EdgeBottom"
-            | "EdgeLeft"
-            | "EdgeRight"
-    )
+    MOUSE_OR_SPATIAL_TRIGGERS.contains(&trig)
 }
 
 pub fn ahk_quote(s: &str) -> String {
@@ -105,6 +139,22 @@ fn is_keyboard_binding(binding: &Binding) -> bool {
 
 fn is_gesture_binding(binding: &Binding) -> bool {
     binding.enabled && is_mouse_or_spatial_trigger(&binding.gesture.trigger)
+}
+
+fn localized<'a>(language: &str, zh_tw: &'a str, en: &'a str) -> &'a str {
+    if language == "zh-TW" {
+        zh_tw
+    } else {
+        en
+    }
+}
+
+fn bool_literal(value: bool) -> &'static str {
+    if value {
+        "true"
+    } else {
+        "false"
+    }
 }
 
 fn write_hotkey_action(script: &mut String, binding: &Binding) {
@@ -174,313 +224,287 @@ fn write_keyboard_helpers(script: &mut String) {
 }
 
 pub fn resolve_action_display_name(action_id: &str, fallback_name: &str, lang: &str) -> String {
-    if lang == "zh-TW" {
-        match action_id {
-            "act-back" => "上一頁".to_string(),
-            "act-forward" => "下一頁".to_string(),
-            "act-close-tab" => "關閉分頁".to_string(),
-            "act-reopen-tab" => "回復關閉分頁".to_string(),
-            "act-prev-tab" => "切換上一分頁".to_string(),
-            "act-next-tab" => "切換下一分頁".to_string(),
-            "act-minimize" => "最小化視窗".to_string(),
-            "act-show-desktop" => "顯示桌面".to_string(),
-            "act-vol-up" => "提高音量".to_string(),
-            "act-vol-down" => "降低音量".to_string(),
-            "act-noop" => "停用按鍵 (無動作)".to_string(),
-            "act-lwin" => "觸發 Win 鍵".to_string(),
-            "act-lalt" => "觸發 Alt 鍵".to_string(),
-            _ => fallback_name.to_string(),
-        }
+    let table = if lang == "zh-TW" {
+        ACTION_NAMES_ZH_TW
     } else {
-        match action_id {
-            "act-back" => "Back".to_string(),
-            "act-forward" => "Forward".to_string(),
-            "act-close-tab" => "Close Tab".to_string(),
-            "act-reopen-tab" => "Reopen Closed Tab".to_string(),
-            "act-prev-tab" => "Previous Tab".to_string(),
-            "act-next-tab" => "Next Tab".to_string(),
-            "act-minimize" => "Minimize Window".to_string(),
-            "act-show-desktop" => "Show Desktop".to_string(),
-            "act-vol-up" => "Volume Up".to_string(),
-            "act-vol-down" => "Volume Down".to_string(),
-            "act-noop" => "No-op (Mute)".to_string(),
-            "act-lwin" => "Trigger Win".to_string(),
-            "act-lalt" => "Trigger Alt".to_string(),
-            _ => fallback_name.to_string(),
-        }
-    }
+        ACTION_NAMES_EN
+    };
+
+    table
+        .iter()
+        .find(|(id, _)| *id == action_id)
+        .map(|(_, name)| (*name).to_string())
+        .unwrap_or_else(|| fallback_name.to_string())
 }
 
-pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
-    let mut s = String::new();
-    s.push_str("#Requires AutoHotkey v2.0\n");
-    s.push_str("#SingleInstance Force\n\n");
-    s.push_str(&format!("; Revision: {}\n", revision));
+fn enabled_targets<'a>(config: &'a AppConfig, kind: &str) -> Vec<&'a Target> {
+    config
+        .targets
+        .iter()
+        .filter(|target| target.kind == kind && target.enabled)
+        .collect()
+}
+
+fn target_executables(target: &Target) -> Vec<String> {
+    target
+        .executables
+        .iter()
+        .map(|executable| executable.trim().to_ascii_lowercase())
+        .filter(|executable| !executable.is_empty())
+        .collect()
+}
+
+fn app_condition(executables: &[String]) -> String {
+    executables
+        .iter()
+        .map(|executable| format!("pLower = \"{}\"", ahk_quote(executable)))
+        .collect::<Vec<_>>()
+        .join(" || ")
+}
+
+fn write_header(script: &mut String, config: &AppConfig, revision: u64) {
+    script.push_str("#Requires AutoHotkey v2.0\n");
+    script.push_str("#SingleInstance Force\n\n");
+    script.push_str(&format!("; Revision: {}\n", revision));
 
     // Include the core gesture engine located in the same runtime directory
-    s.push_str("#Include \"GestureEngine.ahk\"\n\n");
+    script.push_str("#Include \"GestureEngine.ahk\"\n\n");
 
-    s.push_str(&format!(
+    script.push_str(&format!(
         "global gThreshold := {}\n",
         config.engine.threshold_px
     ));
-    s.push_str(&format!(
+    script.push_str(&format!(
         "global gOsdDurationMs := {}\n",
         normalize_osd_duration_ms(config.engine.osd_duration_ms)
     ));
-    s.push_str(&format!(
+    script.push_str(&format!(
         "global gOsdFontSizePx := {}\n",
         normalize_osd_font_size_px(config.engine.osd_font_size_px)
     ));
-    s.push_str(&format!(
+    script.push_str(&format!(
         "global gOsdOpacityPct := {}\n",
         normalize_osd_opacity_pct(config.engine.osd_opacity_pct)
     ));
-    s.push_str(&format!(
+    script.push_str(&format!(
         "global gOsdUnknownGestureLabel := \"{}\"\n",
-        if config.language == "zh-TW" {
-            "未知手勢"
-        } else {
-            "Unknown Gesture"
-        }
+        localized(&config.language, "未知手勢", "Unknown Gesture")
     ));
-    s.push_str(&format!(
+    script.push_str(&format!(
         "global gEdgeScrollEnabled := {}\n",
-        if config.edge_scroll.enabled {
-            "true"
-        } else {
-            "false"
-        }
+        bool_literal(config.edge_scroll.enabled)
     ));
-    s.push_str(&format!(
+    script.push_str(&format!(
         "global gDebugLogEnabled := {}\n\n",
-        if config.engine.debug { "true" } else { "false" }
+        bool_literal(config.engine.debug)
     ));
 
     // Connect function hooks
-    s.push_str(&format!("global gWheelLabel := \"{}\"\n", if config.language == "zh-TW" { "滾輪" } else { "Wheel" }));
-    s.push_str("global gFnIsProcessDisabled := GeneratedIsProcessDisabled\n");
-    s.push_str("global gFnDispatchGestureAction := GeneratedDispatchGestureAction\n");
-    s.push_str("global gFnGetGestureActionName := GeneratedGetGestureActionName\n\n");
+    script.push_str(&format!(
+        "global gWheelLabel := \"{}\"\n",
+        localized(&config.language, "滾輪", "Wheel")
+    ));
+    script.push_str("global gFnIsProcessDisabled := GeneratedIsProcessDisabled\n");
+    script.push_str("global gFnDispatchGestureAction := GeneratedDispatchGestureAction\n");
+    script.push_str("global gFnGetGestureActionName := GeneratedGetGestureActionName\n\n");
+}
 
-    // Priority 3: Disabled processes function
-    s.push_str("; Priority 3: Blacklist (Disabled apps)\n");
-    s.push_str("GeneratedIsProcessDisabled(procName) {\n");
-    let disabled_targets: Vec<&Target> = config
+fn collect_disabled_executables(config: &AppConfig) -> Vec<String> {
+    let mut executables = Vec::new();
+    for target in config
         .targets
         .iter()
-        .filter(|t| t.kind == "disabled" && t.enabled)
-        .collect();
-    let mut exes = Vec::new();
-    for dt in disabled_targets {
-        for exe in &dt.executables {
-            let trimmed = exe.trim().to_ascii_lowercase();
+        .filter(|target| target.kind == "disabled" && target.enabled)
+    {
+        for executable in &target.executables {
+            let trimmed = executable.trim().to_ascii_lowercase();
             if !trimmed.is_empty() {
-                exes.push(trimmed);
+                executables.push(trimmed);
             }
         }
     }
-    // Always include app itself in blacklist so it never intercepts gestures during config/recording
-    if !exes.contains(&"conductor.exe".to_string()) {
-        exes.push("conductor.exe".to_string());
+
+    // Always include the app itself so it never intercepts gestures while
+    // the user is editing or recording.
+    if !executables.iter().any(|exe| exe == "conductor.exe") {
+        executables.push("conductor.exe".to_string());
     }
-    if !exes.is_empty() {
-        s.push_str("    switch StrLower(procName) {\n");
-        let case_items = exes
+    executables
+}
+
+fn write_disabled_process_function(script: &mut String, executables: &[String]) {
+    script.push_str("; Priority 3: Blacklist (Disabled apps)\n");
+    script.push_str("GeneratedIsProcessDisabled(procName) {\n");
+
+    if executables.is_empty() {
+        script.push_str("    return false\n");
+    } else {
+        script.push_str("    switch StrLower(procName) {\n");
+        let cases = executables
             .iter()
-            .map(|e| format!("\"{}\"", ahk_quote(e)))
+            .map(|executable| format!("\"{}\"", ahk_quote(executable)))
             .collect::<Vec<_>>()
             .join(", ");
-        s.push_str(&format!(
+        script.push_str(&format!(
             "        case {}:\n            return true\n",
-            case_items
+            cases
         ));
-        s.push_str("        default:\n            return false\n");
-        s.push_str("    }\n");
-    } else {
-        s.push_str("    return false\n");
+        script.push_str("        default:\n            return false\n");
+        script.push_str("    }\n");
     }
-    s.push_str("}\n\n");
 
-    // Action dispatch function (Priority 2: Group > Priority 1: Global)
-    s.push_str("; Action Dispatcher (3. Disabled > 2. Groups > 1. Global)\n");
-    s.push_str("GeneratedDispatchGestureAction(trigger, stepStr, procName) {\n");
-    s.push_str("    pLower := StrLower(procName)\n\n");
+    script.push_str("}\n\n");
+}
+
+fn write_dispatch_action(script: &mut String, action: &Action, indent: &str) {
+    match action.action_type.as_str() {
+        "keys" | "wheel" => {
+            script.push_str(&format!("{indent}Send(\"{}\")\n", ahk_quote(&action.value)))
+        }
+        "run" => script.push_str(&format!("{indent}Run(\"{}\")\n", ahk_quote(&action.value))),
+        "mouse" => script.push_str(&format!(
+            "{indent}Click(\"{}\")\n",
+            ahk_quote(&action.value)
+        )),
+        "ahk" => {
+            for line in action.value.lines() {
+                script.push_str(&format!("{indent}{line}\n"));
+            }
+        }
+        _ => {}
+    }
+}
+
+fn write_action_dispatcher(
+    script: &mut String,
+    group_targets: &[&Target],
+    global_targets: &[&Target],
+) {
+    script.push_str("; Action Dispatcher (3. Disabled > 2. Groups > 1. Global)\n");
+    script.push_str("GeneratedDispatchGestureAction(trigger, stepStr, procName) {\n");
+    script.push_str("    pLower := StrLower(procName)\n\n");
 
     // Priority 2: Groups
-    let group_targets: Vec<&Target> = config
-        .targets
-        .iter()
-        .filter(|t| t.kind == "group" && t.enabled)
-        .collect();
-    for gt in &group_targets {
-        let group_exes: Vec<String> = gt
-            .executables
-            .iter()
-            .map(|e| e.trim().to_ascii_lowercase())
-            .filter(|e| !e.is_empty())
-            .collect();
-
-        if !group_exes.is_empty() && !gt.bindings.is_empty() {
-            let cond = group_exes
-                .iter()
-                .map(|e| format!("pLower = \"{}\"", ahk_quote(e)))
-                .collect::<Vec<_>>()
-                .join(" || ");
-            s.push_str(&format!("    ; Group: {}\n", gt.name));
-            s.push_str(&format!("    if ({}) {{\n", cond));
-            for b in &gt.bindings {
-                if !is_gesture_binding(b) {
-                    continue;
-                }
-                let trig = trigger_to_ahk_name(&b.gesture.trigger);
-                let steps = b.gesture.steps.join(",");
-                s.push_str(&format!(
-                    "        if (trigger = \"{}\" && stepStr = \"{}\") {{\n",
-                    trig, steps
-                ));
-                match b.action.action_type.as_str() {
-                    "keys" => s.push_str(&format!(
-                        "            Send(\"{}\")\n",
-                        ahk_quote(&b.action.value)
-                    )),
-                    "run" => s.push_str(&format!(
-                        "            Run(\"{}\")\n",
-                        ahk_quote(&b.action.value)
-                    )),
-                    "mouse" => s.push_str(&format!(
-                        "            Click(\"{}\")\n",
-                        ahk_quote(&b.action.value)
-                    )),
-                    "wheel" => s.push_str(&format!(
-                        "            Send(\"{}\")\n",
-                        ahk_quote(&b.action.value)
-                    )),
-                    "ahk" => {
-                        for line in b.action.value.lines() {
-                            s.push_str(&format!("            {}\n", line));
-                        }
-                    }
-                    _ => {}
-                }
-                s.push_str("            return true\n");
-                s.push_str("        }\n");
-            }
-            s.push_str("    }\n\n");
+    for target in group_targets {
+        let executables = target_executables(target);
+        if executables.is_empty() || target.bindings.is_empty() {
+            continue;
         }
+
+        script.push_str(&format!("    ; Group: {}\n", target.name));
+        script.push_str(&format!("    if ({}) {{\n", app_condition(&executables)));
+        for binding in target
+            .bindings
+            .iter()
+            .filter(|binding| is_gesture_binding(binding))
+        {
+            let trigger = trigger_to_ahk_name(&binding.gesture.trigger);
+            let steps = binding.gesture.steps.join(",");
+            script.push_str(&format!(
+                "        if (trigger = \"{}\" && stepStr = \"{}\") {{\n",
+                trigger, steps
+            ));
+            write_dispatch_action(script, &binding.action, "            ");
+            script.push_str("            return true\n");
+            script.push_str("        }\n");
+        }
+        script.push_str("    }\n\n");
     }
 
     // Priority 1: Global
-    let global_targets: Vec<&Target> = config
-        .targets
-        .iter()
-        .filter(|t| t.kind == "global" && t.enabled)
-        .collect();
-    for gt in &global_targets {
-        s.push_str("    ; Priority 1: Global Fallback\n");
-        for b in &gt.bindings {
-            if !is_gesture_binding(b) {
-                continue;
-            }
-            let trig = trigger_to_ahk_name(&b.gesture.trigger);
-            let steps = b.gesture.steps.join(",");
-            s.push_str(&format!(
-                "    if (trigger = \"{}\" && stepStr = \"{}\") {{\n",
-                trig, steps
-            ));
-            match b.action.action_type.as_str() {
-                "keys" => s.push_str(&format!(
-                    "        Send(\"{}\")\n",
-                    ahk_quote(&b.action.value)
-                )),
-                "run" => s.push_str(&format!(
-                    "        Run(\"{}\")\n",
-                    ahk_quote(&b.action.value)
-                )),
-                "mouse" => s.push_str(&format!(
-                    "        Click(\"{}\")\n",
-                    ahk_quote(&b.action.value)
-                )),
-                "wheel" => s.push_str(&format!(
-                    "        Send(\"{}\")\n",
-                    ahk_quote(&b.action.value)
-                )),
-                "ahk" => {
-                    for line in b.action.value.lines() {
-                        s.push_str(&format!("        {}\n", line));
-                    }
-                }
-                _ => {}
-            }
-            s.push_str("        return true\n");
-            s.push_str("    }\n");
-        }
-    }
-
-    s.push_str("    return false\n");
-    s.push_str("}\n\n");
-
-    // Action Name Getter for OSD hint (Priority 2: Groups > Priority 1: Global)
-    s.push_str("; Action Name Query for OSD Tip\n");
-    s.push_str("GeneratedGetGestureActionName(trigger, stepStr, procName) {\n");
-    s.push_str("    pLower := StrLower(procName)\n\n");
-
-    for gt in &group_targets {
-        let group_exes: Vec<String> = gt
-            .executables
+    for target in global_targets {
+        script.push_str("    ; Priority 1: Global Fallback\n");
+        for binding in target
+            .bindings
             .iter()
-            .map(|e| e.trim().to_ascii_lowercase())
-            .filter(|e| !e.is_empty())
-            .collect();
-
-        if !group_exes.is_empty() && !gt.bindings.is_empty() {
-            let cond = group_exes
-                .iter()
-                .map(|e| format!("pLower = \"{}\"", ahk_quote(e)))
-                .collect::<Vec<_>>()
-                .join(" || ");
-            s.push_str(&format!("    if ({}) {{\n", cond));
-            for b in &gt.bindings {
-                if !is_gesture_binding(b) {
-                    continue;
-                }
-                let trig = trigger_to_ahk_name(&b.gesture.trigger);
-                let steps = b.gesture.steps.join(",");
-                let act_name =
-                    resolve_action_display_name(&b.action.id, &b.action.name, &config.language);
-                s.push_str(&format!(
-                    "        if (trigger = \"{}\" && stepStr = \"{}\")\n",
-                    trig, steps
-                ));
-                s.push_str(&format!(
-                    "            return \"{}\"\n",
-                    ahk_quote(&act_name)
-                ));
-            }
-            s.push_str("    }\n\n");
-        }
-    }
-
-    for gt in &global_targets {
-        for b in &gt.bindings {
-            if !is_gesture_binding(b) {
-                continue;
-            }
-            let trig = trigger_to_ahk_name(&b.gesture.trigger);
-            let steps = b.gesture.steps.join(",");
-            let act_name =
-                resolve_action_display_name(&b.action.id, &b.action.name, &config.language);
-            s.push_str(&format!(
-                "    if (trigger = \"{}\" && stepStr = \"{}\")\n",
-                trig, steps
+            .filter(|binding| is_gesture_binding(binding))
+        {
+            let trigger = trigger_to_ahk_name(&binding.gesture.trigger);
+            let steps = binding.gesture.steps.join(",");
+            script.push_str(&format!(
+                "    if (trigger = \"{}\" && stepStr = \"{}\") {{\n",
+                trigger, steps
             ));
-            s.push_str(&format!("        return \"{}\"\n", ahk_quote(&act_name)));
+            write_dispatch_action(script, &binding.action, "        ");
+            script.push_str("        return true\n");
+            script.push_str("    }\n");
         }
     }
 
-    s.push_str("    return \"\"\n");
-    s.push_str("}\n");
+    script.push_str("    return false\n");
+    script.push_str("}\n\n");
+}
 
+fn write_action_name_getter(
+    script: &mut String,
+    config: &AppConfig,
+    group_targets: &[&Target],
+    global_targets: &[&Target],
+) {
+    script.push_str("; Action Name Query for OSD Tip\n");
+    script.push_str("GeneratedGetGestureActionName(trigger, stepStr, procName) {\n");
+    script.push_str("    pLower := StrLower(procName)\n\n");
+
+    for target in group_targets {
+        let executables = target_executables(target);
+        if executables.is_empty() || target.bindings.is_empty() {
+            continue;
+        }
+
+        script.push_str(&format!("    if ({}) {{\n", app_condition(&executables)));
+        for binding in target
+            .bindings
+            .iter()
+            .filter(|binding| is_gesture_binding(binding))
+        {
+            let trigger = trigger_to_ahk_name(&binding.gesture.trigger);
+            let steps = binding.gesture.steps.join(",");
+            let name = resolve_action_display_name(
+                &binding.action.id,
+                &binding.action.name,
+                &config.language,
+            );
+            script.push_str(&format!(
+                "        if (trigger = \"{}\" && stepStr = \"{}\")\n",
+                trigger, steps
+            ));
+            script.push_str(&format!("            return \"{}\"\n", ahk_quote(&name)));
+        }
+        script.push_str("    }\n\n");
+    }
+
+    for target in global_targets {
+        for binding in target
+            .bindings
+            .iter()
+            .filter(|binding| is_gesture_binding(binding))
+        {
+            let trigger = trigger_to_ahk_name(&binding.gesture.trigger);
+            let steps = binding.gesture.steps.join(",");
+            let name = resolve_action_display_name(
+                &binding.action.id,
+                &binding.action.name,
+                &config.language,
+            );
+            script.push_str(&format!(
+                "    if (trigger = \"{}\" && stepStr = \"{}\")\n",
+                trigger, steps
+            ));
+            script.push_str(&format!("        return \"{}\"\n", ahk_quote(&name)));
+        }
+    }
+
+    script.push_str("    return \"\"\n");
+    script.push_str("}\n");
+}
+
+fn write_keyboard_rules(
+    script: &mut String,
+    config: &AppConfig,
+    group_targets: &[&Target],
+    global_targets: &[&Target],
+    disabled_executables: &[String],
+) {
     let mut keyboard_triggers = Vec::new();
     let mut keyboard_trigger_keys = HashSet::new();
     let mut remap_trigger_keys = HashSet::new();
@@ -515,105 +539,122 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
         }
     }
 
-    if !keyboard_triggers.is_empty() {
-        s.push_str(
-            "\n; ------------------------------------------------------------------------------\n",
-        );
-        s.push_str("; Context-sensitive keyboard rules\n");
-        s.push_str(
-            "; ------------------------------------------------------------------------------\n",
-        );
-        write_keyboard_helpers(&mut s);
-
-        if !exes.is_empty() {
-            for exe in &exes {
-                s.push_str(&format!(
-                    "GroupAdd(\"GeneratedDisabledApps\", \"ahk_exe {}\")\n",
-                    ahk_quote(exe)
-                ));
-            }
-            s.push('\n');
-        }
-
-        for (index, target) in group_targets.iter().enumerate() {
-            if !target.bindings.iter().any(is_keyboard_binding) {
-                continue;
-            }
-            for exe in target
-                .executables
-                .iter()
-                .map(|exe| exe.trim())
-                .filter(|exe| !exe.is_empty())
-            {
-                s.push_str(&format!(
-                    "GroupAdd(\"GeneratedKeyboardGroup{}\", \"ahk_exe {}\")\n",
-                    index,
-                    ahk_quote(exe)
-                ));
-            }
-        }
-        s.push('\n');
-        s.push_str("#InputLevel 1\n");
-
-        if !exes.is_empty() {
-            s.push_str("#HotIf WinActive(\"ahk_group GeneratedDisabledApps\")\n");
-            for trigger in &keyboard_triggers {
-                s.push_str(&format!("~*{}::return\n", trigger));
-            }
-        }
-
-        for (index, target) in group_targets.iter().enumerate() {
-            if !target.bindings.iter().any(is_keyboard_binding) {
-                continue;
-            }
-            s.push_str(&format!(
-                "#HotIf WinActive(\"ahk_group GeneratedKeyboardGroup{}\")\n",
-                index
-            ));
-            let mut emitted_triggers = HashSet::new();
-            write_target_hotkeys(&mut s, target, &mut emitted_triggers);
-        }
-
-        s.push_str("#HotIf\n");
-        let mut global_triggers = HashSet::new();
-        for target in &global_targets {
-            write_target_hotkeys(&mut s, target, &mut global_triggers);
-        }
-
-        for remap in config.key_remaps.iter().filter(|remap| remap.enabled) {
-            let source = remap.src_key.trim();
-            let destination = remap.dst_key.trim();
-            if source.is_empty() || !global_triggers.insert(source.to_ascii_lowercase()) {
-                continue;
-            }
-            if destination.eq_ignore_ascii_case("none")
-                || destination.eq_ignore_ascii_case("disabled")
-            {
-                s.push_str(&format!("*{}::return\n", source));
-            } else if !destination.is_empty() {
-                s.push_str(&format!(
-                    "*{}::GeneratedRemapKeyDown(\"{}\", \"{}\")\n",
-                    source,
-                    ahk_quote(source),
-                    ahk_quote(destination)
-                ));
-            }
-        }
-
-        for trigger in keyboard_triggers
-            .iter()
-            .filter(|trigger| remap_trigger_keys.contains(&trigger.to_ascii_lowercase()))
-        {
-            s.push_str(&format!(
-                "*{} up::GeneratedRemapKeyUp(\"{}\")\n",
-                trigger,
-                ahk_quote(trigger)
-            ));
-        }
-        s.push_str("#InputLevel 0\n");
+    if keyboard_triggers.is_empty() {
+        return;
     }
 
-    s
+    script.push_str(
+        "\n; ------------------------------------------------------------------------------\n",
+    );
+    script.push_str("; Context-sensitive keyboard rules\n");
+    script.push_str(
+        "; ------------------------------------------------------------------------------\n",
+    );
+    write_keyboard_helpers(script);
+
+    for executable in disabled_executables {
+        script.push_str(&format!(
+            "GroupAdd(\"GeneratedDisabledApps\", \"ahk_exe {}\")\n",
+            ahk_quote(executable)
+        ));
+    }
+    script.push('\n');
+
+    for (index, target) in group_targets.iter().enumerate() {
+        if !target.bindings.iter().any(is_keyboard_binding) {
+            continue;
+        }
+        for executable in target
+            .executables
+            .iter()
+            .map(|executable| executable.trim())
+            .filter(|executable| !executable.is_empty())
+        {
+            script.push_str(&format!(
+                "GroupAdd(\"GeneratedKeyboardGroup{}\", \"ahk_exe {}\")\n",
+                index,
+                ahk_quote(executable)
+            ));
+        }
+    }
+    script.push('\n');
+    script.push_str("#InputLevel 1\n");
+
+    script.push_str("#HotIf WinActive(\"ahk_group GeneratedDisabledApps\")\n");
+    for trigger in &keyboard_triggers {
+        script.push_str(&format!("~*{}::return\n", trigger));
+    }
+
+    for (index, target) in group_targets.iter().enumerate() {
+        if !target.bindings.iter().any(is_keyboard_binding) {
+            continue;
+        }
+        script.push_str(&format!(
+            "#HotIf WinActive(\"ahk_group GeneratedKeyboardGroup{}\")\n",
+            index
+        ));
+        let mut emitted_triggers = HashSet::new();
+        write_target_hotkeys(script, target, &mut emitted_triggers);
+    }
+
+    script.push_str("#HotIf\n");
+    let mut global_triggers = HashSet::new();
+    for target in global_targets {
+        write_target_hotkeys(script, target, &mut global_triggers);
+    }
+
+    for remap in config.key_remaps.iter().filter(|remap| remap.enabled) {
+        let source = remap.src_key.trim();
+        let destination = remap.dst_key.trim();
+        if source.is_empty() || !global_triggers.insert(source.to_ascii_lowercase()) {
+            continue;
+        }
+        if destination.eq_ignore_ascii_case("none") || destination.eq_ignore_ascii_case("disabled")
+        {
+            script.push_str(&format!("*{}::return\n", source));
+        } else if !destination.is_empty() {
+            script.push_str(&format!(
+                "*{}::GeneratedRemapKeyDown(\"{}\", \"{}\")\n",
+                source,
+                ahk_quote(source),
+                ahk_quote(destination)
+            ));
+        }
+    }
+
+    for trigger in keyboard_triggers
+        .iter()
+        .filter(|trigger| remap_trigger_keys.contains(&trigger.to_ascii_lowercase()))
+    {
+        script.push_str(&format!(
+            "*{} up::GeneratedRemapKeyUp(\"{}\")\n",
+            trigger,
+            ahk_quote(trigger)
+        ));
+    }
+    script.push_str("#InputLevel 0\n");
+}
+
+pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
+    let mut script = String::new();
+    write_header(&mut script, config, revision);
+
+    let disabled_executables = collect_disabled_executables(config);
+    write_disabled_process_function(&mut script, &disabled_executables);
+
+    let group_targets = enabled_targets(config, "group");
+    let global_targets = enabled_targets(config, "global");
+    write_action_dispatcher(&mut script, &group_targets, &global_targets);
+    write_action_name_getter(&mut script, config, &group_targets, &global_targets);
+    write_keyboard_rules(
+        &mut script,
+        config,
+        &group_targets,
+        &global_targets,
+        &disabled_executables,
+    );
+
+    script
 }
 
 #[cfg(test)]

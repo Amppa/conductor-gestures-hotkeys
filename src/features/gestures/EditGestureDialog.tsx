@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   Dialog,
   DialogSurface,
@@ -115,9 +116,13 @@ const DIRECTION_BUTTONS = [
   { key: "DR", label: "🡦" },
 ];
 
-function buildCommandString(trig: GestureTrigger, steps: string[], t?: any): string {
-  const arrowStr = steps.map((step) => formatStepSymbol(step, t)).join("");
-  return `${trig}${arrowStr}`;
+function buildCommandString(
+  trigger: GestureTrigger,
+  steps: string[],
+  t: TFunction,
+): string {
+  const arrowString = steps.map((step) => formatStepSymbol(step, t)).join("");
+  return `${trigger}${arrowString}`;
 }
 
 export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
@@ -151,7 +156,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
     setCommandText(raw);
     const parsed = parseStrokeInput(raw, trigger);
     if (parsed.trigger) {
-      setTrigger(parsed.trigger as GestureTrigger);
+      setTrigger(parsed.trigger);
     }
     setSteps(parsed.steps);
   };
@@ -159,8 +164,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
   // Click mouse SVG button to change trigger
   const handleSelectTrigger = (newTrigger: GestureTrigger) => {
     setTrigger(newTrigger);
-    const updatedCmd = `${newTrigger}${steps.map((step) => formatStepSymbol(step, t)).join("")}`;
-    setCommandText(updatedCmd);
+    setCommandText(buildCommandString(newTrigger, steps, t));
   };
 
   // Click 3x3 arrow grid button to append stroke
@@ -184,7 +188,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
     onSave({
       ...gesture,
       name: customName && name.trim() ? name.trim() : formatGestureName(parsed.trigger, parsed.steps, t),
-      trigger: (parsed.trigger as GestureTrigger) || trigger,
+      trigger: parsed.trigger || trigger,
       steps: parsed.steps,
     });
   };

@@ -1,72 +1,14 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  makeStyles,
-  tokens,
-  Title3,
-  Divider,
-  Card,
-  Caption1,
-  Badge,
-  Button,
-} from "@fluentui/react-components";
+import { makeStyles, tokens, Card, Badge, Button } from "@fluentui/react-components";
 import { Add16Regular, Delete16Regular } from "@fluentui/react-icons";
 import { Action } from "../../domain/types";
 import { EditCommandDialog } from "./EditCommandDialog";
+import { PageHeader, usePageStyles } from "../../shared/pageStyles";
+import { formatActionName } from "../../shared/displayNames";
+import { createId } from "../../shared/ids";
 
 const useStyles = makeStyles({
-  container: {
-    padding: "16px 24px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    minHeight: "100%",
-    boxSizing: "border-box",
-    justifyContent: "flex-start",
-  },
-  pageHeader: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    flexShrink: 0,
-  },
-  pageTitle: {
-    fontSize: "20px",
-    lineHeight: "24px",
-    fontWeight: tokens.fontWeightSemibold,
-    margin: "0 !important",
-    padding: 0,
-  },
-  divider: {
-    margin: "0 !important",
-  },
-  card: {
-    padding: "16px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "14px",
-    backgroundColor: tokens.colorNeutralBackground1,
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    fontSize: tokens.fontSizeBase200,
-  },
-  th: {
-    textAlign: "left",
-    padding: "8px 12px",
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    color: tokens.colorNeutralForeground3,
-    fontWeight: 600,
-  },
-  tr: {
-    borderBottom: `1px solid ${tokens.colorNeutralStroke3}`,
-    cursor: "pointer",
-    transition: "background-color 0.15s ease",
-    ":hover": {
-      backgroundColor: tokens.colorNeutralBackground3Hover,
-    },
-  },
   tdName: {
     padding: "8px 12px",
     fontWeight: 600,
@@ -89,11 +31,6 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusSmall,
     wordBreak: "break-all",
   },
-  tdOps: {
-    width: "48px",
-    textAlign: "right",
-    padding: "6px 8px",
-  },
 });
 
 interface CommandsViewProps {
@@ -105,6 +42,7 @@ export const CommandsView: React.FC<CommandsViewProps> = ({
   actions,
   onUpdateActions,
 }) => {
+  const page = usePageStyles();
   const styles = useStyles();
   const { t } = useTranslation();
   const [editingAction, setEditingAction] = useState<Action | null>(null);
@@ -113,7 +51,7 @@ export const CommandsView: React.FC<CommandsViewProps> = ({
   const handleOpenAddDialog = () => {
     setIsCreating(true);
     setEditingAction({
-      id: `action-${Date.now()}`,
+      id: createId("action"),
       name: t("actions.newActionName"),
       type: "keys",
       value: "",
@@ -126,65 +64,65 @@ export const CommandsView: React.FC<CommandsViewProps> = ({
   };
 
   const handleSaveAction = (saved: Action) => {
-    if (!onUpdateActions) return;
-    if (isCreating) {
-      onUpdateActions([...actions, saved]);
-    } else {
-      onUpdateActions(actions.map((a) => (a.id === saved.id ? saved : a)));
+    if (!onUpdateActions) {
+      return;
     }
+    onUpdateActions(
+      isCreating
+        ? [...actions, saved]
+        : actions.map((action) => (action.id === saved.id ? saved : action)),
+    );
     setEditingAction(null);
     setIsCreating(false);
   };
 
   const handleDeleteAction = (id: string) => {
-    if (!onUpdateActions) return;
-    onUpdateActions(actions.filter((a) => a.id !== id));
+    onUpdateActions?.(actions.filter((action) => action.id !== id));
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.pageHeader}>
-        <Title3 as="h1" className={styles.pageTitle}>{t("nav.actions")}</Title3>
-        <Divider className={styles.divider} />
-      </div>
+    <div className={page.container}>
+      <PageHeader title={t("nav.actions")} />
 
-      <Card className={styles.card}>
-        <table className={styles.table}>
+      <Card className={page.card}>
+        <table className={page.table}>
           <thead>
             <tr>
-              <th className={styles.th}>{t("actions.tableName")}</th>
-              <th className={styles.th} style={{ width: "120px" }}>{t("actions.tableType")}</th>
-              <th className={styles.th}>{t("actions.tableAction")}</th>
-              <th className={styles.th} style={{ width: "48px" }}></th>
+              <th className={page.th}>{t("actions.tableName")}</th>
+              <th className={page.th} style={{ width: "120px" }}>
+                {t("actions.tableType")}
+              </th>
+              <th className={page.th}>{t("actions.tableAction")}</th>
+              <th className={page.th} style={{ width: "48px" }}></th>
             </tr>
           </thead>
           <tbody>
-            {actions.map((act) => (
+            {actions.map((action) => (
               <tr
-                key={act.id}
-                className={styles.tr}
-                onClick={() => handleEditAction(act)}
+                key={action.id}
+                className={`${page.row} ${page.clickableRow}`}
+                onClick={() => handleEditAction(action)}
                 title={t("targets.doubleClickActionTip")}
               >
-                <td className={styles.tdName}>
-                  {t("actionNames." + act.id, { defaultValue: act.name })}
-                </td>
+                <td className={styles.tdName}>{formatActionName(t, action)}</td>
                 <td className={styles.tdType}>
                   <Badge appearance="tint" color="informative">
-                    {act.type}
+                    {action.type}
                   </Badge>
                 </td>
                 <td className={styles.tdAction}>
-                  <span className={styles.codeValue}>{act.value || t("actions.emptyValue")}</span>
+                  <span className={styles.codeValue}>
+                    {action.value || t("actions.emptyValue")}
+                  </span>
                 </td>
-                <td className={styles.tdOps}>
+                <td className={page.opsCell}>
                   <Button
                     size="small"
                     appearance="subtle"
                     icon={<Delete16Regular />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteAction(act.id);
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleDeleteAction(action.id);
                     }}
                     title={t("actions.deleteTip")}
                   />
@@ -193,7 +131,7 @@ export const CommandsView: React.FC<CommandsViewProps> = ({
             ))}
             {actions.length === 0 && (
               <tr>
-                <td colSpan={4} style={{ padding: "16px", textAlign: "center", color: tokens.colorNeutralForeground4 }}>
+                <td colSpan={4} className={page.emptyCell}>
                   {t("targets.emptyBindings")}
                 </td>
               </tr>

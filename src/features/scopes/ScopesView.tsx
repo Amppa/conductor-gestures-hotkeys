@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import {
   makeStyles,
   tokens,
-  Title3,
   Card,
   Subtitle2,
   Caption1,
@@ -11,7 +10,6 @@ import {
   Button,
   Checkbox,
   Tag,
-  Divider,
   Input,
   Menu,
   MenuTrigger,
@@ -36,38 +34,32 @@ import {
   Dismiss16Regular,
 } from "@fluentui/react-icons";
 import { Target, Binding, Gesture, Action } from "../../domain/types";
-import { hasEnabledGestureDuplicate } from "../../domain/ruleValidation";
+import {
+  isActionIncomplete,
+  isBindingInvalid,
+  isDuplicateGesture,
+  isGestureIncomplete,
+} from "../../domain/bindingRules";
+import {
+  addBinding,
+  addExecutable,
+  createEmptyBinding,
+  removeBinding,
+  removeExecutable,
+  renameTarget,
+  replaceBindingAction,
+  replaceBindingGesture,
+  setBindingEnabled,
+} from "../../domain/targetMutations";
 import { formatGestureLabel } from "../gestures/gestureSymbols";
 import { EditGestureDialog } from "../gestures/EditGestureDialog";
 import { EditCommandDialog } from "../commands/EditCommandDialog";
 import { AddProcessDialog } from "./AddProcessDialog";
+import { PageHeader, usePageStyles } from "../../shared/pageStyles";
+import { formatActionName } from "../../shared/displayNames";
+import { createId } from "../../shared/ids";
 
 const useStyles = makeStyles({
-  container: {
-    padding: "16px 24px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    minHeight: "100%",
-    boxSizing: "border-box",
-    justifyContent: "flex-start",
-  },
-  pageHeader: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    flexShrink: 0,
-  },
-  pageTitle: {
-    fontSize: "20px",
-    lineHeight: "24px",
-    fontWeight: tokens.fontWeightSemibold,
-    margin: "0 !important",
-    padding: 0,
-  },
-  divider: {
-    margin: "0 !important",
-  },
   section: {
     display: "flex",
     flexDirection: "column",
@@ -77,13 +69,6 @@ const useStyles = makeStyles({
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-  card: {
-    padding: "16px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "14px",
-    backgroundColor: tokens.colorNeutralBackground1,
   },
   groupHeader: {
     display: "flex",
@@ -97,20 +82,7 @@ const useStyles = makeStyles({
     alignItems: "center",
     gap: "8px",
   },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    fontSize: tokens.fontSizeBase200,
-  },
-  th: {
-    textAlign: "left",
-    padding: "8px 12px",
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    color: tokens.colorNeutralForeground3,
-    fontWeight: 600,
-  },
-  tr: {
-    borderBottom: `1px solid ${tokens.colorNeutralStroke3}`,
+  scopesRow: {
     ":hover": {
       backgroundColor: tokens.colorNeutralBackground2,
     },
@@ -142,16 +114,24 @@ const useStyles = makeStyles({
       backgroundColor: tokens.colorNeutralBackground3Hover,
     },
   },
-  tdOps: {
-    width: "48px",
-    textAlign: "right",
-    padding: "6px 8px",
-  },
   tagList: {
     display: "flex",
     flexWrap: "wrap",
     gap: "8px",
     alignItems: "center",
+  },
+  emptyValue: {
+    color: tokens.colorNeutralForeground4,
+    fontStyle: "italic",
+  },
+  gestureValue: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  menuList: {
+    maxHeight: "260px",
+    overflowY: "auto",
   },
 });
 
@@ -162,9 +142,6 @@ interface ScopesViewProps {
   onUpdateTargets: (updated: Target[]) => void;
   onAddGestureTemplate?: (newTemplate: Gesture) => void;
   onAddActionTemplate?: (newAction: Action) => void;
-  onDoubleGestureClick?: (targetId: string, bindingId: string) => void;
-  onDoubleActionClick?: (targetId: string, bindingId: string) => void;
-  onOpenAddProcessDialog?: (targetId: string) => void;
 }
 
 export const ScopesView: React.FC<ScopesViewProps> = ({
@@ -173,22 +150,28 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
   actionTemplates = [],
   onUpdateTargets,
   onAddGestureTemplate,
-  onAddActionTemplate,
-  onOpenAddProcessDialog,
 }) => {
+  const page = usePageStyles();
   const styles = useStyles();
   const { t } = useTranslation();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
-
-  // Dialog states for inline double-click editing
-  const [editingGesture, setEditingGesture] = useState<{ targetId: string; binding: Binding } | null>(null);
-  const [editingAction, setEditingAction] = useState<{ targetId: string; binding: Binding } | null>(null);
+  const [editingGesture, setEditingGesture] = useState<{
+    targetId: string;
+    binding: Binding;
+  } | null>(null);
+  const [editingAction, setEditingAction] = useState<{
+    targetId: string;
+    binding: Binding;
+  } | null>(null);
   const [addProcessTargetId, setAddProcessTargetId] = useState<string | null>(null);
   const [pendingDeleteGroupId, setPendingDeleteGroupId] = useState<string | null>(null);
-
-  // Inline group rename state
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [tempGroupName, setTempGroupName] = useState("");
+
+  const findBinding = (targetId: string, bindingId: string): Binding | null => {
+    const target = targets.find((item) => item.id === targetId);
+    return target?.bindings.find((item) => item.id === bindingId) ?? null;
+  };
 
   const handleStartRename = (groupId: string, currentName: string) => {
     setEditingGroupId(groupId);
@@ -196,11 +179,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
   };
 
   const handleSaveRename = (groupId: string) => {
-    const trimmed = tempGroupName.trim();
-    if (trimmed) {
-      const updated = targets.map((t) => (t.id === groupId ? { ...t, name: trimmed } : t));
-      onUpdateTargets(updated);
-    }
+    onUpdateTargets(renameTarget(targets, groupId, tempGroupName));
     setEditingGroupId(null);
   };
 
@@ -209,164 +188,78 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
   };
 
   const toggleGroupCollapse = (id: string) => {
-    setCollapsedGroups((prev) => ({ ...prev, [id]: !prev[id] }));
+    setCollapsedGroups((previous) => ({ ...previous, [id]: !previous[id] }));
   };
 
-  const handleDoubleGesture = (targetId: string, bindingId: string) => {
-    const t = targets.find((item) => item.id === targetId);
-    if (!t) return;
-    const b = t.bindings.find((item) => item.id === bindingId);
-    if (!b) return;
-    setEditingGesture({ targetId, binding: b });
+  const handleOpenGestureEditor = (targetId: string, bindingId: string) => {
+    const binding = findBinding(targetId, bindingId);
+    if (binding) {
+      setEditingGesture({ targetId, binding });
+    }
   };
 
-  const handleDoubleAction = (targetId: string, bindingId: string) => {
-    const t = targets.find((item) => item.id === targetId);
-    if (!t) return;
-    const b = t.bindings.find((item) => item.id === bindingId);
-    if (!b) return;
-    setEditingAction({ targetId, binding: b });
+  const handleOpenActionEditor = (targetId: string, bindingId: string) => {
+    const binding = findBinding(targetId, bindingId);
+    if (binding) {
+      setEditingAction({ targetId, binding });
+    }
   };
 
-  const handleOpenAddGesture = (targetId: string, bindingId: string) => {
-    const t = targets.find((item) => item.id === targetId);
-    if (!t) return;
-    const b = t.bindings.find((item) => item.id === bindingId);
-    if (!b) return;
-    setEditingGesture({ targetId, binding: b });
+  const handleSaveGestureDirect = (
+    targetId: string,
+    bindingId: string,
+    gesture: Gesture,
+  ) => {
+    onUpdateTargets(replaceBindingGesture(targets, targetId, bindingId, gesture));
   };
 
-  const handleOpenAddAction = (targetId: string, bindingId: string) => {
-    const t = targets.find((item) => item.id === targetId);
-    if (!t) return;
-    const b = t.bindings.find((item) => item.id === bindingId);
-    if (!b) return;
-    setEditingAction({ targetId, binding: b });
+  const handleSaveActionDirect = (
+    targetId: string,
+    bindingId: string,
+    action: Action,
+  ) => {
+    onUpdateTargets(replaceBindingAction(targets, targetId, bindingId, action));
   };
 
-  const checkGestureEmpty = (gesture?: Gesture): boolean => {
-    if (!gesture || !gesture.trigger) return true;
-    const trig = gesture.trigger;
-    const allowsEmptySteps =
-      trig.startsWith("Corner") ||
-      ["Insert", "LAlt", "LWin", "X1", "X2"].includes(trig) ||
-      !["R", "M", "L", "EdgeTop", "EdgeBottom", "EdgeLeft", "EdgeRight"].includes(trig);
-    if (allowsEmptySteps) return false;
-    return !gesture.steps || gesture.steps.length === 0;
-  };
-
-  const checkActionEmpty = (action?: Action): boolean => {
-    if (!action) return true;
-    if (action.type === "noop" || action.id === "act-noop") return false;
-    return !action.value || !action.value.trim();
-  };
-
-  const isGestureEmpty = (b: Binding): boolean => checkGestureEmpty(b.gesture);
-
-  const isActionEmpty = (b: Binding): boolean => checkActionEmpty(b.action);
-
-  const isDuplicateGesture = (target: Target, b: Binding): boolean => {
-    return (
-      b.enabled &&
-      !isGestureEmpty(b) &&
-      hasEnabledGestureDuplicate(target.bindings, b.id, b.gesture)
-    );
-  };
-
-  const isBindingInvalid = (target: Target, b: Binding): boolean => {
-    return isGestureEmpty(b) || isActionEmpty(b) || isDuplicateGesture(target, b);
-  };
-
-  const handleSelectPresetGesture = (targetId: string, bindingId: string, template: Gesture) => {
-    const decoupled: Gesture = {
+  const handleSelectPresetGesture = (
+    targetId: string,
+    bindingId: string,
+    template: Gesture,
+  ) => {
+    handleSaveGestureDirect(targetId, bindingId, {
       ...template,
-      id: `gesture-${Date.now()}`,
-      name: t("gestureNames." + template.id, { defaultValue: template.name }),
-      steps: [...(template.steps || [])],
-    };
-    handleSaveGestureDirect(targetId, bindingId, decoupled);
+      id: createId("gesture"),
+      name: t(`gestureNames.${template.id}`, { defaultValue: template.name }),
+      steps: [...template.steps],
+    });
   };
 
-  const handleSelectPresetAction = (targetId: string, bindingId: string, template: Action) => {
-    const decoupled: Action = {
+  const handleSelectPresetAction = (
+    targetId: string,
+    bindingId: string,
+    template: Action,
+  ) => {
+    handleSaveActionDirect(targetId, bindingId, {
       ...template,
-      id: `action-${Date.now()}`,
-      name: t("actionNames." + template.id, { defaultValue: template.name }),
-    };
-    handleSaveActionDirect(targetId, bindingId, decoupled);
-  };
-
-  const handleSaveGestureDirect = (targetId: string, bindingId: string, updatedGesture: Gesture) => {
-    const updated = targets.map((t) => {
-      if (t.id !== targetId) return t;
-      return {
-        ...t,
-        bindings: t.bindings.map((b) => {
-          if (b.id !== bindingId) return b;
-          const candidate = { ...b, gesture: updatedGesture };
-          const emptyG = checkGestureEmpty(updatedGesture);
-          const emptyA = checkActionEmpty(b.action);
-          const isDup = hasEnabledGestureDuplicate(t.bindings, b.id, updatedGesture);
-          const shouldEnable = !emptyG && !emptyA && !isDup;
-          return {
-            ...candidate,
-            enabled: shouldEnable ? true : false,
-          };
-        }),
-      };
+      id: createId("action"),
+      name: t(`actionNames.${template.id}`, { defaultValue: template.name }),
     });
-    onUpdateTargets(updated);
-  };
-
-  const handleSaveActionDirect = (targetId: string, bindingId: string, updatedAction: Action) => {
-    const updated = targets.map((t) => {
-      if (t.id !== targetId) return t;
-      return {
-        ...t,
-        bindings: t.bindings.map((b) => {
-          if (b.id !== bindingId) return b;
-          const candidate = { ...b, action: updatedAction };
-          const emptyG = checkGestureEmpty(b.gesture);
-          const emptyA = checkActionEmpty(updatedAction);
-          const isDup = hasEnabledGestureDuplicate(t.bindings, b.id, b.gesture);
-          const shouldEnable = !emptyG && !emptyA && !isDup;
-          return {
-            ...candidate,
-            enabled: shouldEnable ? true : false,
-          };
-        }),
-      };
-    });
-    onUpdateTargets(updated);
   };
 
   const handleSaveGesture = (updatedGesture: Gesture, addToTemplates?: boolean) => {
-    if (!editingGesture) return;
-    const { targetId, binding } = editingGesture;
-    const updated = targets.map((t) => {
-      if (t.id !== targetId) return t;
-      return {
-        ...t,
-        bindings: t.bindings.map((b) => {
-          if (b.id !== binding.id) return b;
-          const candidate = { ...b, gesture: updatedGesture };
-          const emptyG = checkGestureEmpty(updatedGesture);
-          const emptyA = checkActionEmpty(b.action);
-          const isDup = hasEnabledGestureDuplicate(t.bindings, b.id, updatedGesture);
-          const shouldEnable = !emptyG && !emptyA && !isDup;
-          return {
-            ...candidate,
-            enabled: shouldEnable ? true : false,
-          };
-        }),
-      };
-    });
-    onUpdateTargets(updated);
+    if (!editingGesture) {
+      return;
+    }
+    handleSaveGestureDirect(
+      editingGesture.targetId,
+      editingGesture.binding.id,
+      updatedGesture,
+    );
 
     if (addToTemplates && onAddGestureTemplate) {
       onAddGestureTemplate({
         ...updatedGesture,
-        id: `gesture-${Date.now()}`,
+        id: createId("gesture"),
         name: updatedGesture.name || t("gestures.newGestureName"),
       });
     }
@@ -375,288 +268,267 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
   };
 
   const handleSaveAction = (updatedAction: Action) => {
-    if (!editingAction) return;
-    const { targetId, binding } = editingAction;
-    const updated = targets.map((t) => {
-      if (t.id !== targetId) return t;
-      return {
-        ...t,
-        bindings: t.bindings.map((b) => {
-          if (b.id !== binding.id) return b;
-          const candidate = { ...b, action: updatedAction };
-          const emptyG = checkGestureEmpty(b.gesture);
-          const emptyA = checkActionEmpty(updatedAction);
-          const isDup = hasEnabledGestureDuplicate(t.bindings, b.id, b.gesture);
-          const shouldEnable = !emptyG && !emptyA && !isDup;
-          return {
-            ...candidate,
-            enabled: shouldEnable ? true : false,
-          };
-        }),
-      };
-    });
-    onUpdateTargets(updated);
+    if (!editingAction) {
+      return;
+    }
+    handleSaveActionDirect(
+      editingAction.targetId,
+      editingAction.binding.id,
+      updatedAction,
+    );
     setEditingAction(null);
   };
 
-  const globalTarget = targets.find((t) => t.kind === "global");
-  const specificGroups = targets.filter((t) => t.kind === "group");
-
-  // Toggle binding enable/disable checkbox
-  const handleToggleBinding = (targetId: string, bindingId: string, checked: boolean) => {
-    const updated = targets.map((t) => {
-      if (t.id !== targetId) return t;
-      return {
-        ...t,
-        bindings: t.bindings.map((b) => {
-          if (b.id !== bindingId) return b;
-          if (!checked) return { ...b, enabled: false };
-          const duplicateEnabled = hasEnabledGestureDuplicate(t.bindings, b.id, b.gesture);
-          return duplicateEnabled ? b : { ...b, enabled: true };
-        }),
-      };
-    });
-    onUpdateTargets(updated);
+  const handleToggleBinding = (
+    targetId: string,
+    bindingId: string,
+    checked: boolean,
+  ) => {
+    onUpdateTargets(setBindingEnabled(targets, targetId, bindingId, checked));
   };
 
-  // Delete a binding from a target
   const handleDeleteBinding = (targetId: string, bindingId: string) => {
-    const updated = targets.map((t) => {
-      if (t.id !== targetId) return t;
-      return {
-        ...t,
-        bindings: t.bindings.filter((b) => b.id !== bindingId),
-      };
-    });
-    onUpdateTargets(updated);
+    onUpdateTargets(removeBinding(targets, targetId, bindingId));
   };
 
-  const handleAddProcessExe = (exe: string) => {
-    if (!addProcessTargetId) return;
-    const clean = exe.trim().toLowerCase();
-    const updated = targets.map((t) => {
-      if (t.id !== addProcessTargetId) return t;
-      if (t.executables.map((e) => e.toLowerCase()).includes(clean)) {
-        return t; // already present
-      }
-      return {
-        ...t,
-        executables: [...t.executables, clean],
-      };
-    });
-    onUpdateTargets(updated);
+  const handleAddProcessExe = (executable: string) => {
+    if (!addProcessTargetId) {
+      return;
+    }
+    onUpdateTargets(addExecutable(targets, addProcessTargetId, executable));
   };
 
-  const handleDeleteExe = (targetId: string, exe: string) => {
-    const updated = targets.map((t) => {
-      if (t.id !== targetId) return t;
-      return {
-        ...t,
-        executables: t.executables.filter((e) => e.toLowerCase() !== exe.toLowerCase()),
-      };
-    });
-    onUpdateTargets(updated);
+  const handleDeleteExe = (targetId: string, executable: string) => {
+    onUpdateTargets(removeExecutable(targets, targetId, executable));
   };
 
-  // Add a new specific group
   const handleAddGroup = () => {
-    const newGroupId = `group-${Date.now()}`;
-    const newGroup: Target = {
-      id: newGroupId,
-      name: t("targets.newGroupName"),
-      enabled: true,
-      kind: "group",
-      executables: ["example.exe"],
-      bindings: [],
-    };
-    onUpdateTargets([...targets, newGroup]);
+    onUpdateTargets([
+      ...targets,
+      {
+        id: createId("group"),
+        name: t("targets.newGroupName"),
+        enabled: true,
+        kind: "group",
+        executables: ["example.exe"],
+        bindings: [],
+      },
+    ]);
   };
 
   const handleConfirmDeleteGroup = () => {
-    if (!pendingDeleteGroupId) return;
-    onUpdateTargets(targets.filter((target) => target.id !== pendingDeleteGroupId));
+    if (!pendingDeleteGroupId) {
+      return;
+    }
+    onUpdateTargets(
+      targets.filter((target) => target.id !== pendingDeleteGroupId),
+    );
     setPendingDeleteGroupId(null);
   };
 
-  // Render a clean [ ] Checkbox | Gesture | Action table
-  const renderBindingsTable = (target: Target) => {
-    return (
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th className={styles.th}></th>
-            <th className={styles.th}>{t("targets.tableGesture")}</th>
-            <th className={styles.th}>{t("targets.tableAction")}</th>
-            <th className={styles.th}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {target.bindings.map((b) => {
-            const emptyGesture = isGestureEmpty(b);
-            const emptyAction = isActionEmpty(b);
-            const duplicate = isDuplicateGesture(target, b);
-            const invalid = emptyGesture || emptyAction || duplicate;
+  const globalTarget = targets.find((target) => target.kind === "global");
+  const specificGroups = targets.filter((target) => target.kind === "group");
 
-            return (
-              <tr key={b.id} className={styles.tr}>
-                <td className={styles.tdCheckbox}>
-                  <Checkbox
-                    checked={!invalid && b.enabled}
-                    disabled={invalid}
-                    onChange={(_, data) => handleToggleBinding(target.id, b.id, !!data.checked)}
-                    title={
-                      invalid
-                        ? duplicate
-                          ? t("targets.duplicateTooltip")
-                          : t("targets.incompleteTooltip")
-                        : undefined
-                    }
-                  />
-                </td>
-                <td className={styles.tdGesture}>
-                  <Menu>
-                    <MenuTrigger disableButtonEnhancement>
-                      <div
-                        className={styles.cellTriggerArea}
-                        title={t("targets.doubleClickGestureTip")}
-                      >
-                        {emptyGesture ? (
-                          <span style={{ color: tokens.colorNeutralForeground4, fontStyle: "italic" }}>
-                            {t("targets.noGesture")}
-                          </span>
-                        ) : (
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span>{formatGestureLabel(b.gesture.trigger, b.gesture.steps, t)}</span>
-                            {duplicate && (
-                              <Badge appearance="tint" color="danger" size="small">
-                                {t("targets.duplicateGesture")}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                        <ChevronDown16Regular style={{ color: tokens.colorNeutralForeground4, flexShrink: 0 }} />
-                      </div>
-                    </MenuTrigger>
-                    <MenuPopover>
-                      <MenuList style={{ maxHeight: "260px", overflowY: "auto" }}>
-                        {gestureTemplates.map((gt) => (
-                          <MenuItem
-                            key={gt.id}
-                            onClick={() => handleSelectPresetGesture(target.id, b.id, gt)}
-                          >
-                            {t("gestureNames." + gt.id, { defaultValue: gt.name })} ({formatGestureLabel(gt.trigger, gt.steps, t)})
-                          </MenuItem>
-                        ))}
-                        <MenuDivider />
-                        <MenuItem
-                          icon={<Add16Regular />}
-                          onClick={() => handleOpenAddGesture(target.id, b.id)}
-                        >
-                          {t("targets.addNewGesture")}
-                        </MenuItem>
-                      </MenuList>
-                    </MenuPopover>
-                  </Menu>
-                </td>
-                <td className={styles.tdAction}>
-                  <Menu>
-                    <MenuTrigger disableButtonEnhancement>
-                      <div
-                        className={styles.cellTriggerArea}
-                        title={b.action.value ? `${t("targets.doubleClickActionTip")} (${b.action.value})` : t("targets.doubleClickActionTip")}
-                      >
-                        {emptyAction ? (
-                          <span style={{ color: tokens.colorNeutralForeground4, fontStyle: "italic" }}>
-                            {t("targets.noAction")}
-                          </span>
-                        ) : (
+  const renderBindingsTable = (target: Target) => (
+    <table className={page.table}>
+      <thead>
+        <tr>
+          <th className={page.th}></th>
+          <th className={page.th}>{t("targets.tableGesture")}</th>
+          <th className={page.th}>{t("targets.tableAction")}</th>
+          <th className={page.th}></th>
+        </tr>
+      </thead>
+      <tbody>
+        {target.bindings.map((binding) => {
+          const emptyGesture = isGestureIncomplete(binding.gesture);
+          const emptyAction = isActionIncomplete(binding.action);
+          const duplicate = isDuplicateGesture(target, binding);
+          const invalid = isBindingInvalid(target, binding);
+
+          return (
+            <tr key={binding.id} className={`${page.row} ${styles.scopesRow}`}>
+              <td className={styles.tdCheckbox}>
+                <Checkbox
+                  checked={!invalid && binding.enabled}
+                  disabled={invalid}
+                  onChange={(_, data) =>
+                    handleToggleBinding(target.id, binding.id, !!data.checked)
+                  }
+                  title={
+                    invalid
+                      ? duplicate
+                        ? t("targets.duplicateTooltip")
+                        : t("targets.incompleteTooltip")
+                      : undefined
+                  }
+                />
+              </td>
+              <td className={styles.tdGesture}>
+                <Menu>
+                  <MenuTrigger disableButtonEnhancement>
+                    <div
+                      className={styles.cellTriggerArea}
+                      title={t("targets.doubleClickGestureTip")}
+                    >
+                      {emptyGesture ? (
+                        <span className={styles.emptyValue}>
+                          {t("targets.noGesture")}
+                        </span>
+                      ) : (
+                        <div className={styles.gestureValue}>
                           <span>
-                            {t("actionNames." + b.action.id, { defaultValue: b.action.name }) || b.action.value}
+                            {formatGestureLabel(
+                              binding.gesture.trigger,
+                              binding.gesture.steps,
+                              t,
+                            )}
                           </span>
-                        )}
-                        <ChevronDown16Regular style={{ color: tokens.colorNeutralForeground4, flexShrink: 0 }} />
-                      </div>
-                    </MenuTrigger>
-                    <MenuPopover>
-                      <MenuList style={{ maxHeight: "260px", overflowY: "auto" }}>
-                        {actionTemplates.map((at) => (
-                          <MenuItem
-                            key={at.id}
-                            onClick={() => handleSelectPresetAction(target.id, b.id, at)}
-                          >
-                            {t("actionNames." + at.id, { defaultValue: at.name })} ({at.value})
-                          </MenuItem>
-                        ))}
-                        <MenuDivider />
+                          {duplicate && (
+                            <Badge appearance="tint" color="danger" size="small">
+                              {t("targets.duplicateGesture")}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      <ChevronDown16Regular
+                        style={{
+                          color: tokens.colorNeutralForeground4,
+                          flexShrink: 0,
+                        }}
+                      />
+                    </div>
+                  </MenuTrigger>
+                  <MenuPopover>
+                    <MenuList className={styles.menuList}>
+                      {gestureTemplates.map((template) => (
                         <MenuItem
-                          icon={<Add16Regular />}
-                          onClick={() => handleOpenAddAction(target.id, b.id)}
+                          key={template.id}
+                          onClick={() =>
+                            handleSelectPresetGesture(target.id, binding.id, template)
+                          }
                         >
-                          {t("targets.addNewAction")}
+                          {t(`gestureNames.${template.id}`, {
+                            defaultValue: template.name,
+                          })}{" "}
+                          (
+                          {formatGestureLabel(
+                            template.trigger,
+                            template.steps,
+                            t,
+                          )}
+                          )
                         </MenuItem>
-                      </MenuList>
-                    </MenuPopover>
-                  </Menu>
-                </td>
-                <td className={styles.tdOps}>
-                  <Button
-                    size="small"
-                    appearance="subtle"
-                    icon={<Delete16Regular />}
-                    onClick={() => handleDeleteBinding(target.id, b.id)}
-                    title={t("targets.deleteGestureTip")}
-                  />
-                </td>
-              </tr>
-            );
-          })}
-          {target.bindings.length === 0 && (
-            <tr>
-              <td colSpan={4} style={{ padding: "16px", textAlign: "center", color: tokens.colorNeutralForeground4 }}>
-                {t("targets.emptyBindings")}
+                      ))}
+                      <MenuDivider />
+                      <MenuItem
+                        icon={<Add16Regular />}
+                        onClick={() => handleOpenGestureEditor(target.id, binding.id)}
+                      >
+                        {t("targets.addNewGesture")}
+                      </MenuItem>
+                    </MenuList>
+                  </MenuPopover>
+                </Menu>
+              </td>
+              <td className={styles.tdAction}>
+                <Menu>
+                  <MenuTrigger disableButtonEnhancement>
+                    <div
+                      className={styles.cellTriggerArea}
+                      title={
+                        binding.action.value
+                          ? `${t("targets.doubleClickActionTip")} (${binding.action.value})`
+                          : t("targets.doubleClickActionTip")
+                      }
+                    >
+                      {emptyAction ? (
+                        <span className={styles.emptyValue}>
+                          {t("targets.noAction")}
+                        </span>
+                      ) : (
+                        <span>
+                          {formatActionName(t, binding.action) ||
+                            binding.action.value}
+                        </span>
+                      )}
+                      <ChevronDown16Regular
+                        style={{
+                          color: tokens.colorNeutralForeground4,
+                          flexShrink: 0,
+                        }}
+                      />
+                    </div>
+                  </MenuTrigger>
+                  <MenuPopover>
+                    <MenuList className={styles.menuList}>
+                      {actionTemplates.map((template) => (
+                        <MenuItem
+                          key={template.id}
+                          onClick={() =>
+                            handleSelectPresetAction(target.id, binding.id, template)
+                          }
+                        >
+                          {formatActionName(t, template)} ({template.value})
+                        </MenuItem>
+                      ))}
+                      <MenuDivider />
+                      <MenuItem
+                        icon={<Add16Regular />}
+                        onClick={() => handleOpenActionEditor(target.id, binding.id)}
+                      >
+                        {t("targets.addNewAction")}
+                      </MenuItem>
+                    </MenuList>
+                  </MenuPopover>
+                </Menu>
+              </td>
+              <td className={page.opsCell}>
+                <Button
+                  size="small"
+                  appearance="subtle"
+                  icon={<Delete16Regular />}
+                  onClick={() => handleDeleteBinding(target.id, binding.id)}
+                  title={t("targets.deleteGestureTip")}
+                />
               </td>
             </tr>
-          )}
-        </tbody>
-      </table>
-    );
-  };
+          );
+        })}
+        {target.bindings.length === 0 && (
+          <tr>
+            <td colSpan={4} className={page.emptyCell}>
+              {t("targets.emptyBindings")}
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  );
 
   return (
-    <div className={styles.container}>
-      <div className={styles.pageHeader}>
-        <Title3 as="h1" className={styles.pageTitle}>{t("nav.targets")}</Title3>
-        <Divider className={styles.divider} />
-      </div>
+    <div className={page.container}>
+      <PageHeader title={t("nav.targets")} />
 
-      {/* Top clean logic prompt */}
-      {/* 1. Global Default */}
       {globalTarget && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Subtitle2>{t("targets.globalTitle", { defaultValue: globalTarget.name })}</Subtitle2>
-            </div>
+            <Subtitle2>
+              {t("targets.globalTitle", { defaultValue: globalTarget.name })}
+            </Subtitle2>
           </div>
-          <Card className={styles.card}>
+          <Card className={page.card}>
             {renderBindingsTable(globalTarget)}
             <div>
               <Button
                 size="small"
                 appearance="subtle"
                 icon={<Add16Regular />}
-                onClick={() => {
-                  const newBinding: Binding = {
-                    id: `b-${Date.now()}`,
-                    enabled: false,
-                    gesture: { id: `g-${Date.now()}`, name: "", trigger: "R", steps: [] },
-                    action: { id: `a-${Date.now()}`, name: "", type: "keys", value: "" },
-                  };
-                  const updated = targets.map((t) =>
-                    t.id === globalTarget.id ? { ...t, bindings: [...t.bindings, newBinding] } : t
-                  );
-                  onUpdateTargets(updated);
-                }}
+                onClick={() =>
+                  onUpdateTargets(
+                    addBinding(targets, globalTarget.id, createEmptyBinding()),
+                  )
+                }
               >
                 {t("targets.addGesture")}
               </Button>
@@ -665,18 +537,25 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
         </div>
       )}
 
-      <Divider />
-
-      {/* 2. Whitelist (App groups) */}
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <div>
             <Subtitle2>{t("targets.specificSection")}</Subtitle2>
-            <Caption1 style={{ display: "block", color: tokens.colorNeutralForeground3 }}>
+            <Caption1
+              style={{
+                display: "block",
+                color: tokens.colorNeutralForeground3,
+              }}
+            >
               {t("targets.whitelistDesc")}
             </Caption1>
           </div>
-          <Button size="small" appearance="secondary" icon={<Add16Regular />} onClick={handleAddGroup}>
+          <Button
+            size="small"
+            appearance="secondary"
+            icon={<Add16Regular />}
+            onClick={handleAddGroup}
+          >
             {t("targets.addGroup")}
           </Button>
         </div>
@@ -686,9 +565,10 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
           const groupDisplayName =
             group.name !== "Browsers" && group.name !== "Group 01"
               ? group.name
-              : t("targets." + group.id + "Title", { defaultValue: group.name });
+              : t(`targets.${group.id}Title`, { defaultValue: group.name });
+
           return (
-            <Card key={group.id} className={styles.card}>
+            <Card key={group.id} className={page.card}>
               <div className={styles.groupHeader}>
                 <div
                   className={styles.groupTitleArea}
@@ -698,7 +578,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                   {editingGroupId === group.id ? (
                     <div
                       style={{ display: "flex", alignItems: "center", gap: "4px" }}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(event) => event.stopPropagation()}
                     >
                       <Input
                         size="small"
@@ -706,10 +586,10 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                         autoFocus
                         placeholder={t("targets.renameGroupPlaceholder")}
                         onChange={(_, data) => setTempGroupName(data.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
                             handleSaveRename(group.id);
-                          } else if (e.key === "Escape") {
+                          } else if (event.key === "Escape") {
                             handleCancelRename();
                           }
                         }}
@@ -732,8 +612,8 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                       <span
                         style={{ fontWeight: 600, cursor: "pointer" }}
                         title={t("targets.renameGroupTip")}
-                        onDoubleClick={(e) => {
-                          e.stopPropagation();
+                        onDoubleClick={(event) => {
+                          event.stopPropagation();
                           handleStartRename(group.id, groupDisplayName);
                         }}
                       >
@@ -744,8 +624,8 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                         appearance="subtle"
                         icon={<Edit16Regular />}
                         title={t("targets.renameGroupTip")}
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        onClick={(event) => {
+                          event.stopPropagation();
                           handleStartRename(group.id, groupDisplayName);
                         }}
                       />
@@ -755,8 +635,8 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                         icon={<Delete16Regular />}
                         title={t("targets.deleteGroup")}
                         aria-label={t("targets.deleteGroup")}
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        onClick={(event) => {
+                          event.stopPropagation();
                           setPendingDeleteGroupId(group.id);
                         }}
                       />
@@ -768,18 +648,23 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
               {!isCollapsed && (
                 <>
                   <div className={styles.tagList}>
-                    <Caption1 style={{ color: tokens.colorNeutralForeground3, fontWeight: 600 }}>
+                    <Caption1
+                      style={{
+                        color: tokens.colorNeutralForeground3,
+                        fontWeight: 600,
+                      }}
+                    >
                       {t("targets.includedApps")}
                     </Caption1>
-                    {group.executables.map((exe) => (
+                    {group.executables.map((executable) => (
                       <Tag
-                        key={exe}
+                        key={executable}
                         size="small"
                         dismissible
                         dismissIcon={{ "aria-label": "remove" }}
-                        onClick={() => handleDeleteExe(group.id, exe)}
+                        onClick={() => handleDeleteExe(group.id, executable)}
                       >
-                        {exe}
+                        {executable}
                       </Tag>
                     ))}
                     <Button
@@ -801,18 +686,11 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                       size="small"
                       appearance="subtle"
                       icon={<Add16Regular />}
-                      onClick={() => {
-                        const newBinding: Binding = {
-                          id: `b-${Date.now()}`,
-                          enabled: false,
-                          gesture: { id: `g-${Date.now()}`, name: "", trigger: "R", steps: [] },
-                          action: { id: `a-${Date.now()}`, name: "", type: "keys", value: "" },
-                        };
-                        const updated = targets.map((t) =>
-                          t.id === group.id ? { ...t, bindings: [...t.bindings, newBinding] } : t
-                        );
-                        onUpdateTargets(updated);
-                      }}
+                      onClick={() =>
+                        onUpdateTargets(
+                          addBinding(targets, group.id, createEmptyBinding()),
+                        )
+                      }
                     >
                       {t("targets.addGesture")}
                     </Button>
@@ -824,7 +702,6 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
         })}
       </div>
 
-      {/* Inline Double-Click Edit Dialogs */}
       {editingGesture && (
         <EditGestureDialog
           open={!!editingGesture}
@@ -846,11 +723,11 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
       {addProcessTargetId && (
         <AddProcessDialog
           open={!!addProcessTargetId}
-          targetName={
-            t("targets." + addProcessTargetId + "Title", {
-              defaultValue: targets.find((t) => t.id === addProcessTargetId)?.name || "Target List",
-            })
-          }
+          targetName={t(`targets.${addProcessTargetId}Title`, {
+            defaultValue:
+              targets.find((target) => target.id === addProcessTargetId)?.name ||
+              "Target List",
+          })}
           onAdd={handleAddProcessExe}
           onCancel={() => setAddProcessTargetId(null)}
         />
@@ -866,11 +743,15 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
             <DialogContent>
               {t("targets.deleteGroupConfirmMessage", {
                 name:
-                  targets.find((target) => target.id === pendingDeleteGroupId)?.name || "",
+                  targets.find((target) => target.id === pendingDeleteGroupId)
+                    ?.name || "",
               })}
             </DialogContent>
             <DialogActions>
-              <Button appearance="secondary" onClick={() => setPendingDeleteGroupId(null)}>
+              <Button
+                appearance="secondary"
+                onClick={() => setPendingDeleteGroupId(null)}
+              >
                 {t("dialogs.cancel")}
               </Button>
               <Button appearance="primary" onClick={handleConfirmDeleteGroup}>
