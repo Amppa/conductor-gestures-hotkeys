@@ -124,11 +124,11 @@ export function formatTriggerSymbol(trigger: string): string {
     case "CornerTL":
       return "◰";
     case "CornerTR":
-      return "◱";
-    case "CornerBL":
-      return "◲";
-    case "CornerBR":
       return "◳";
+    case "CornerBL":
+      return "◱";
+    case "CornerBR":
+      return "◲";
     case "EdgeTop":
       return "⬒";
     case "EdgeBottom":
