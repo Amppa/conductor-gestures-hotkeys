@@ -170,10 +170,16 @@ export const App: React.FC = () => {
   };
 
   const handleAddGestureTemplate = (template: Gesture) => {
-    setConfig((previous) => ({
-      ...previous,
-      gestureTemplates: [...previous.gestureTemplates, template],
-    }));
+    setConfig((previous) => {
+      const duplicate = previous.gestureTemplates.some(
+        (existing) =>
+          existing.trigger === template.trigger &&
+          existing.steps.join(",") === template.steps.join(","),
+      );
+      return duplicate
+        ? previous
+        : { ...previous, gestureTemplates: [...previous.gestureTemplates, template] };
+    });
   };
 
   const handleAddActionTemplate = (action: Action) => {

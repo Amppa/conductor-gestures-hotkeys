@@ -229,7 +229,6 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
     handleSaveGestureDirect(targetId, bindingId, {
       ...template,
       id: createId("gesture"),
-      name: t(`gestureNames.${template.id}`, { defaultValue: template.name }),
       steps: [...template.steps],
     });
   };
@@ -260,7 +259,6 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
       onAddGestureTemplate({
         ...updatedGesture,
         id: createId("gesture"),
-        name: updatedGesture.name || t("gestures.newGestureName"),
       });
     }
 
@@ -408,16 +406,11 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                             handleSelectPresetGesture(target.id, binding.id, template)
                           }
                         >
-                          {t(`gestureNames.${template.id}`, {
-                            defaultValue: template.name,
-                          })}{" "}
-                          (
                           {formatGestureLabel(
                             template.trigger,
                             template.steps,
                             t,
                           )}
-                          )
                         </MenuItem>
                       ))}
                       <MenuDivider />

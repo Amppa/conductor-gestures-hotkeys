@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { makeStyles, tokens, Button, Badge, Subtitle2, Caption1 } from "@fluentui/react-components";
 import { ArrowReset20Regular } from "@fluentui/react-icons";
 import { GestureTrigger } from "../../domain/types";
-import { formatStepSymbol, formatTriggerSymbol } from "./gestureSymbols";
 
 const useStyles = makeStyles({
   container: {

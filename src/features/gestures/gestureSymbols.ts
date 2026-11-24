@@ -3,7 +3,7 @@
  * Formats mouse triggers and direction arrows with i18n support.
  */
 import type { TFunction } from "i18next";
-import { Gesture, GestureTrigger } from "../../domain/types";
+import { GestureTrigger } from "../../domain/types";
 import { normalizeTrigger } from "../../domain/triggerNormalization";
 
 const ARROW_ALIASES: Record<string, string> = {
@@ -71,31 +71,6 @@ function normalizeArrows(text: string): string {
   );
 }
 
-export function formatGestureName(
-  trigger: string,
-  steps: string[],
-  t: TFunction,
-): string {
-  const key = normalizeTrigger(trigger);
-  const label = t(`triggers.${key}`, { defaultValue: key });
-  const button = label.replace(/^[RML] \((.*)\)$/, "$1");
-  return (
-    button +
-    (steps.length ? " " + steps.map((step) => formatStepSymbol(step, t)).join("") : "")
-  );
-}
-
-/**
- * Uses the translated template name when it exists, otherwise keeps the
- * user-provided name stored on the template.
- */
-export function formatTemplateName(t: TFunction, gesture: Gesture): string {
-  const translated = t(`gestureNames.${gesture.id}`, { defaultValue: "" });
-  return translated
-    ? formatGestureName(gesture.trigger, gesture.steps, t)
-    : gesture.name;
-}
-
 export function formatStepSymbol(step: string, t?: TFunction): string {
   switch (step.toUpperCase()) {
     case "U":
@@ -133,12 +108,8 @@ export function formatStepSymbol(step: string, t?: TFunction): string {
   }
 }
 
-export function formatTriggerSymbol(trigger: string, t?: TFunction): string {
+export function formatTriggerSymbol(trigger: string): string {
   const normalized = normalizeTrigger(trigger);
-  if (t) {
-    return t(`triggers.${normalized}`, { defaultValue: normalized });
-  }
-
   switch (normalized) {
     case "R":
       return "R";
@@ -150,6 +121,22 @@ export function formatTriggerSymbol(trigger: string, t?: TFunction): string {
       return "X1";
     case "X2":
       return "X2";
+    case "CornerTL":
+      return "◰";
+    case "CornerTR":
+      return "◱";
+    case "CornerBL":
+      return "◲";
+    case "CornerBR":
+      return "◳";
+    case "EdgeTop":
+      return "⬒";
+    case "EdgeBottom":
+      return "⬓";
+    case "EdgeLeft":
+      return "◧";
+    case "EdgeRight":
+      return "◨";
     default:
       return normalized;
   }
@@ -161,23 +148,10 @@ export function formatGestureLabel(
   t?: TFunction,
 ): string {
   const normalized = normalizeTrigger(trigger);
-  const isMouse = MOUSE_TRIGGERS.includes(normalized);
-  const label = isMouse ? normalized : formatTriggerSymbol(normalized, t);
-
-  if (steps.length === 0) {
-    if (isMouse) {
-      const clickText = t ? t("triggers.click") : "Click";
-      return `${label} (${clickText})`;
-    }
-    return label;
-  }
-
-  if (steps[0] === "WU" || steps[0] === "WD") {
-    return `${label} + ${formatStepSymbol(steps[0], t)}`;
-  }
-
-  const stepArrows = steps.map((step) => formatStepSymbol(step, t)).join("");
-  return isMouse ? `${label}${stepArrows}` : `${label} ${stepArrows}`;
+  const label = MOUSE_TRIGGERS.includes(normalized)
+    ? normalized
+    : formatTriggerSymbol(normalized);
+  return [label, ...steps.map((step) => formatStepSymbol(step, t))].join(", ");
 }
 
 /**

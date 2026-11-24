@@ -32,6 +32,12 @@ const NAMED_KEYS: Record<string, string> = {
   ScrollLock: "ScrollLock",
   PrintScreen: "PrintScreen",
   Pause: "Pause",
+  NumpadDivide: "NumpadDiv",
+  NumpadMultiply: "NumpadMult",
+  NumpadSubtract: "NumpadSub",
+  NumpadAdd: "NumpadAdd",
+  NumpadDecimal: "NumpadDot",
+  NumpadEnter: "NumpadEnter",
 };
 
 function eventBaseKey(event: KeyboardEvent<HTMLInputElement>): string | null {

@@ -26,7 +26,7 @@ export type ActionType = "keys" | "mouse" | "wheel" | "run" | "ahk" | "noop" | "
 
 export interface Gesture {
   id: string;
-  name: string;
+  name?: string;
   trigger: GestureTrigger;
   steps: string[];
 }

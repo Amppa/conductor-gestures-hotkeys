@@ -20,7 +20,6 @@ import {
 import { Gesture, GestureTrigger } from "../../domain/types";
 import {
   formatStepSymbol,
-  formatGestureName,
   parseStrokeInput,
 } from "./gestureSymbols";
 import { MousePreview } from "./MousePreview";
@@ -137,14 +136,6 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
 
   const [activeTab, setActiveTab] = useState<GestureDialogTab>("standard");
 
-  // Gesture state
-  const [name, setName] = useState(
-    t("gestureNames." + gesture.id, { defaultValue: gesture.name })
-  );
-  const [customName, setCustomName] = useState(() => !!gesture.name &&
-    gesture.name !== t("gestures.newGestureName") &&
-    !t(`gestureNames.${gesture.id}`, { defaultValue: "" }) &&
-    gesture.name !== formatGestureName(gesture.trigger, gesture.steps, t));
   const [trigger, setTrigger] = useState<GestureTrigger>(gesture.trigger);
   const [steps, setSteps] = useState<string[]>([...gesture.steps]);
   const [commandText, setCommandText] = useState<string>(
@@ -187,7 +178,6 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
     const parsed = parseStrokeInput(commandText, trigger);
     onSave({
       ...gesture,
-      name: customName && name.trim() ? name.trim() : formatGestureName(parsed.trigger, parsed.steps, t),
       trigger: parsed.trigger || trigger,
       steps: parsed.steps,
     });
@@ -200,18 +190,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
           <DialogTitle>{gesture.id ? t("dialogs.editGesture") : t("gestures.add")}</DialogTitle>
 
           <DialogContent className={styles.content}>
-            {/* Row 1: Name */}
-            <div className={styles.formRow}>
-              <Subtitle2 className={styles.rowLabel}>{t("gestures.name")}：</Subtitle2>
-              <Input
-                className={styles.rowInput}
-                value={customName ? name : formatGestureName(trigger, steps, t)}
-                onChange={(_, data) => { setCustomName(true); setName(data.value); }}
-                placeholder={t("dialogs.gestureNamePlaceholder")}
-              />
-            </div>
-
-            {/* Row 2: Command */}
+            {/* Command */}
             <div className={styles.formRow}>
               <Subtitle2 className={styles.rowLabel}>{t("dialogs.command")}：</Subtitle2>
               <Input
@@ -222,7 +201,6 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
               />
             </div>
 
-            {/* Row 3: Tabs */}
             {screenMode && <>
               <Select aria-label={t("targets.tableGesture")} value={trigger} onChange={(_, data) => {
                 const next = data.value as GestureTrigger;
@@ -247,8 +225,6 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
                 {t("dialogs.tabRecord")}
               </Tab>
             </TabList>}
-
-            {/* Row 4: Mode Content */}
 
             {/* Standard Mode: Mouse SVG on the left, 3x3 Arrow Grid on the right */}
             {!screenMode && activeTab === "standard" && (

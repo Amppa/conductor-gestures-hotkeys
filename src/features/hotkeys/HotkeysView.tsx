@@ -9,10 +9,6 @@ import { PageHeader, usePageStyles } from "../../shared/pageStyles";
 import { createId } from "../../shared/ids";
 
 const useStyles = makeStyles({
-  tdName: {
-    padding: "8px 12px",
-    fontWeight: tokens.fontWeightSemibold,
-  },
   tdKey: {
     padding: "8px 12px",
     color: tokens.colorBrandForeground1,
@@ -39,7 +35,6 @@ export const HotkeysView: React.FC<HotkeysViewProps> = ({
     setIsCreating(true);
     setEditingHotkey({
       id: createId("hotkey"),
-      name: "",
       trigger: "",
       steps: [],
     });
@@ -80,7 +75,6 @@ export const HotkeysView: React.FC<HotkeysViewProps> = ({
         <table className={page.table}>
           <thead>
             <tr>
-              <th className={page.th}>{t("hotkeys.tableName")}</th>
               <th className={page.th}>{t("hotkeys.tableKey")}</th>
               <th className={page.th}></th>
             </tr>
@@ -93,7 +87,6 @@ export const HotkeysView: React.FC<HotkeysViewProps> = ({
                 onClick={() => handleEdit(hotkey)}
                 title={t("hotkeys.editTip")}
               >
-                <td className={styles.tdName}>{hotkey.name}</td>
                 <td className={styles.tdKey}>{formatHotkeyTrigger(hotkey.trigger)}</td>
                 <td className={page.opsCell}>
                   <Button
@@ -111,7 +104,7 @@ export const HotkeysView: React.FC<HotkeysViewProps> = ({
             ))}
             {hotkeys.length === 0 && (
               <tr>
-                <td colSpan={3} className={page.emptyCell}>
+                <td colSpan={2} className={page.emptyCell}>
                   {t("hotkeys.empty")}
                 </td>
               </tr>

@@ -44,22 +44,6 @@ interface EditHotkeyDialogProps {
   onCancel: () => void;
 }
 
-const MODIFIER_NAME_KEYS: Record<string, string> = {
-  LCtrl: "hotkeys.keyNameLCtrl",
-  RCtrl: "hotkeys.keyNameRCtrl",
-  LShift: "hotkeys.keyNameLShift",
-  RShift: "hotkeys.keyNameRShift",
-  LAlt: "hotkeys.keyNameLAlt",
-  RAlt: "hotkeys.keyNameRAlt",
-  LWin: "hotkeys.keyNameLWin",
-  RWin: "hotkeys.keyNameRWin",
-};
-
-function getAutomaticName(trigger: string, t: (key: string) => string): string {
-  const nameKey = MODIFIER_NAME_KEYS[trigger];
-  return nameKey ? t(nameKey) : formatHotkeyTrigger(trigger);
-}
-
 export const EditHotkeyDialog: React.FC<EditHotkeyDialogProps> = ({
   hotkey,
   existingHotkeys,
@@ -69,18 +53,14 @@ export const EditHotkeyDialog: React.FC<EditHotkeyDialogProps> = ({
 }) => {
   const styles = useStyles();
   const { t } = useTranslation();
-  const [name, setName] = useState(hotkey.name);
   const [trigger, setTrigger] = useState(hotkey.trigger);
-  const [isNameCustomized, setIsNameCustomized] = useState(
-    !isCreating && hotkey.name.trim().length > 0
-  );
 
   const duplicate = existingHotkeys.some(
     (item) =>
       item.id !== hotkey.id &&
       item.trigger.toLowerCase() === trigger.toLowerCase()
   );
-  const canSave = name.trim().length > 0 && trigger.length > 0 && !duplicate;
+  const canSave = trigger.length > 0 && !duplicate;
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     event.preventDefault();
@@ -89,16 +69,12 @@ export const EditHotkeyDialog: React.FC<EditHotkeyDialogProps> = ({
     const captured = keyboardEventToTrigger(event);
     if (!captured) return;
     setTrigger(captured);
-    if (!isNameCustomized) {
-      setName(getAutomaticName(captured, t));
-    }
   };
 
   const handleSave = () => {
     if (!canSave) return;
     onSave({
       ...hotkey,
-      name: name.trim(),
       trigger,
       steps: [],
     });
@@ -112,16 +88,6 @@ export const EditHotkeyDialog: React.FC<EditHotkeyDialogProps> = ({
             {t(isCreating ? "hotkeys.addTitle" : "hotkeys.editTitle")}
           </DialogTitle>
           <DialogContent className={styles.content}>
-            <Field label={t("hotkeys.nameLabel")} required>
-              <Input
-                value={name}
-                onChange={(_, data) => {
-                  setName(data.value);
-                  setIsNameCustomized(data.value.trim().length > 0);
-                }}
-                placeholder={t("hotkeys.namePlaceholder")}
-              />
-            </Field>
             <Field
               label={t("hotkeys.keyLabel")}
               hint={duplicate ? t("hotkeys.duplicate") : t("hotkeys.captureHint")}

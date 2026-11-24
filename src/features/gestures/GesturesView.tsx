@@ -1,31 +1,24 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { makeStyles, tokens, Card, Badge, Button } from "@fluentui/react-components";
+import { makeStyles, tokens, Card, Button } from "@fluentui/react-components";
 import { Add16Regular, Delete16Regular } from "@fluentui/react-icons";
 import { Gesture } from "../../domain/types";
 import { normalizeTrigger } from "../../domain/triggerNormalization";
 import {
   formatGestureLabel,
-  formatTemplateName,
-  formatTriggerSymbol,
 } from "./gestureSymbols";
 import { EditGestureDialog } from "./EditGestureDialog";
 import { PageHeader, usePageStyles } from "../../shared/pageStyles";
 import { createId } from "../../shared/ids";
 
 const useStyles = makeStyles({
-  tdName: {
-    padding: "8px 12px",
-    fontWeight: 600,
-    userSelect: "none",
-  },
-  tdTrigger: {
-    width: "120px",
-    padding: "8px 12px",
-  },
   tdStroke: {
     padding: "8px 12px",
     userSelect: "none",
+  },
+  strokeLabel: {
+    fontWeight: 600,
+    fontSize: tokens.fontSizeBase300,
     color: tokens.colorBrandForeground1,
   },
   emptyStroke: {
@@ -55,7 +48,6 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
     setIsCreating(true);
     setEditingGesture({
       id: createId("gesture"),
-      name: t("gestures.newGestureName"),
       trigger: screenMode ? "EdgeTop" : "R",
       steps: screenMode ? ["WU"] : [],
     });
@@ -67,6 +59,16 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
   };
 
   const handleSaveGesture = (saved: Gesture) => {
+    const duplicate = gestures.some(
+      (gesture) =>
+        gesture.id !== saved.id &&
+        normalizeTrigger(gesture.trigger) === normalizeTrigger(saved.trigger) &&
+        gesture.steps.join(",") === saved.steps.join(","),
+    );
+    if (duplicate) {
+      window.alert(t("gestures.duplicate"));
+      return;
+    }
     onUpdateGestures(
       isCreating
         ? [...gestures, saved]
@@ -82,23 +84,22 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
 
   return (
     <div className={page.container}>
-      <PageHeader title={t(screenMode ? "nav.screen" : "nav.gestures")} />
+      <PageHeader
+        title={t(screenMode ? "nav.screen" : "nav.gestures")}
+        description={screenMode ? t("gestures.screenDescription") : undefined}
+      />
 
       <Card className={page.card}>
         <table className={page.table}>
           <thead>
             <tr>
-              <th className={page.th}>{t("gestures.tableName")}</th>
-              <th className={page.th} style={{ width: "120px" }}>
-                {t("gestures.tableTrigger")}
-              </th>
               <th className={page.th}>{t("gestures.tableStroke")}</th>
               <th className={page.th} style={{ width: "48px" }}></th>
             </tr>
           </thead>
           <tbody>
             {gestures.map((gesture) => {
-              const trigger = normalizeTrigger(gesture.trigger);
+              const strokeText = formatGestureLabel(gesture.trigger, gesture.steps, t);
               return (
                 <tr
                   key={gesture.id}
@@ -106,17 +107,9 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
                   onClick={() => handleEditGesture(gesture)}
                   title={t("targets.doubleClickGestureTip")}
                 >
-                  <td className={styles.tdName}>{formatTemplateName(t, gesture)}</td>
-                  <td className={styles.tdTrigger}>
-                    <Badge appearance="tint" color="brand">
-                      {formatTriggerSymbol(gesture.trigger, t)}
-                    </Badge>
-                  </td>
                   <td className={styles.tdStroke}>
-                    {gesture.steps.length > 0 ? (
-                      formatGestureLabel(gesture.trigger, gesture.steps, t)
-                    ) : trigger === "X1" || trigger === "X2" ? (
-                      trigger
+                    {strokeText ? (
+                      <div className={styles.strokeLabel}>{strokeText}</div>
                     ) : (
                       <span className={styles.emptyStroke}>
                         {t("targets.noGesture")}
@@ -140,7 +133,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
             })}
             {gestures.length === 0 && (
               <tr>
-                <td colSpan={4} className={page.emptyCell}>
+                <td colSpan={2} className={page.emptyCell}>
                   {t("targets.emptyBindings")}
                 </td>
               </tr>

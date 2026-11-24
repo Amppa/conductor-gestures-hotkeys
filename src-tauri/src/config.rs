@@ -107,6 +107,7 @@ pub struct EdgeScrollConfig {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct GestureTemplate {
     pub id: String,
+    #[serde(default, skip_serializing)]
     pub name: String,
     pub trigger: String,
     pub steps: Vec<String>,
@@ -146,6 +147,7 @@ pub struct Binding {
 #[serde(rename_all = "camelCase")]
 pub struct Gesture {
     pub id: String,
+    #[serde(default, skip_serializing)]
     pub name: String,
     pub trigger: String,
     pub steps: Vec<String>,
@@ -256,8 +258,23 @@ fn default_gesture_templates() -> Vec<GestureTemplate> {
         gesture_template("r-wd", "R + Wheel Down", "R", &["WD"]),
         gesture_template("corner-br", "Bottom-Right Corner", "CornerBR", &[]),
         gesture_template("key-insert", "Insert Key", "Insert", &[]),
-        gesture_template("key-lalt", "Left Alt", "LAlt", &[]),
-        gesture_template("key-lwin", "Left Win", "LWin", &[]),
+        gesture_template("key-numlock", "Num Lock", "NumLock", &[]),
+        gesture_template("key-numpad0", "Numpad 0", "Numpad0", &[]),
+        gesture_template("key-numpad1", "Numpad 1", "Numpad1", &[]),
+        gesture_template("key-numpad2", "Numpad 2", "Numpad2", &[]),
+        gesture_template("key-numpad3", "Numpad 3", "Numpad3", &[]),
+        gesture_template("key-numpad4", "Numpad 4", "Numpad4", &[]),
+        gesture_template("key-numpad5", "Numpad 5", "Numpad5", &[]),
+        gesture_template("key-numpad6", "Numpad 6", "Numpad6", &[]),
+        gesture_template("key-numpad7", "Numpad 7", "Numpad7", &[]),
+        gesture_template("key-numpad8", "Numpad 8", "Numpad8", &[]),
+        gesture_template("key-numpad9", "Numpad 9", "Numpad9", &[]),
+        gesture_template("key-numpad-div", "Numpad Divide", "NumpadDiv", &[]),
+        gesture_template("key-numpad-mult", "Numpad Multiply", "NumpadMult", &[]),
+        gesture_template("key-numpad-sub", "Numpad Subtract", "NumpadSub", &[]),
+        gesture_template("key-numpad-add", "Numpad Add", "NumpadAdd", &[]),
+        gesture_template("key-numpad-dot", "Numpad Decimal", "NumpadDot", &[]),
+        gesture_template("key-numpad-enter", "Numpad Enter", "NumpadEnter", &[]),
     ]
 }
 
@@ -537,8 +554,23 @@ mod tests {
                 "r-wd",
                 "corner-br",
                 "key-insert",
-                "key-lalt",
-                "key-lwin",
+                "key-numlock",
+                "key-numpad0",
+                "key-numpad1",
+                "key-numpad2",
+                "key-numpad3",
+                "key-numpad4",
+                "key-numpad5",
+                "key-numpad6",
+                "key-numpad7",
+                "key-numpad8",
+                "key-numpad9",
+                "key-numpad-div",
+                "key-numpad-mult",
+                "key-numpad-sub",
+                "key-numpad-add",
+                "key-numpad-dot",
+                "key-numpad-enter",
             ]
         );
     }
