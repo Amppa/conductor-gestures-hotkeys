@@ -5,7 +5,7 @@
     "type":  "module",
     "scripts":  {
                     "dev":  "vite",
-                    "build":  "tsc --noEmit \u0026\u0026 vite build",
+                    "build":  "node scripts/build-frontend.mjs",
                     "test:engine":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-engine.ps1",
                     "test:i18n":  "node scripts/test-i18n.mjs",
                     "test:rules":  "vitest run",
