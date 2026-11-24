@@ -12,7 +12,7 @@ import {
 } from "@fluentui/react-components";
 import { Add16Regular, Delete16Regular } from "@fluentui/react-icons";
 import { Gesture } from "../../domain/types";
-import { formatGestureLabel, formatTriggerSymbol, formatGestureName } from "./gestureSymbols";
+import { formatGestureLabel, formatTriggerSymbol, formatGestureName, normalizeTrigger } from "./gestureSymbols";
 import { EditGestureDialog } from "./EditGestureDialog";
 
 const useStyles = makeStyles({
@@ -90,11 +90,13 @@ const useStyles = makeStyles({
 });
 
 interface GesturesViewProps {
+  screenMode?: boolean;
   gestures: Gesture[];
   onUpdateGestures: (updated: Gesture[]) => void;
 }
 
 export const GesturesView: React.FC<GesturesViewProps> = ({
+  screenMode = false,
   gestures,
   onUpdateGestures,
 }) => {
@@ -108,8 +110,8 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
     setEditingGesture({
       id: `gesture-${Date.now()}`,
       name: t("gestures.newGestureName"),
-      trigger: "R",
-      steps: [],
+      trigger: screenMode ? "EdgeTop" : "R",
+      steps: screenMode ? ["WU"] : [],
     });
   };
 
@@ -137,7 +139,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
-        <Title3 as="h1" className={styles.pageTitle}>{t("nav.gestures")}</Title3>
+        <Title3 as="h1" className={styles.pageTitle}>{t(screenMode ? "nav.screen" : "nav.gestures")}</Title3>
         <Divider className={styles.divider} />
       </div>
 
@@ -170,6 +172,8 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
                 <td className={styles.tdStroke}>
                   {gesture.steps.length > 0 ? (
                     formatGestureLabel(gesture.trigger, gesture.steps, t)
+                  ) : ["X1", "X2"].includes(normalizeTrigger(gesture.trigger)) ? (
+                    normalizeTrigger(gesture.trigger)
                   ) : (
                     <span style={{ color: tokens.colorNeutralForeground4, fontStyle: "italic" }}>
                       {t("targets.noGesture")}
@@ -214,6 +218,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
 
       {editingGesture && (
         <EditGestureDialog
+          screenMode={screenMode}
           open={!!editingGesture}
           gesture={editingGesture}
           onSave={handleSaveGesture}

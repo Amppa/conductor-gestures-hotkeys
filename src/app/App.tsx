@@ -12,7 +12,7 @@ import { SettingsView } from "../features/settings/SettingsView";
 import { DEFAULT_CONFIG } from "../domain/defaults";
 import { AppConfig, Target, Gesture, Action } from "../domain/types";
 import { normalizeTrigger } from "../features/gestures/gestureSymbols";
-import { isKeyboardTemplate } from "../domain/triggerTypes";
+import { isKeyboardTemplate, isScreenTemplate } from "../domain/triggerTypes";
 
 function migrateConfigTriggers(rawConfig: AppConfig): AppConfig {
   // 1. Auto-merge missing action templates from defaults
@@ -201,7 +201,7 @@ export const App: React.FC = () => {
       ...prev,
       gestureTemplates: [
         ...newGestures,
-        ...prev.gestureTemplates.filter(isKeyboardTemplate),
+        ...prev.gestureTemplates.filter((template) => isKeyboardTemplate(template) || isScreenTemplate(template)),
       ],
     }));
   };
@@ -261,10 +261,14 @@ export const App: React.FC = () => {
           {selectedTab === "gestures" && (
             <GesturesView
               gestures={config.gestureTemplates.filter(
-                (template) => !isKeyboardTemplate(template)
+                (template) => !isKeyboardTemplate(template) && !isScreenTemplate(template)
               )}
               onUpdateGestures={handleUpdateGestures}
             />
+          )}
+          {selectedTab === "screen" && (
+            <GesturesView screenMode gestures={config.gestureTemplates.filter(isScreenTemplate)}
+              onUpdateGestures={(updated) => setConfig((previous) => ({ ...previous, gestureTemplates: [...previous.gestureTemplates.filter((template) => !isScreenTemplate(template)), ...updated] }))} />
           )}
           {selectedTab === "hotkeys" && (
             <HotkeysView
@@ -277,6 +281,9 @@ export const App: React.FC = () => {
               actions={config.actionTemplates}
               onUpdateActions={handleUpdateActions}
             />
+          )}
+          {selectedTab === "popup-menu" && (
+            <div style={{ padding: "16px 24px" }}>{t("common.inDevelopment")}</div>
           )}
           {selectedTab === "settings" && (
             <SettingsView

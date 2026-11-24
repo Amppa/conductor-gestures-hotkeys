@@ -9,6 +9,7 @@ import {
   DialogContent,
   Button,
   Input,
+  Select,
   TabList,
   Tab,
   Subtitle2,
@@ -95,6 +96,7 @@ const useStyles = makeStyles({
 export type GestureDialogTab = "standard" | "record";
 
 interface EditGestureDialogProps {
+  screenMode?: boolean;
   open: boolean;
   gesture: Gesture;
   onSave: (updated: Gesture) => void;
@@ -119,6 +121,7 @@ function buildCommandString(trig: GestureTrigger, steps: string[], t?: any): str
 }
 
 export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
+  screenMode = false,
   open,
   gesture,
   onSave,
@@ -216,7 +219,19 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
             </div>
 
             {/* Row 3: Tabs */}
-            <TabList
+            {screenMode && <>
+              <Select aria-label={t("targets.tableGesture")} value={trigger} onChange={(_, data) => {
+                const next = data.value as GestureTrigger;
+                const nextSteps = next.startsWith("Corner") ? [] : ["WU"];
+                setTrigger(next); setSteps(nextSteps); setCommandText(buildCommandString(next, nextSteps, t));
+              }}>
+                {["EdgeTop", "EdgeBottom", "EdgeLeft", "EdgeRight", "CornerTL", "CornerTR", "CornerBL", "CornerBR"].map((value) => <option key={value} value={value}>{t(`triggers.${value}`)}</option>)}
+              </Select>
+              {trigger.startsWith("Edge") && <Select aria-label={t("gestures.stroke")} value={steps[0] ?? "WU"} onChange={(_, data) => {
+                setSteps([data.value]); setCommandText(buildCommandString(trigger, [data.value], t));
+              }}><option value="WU">{t("triggers.wheelUp")}</option><option value="WD">{t("triggers.wheelDown")}</option></Select>}
+            </>}
+            {!screenMode && <TabList
               selectedValue={activeTab}
               onTabSelect={(_, data) => setActiveTab(data.value as GestureDialogTab)}
               className={styles.tabList}
@@ -227,12 +242,12 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
               <Tab value="record">
                 {t("dialogs.tabRecord")}
               </Tab>
-            </TabList>
+            </TabList>}
 
             {/* Row 4: Mode Content */}
 
             {/* Standard Mode: Mouse SVG on the left, 3x3 Arrow Grid on the right */}
-            {activeTab === "standard" && (
+            {!screenMode && activeTab === "standard" && (
               <div className={styles.standardContentRow}>
                 <div className={styles.mouseCol}>
                   <MousePreview
@@ -260,7 +275,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
             )}
 
             {/* Record Mode: Interactive Canvas */}
-            {activeTab === "record" && (
+            {!screenMode && activeTab === "record" && (
               <div className={styles.recordContent}>
                 <GestureRecorderCanvas
                   initialTrigger={trigger}

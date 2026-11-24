@@ -11,6 +11,8 @@
     "inDevelopment": "In Development"
   },
   "nav": {
+    "popupMenu": "Popup Menu",
+    "screen": "Screen Edge & Corner Triggers",
     "targets": "Scope",
     "excluded": "Excluded Apps",
     "gestures": "Gesture Triggers",
@@ -251,6 +253,17 @@
     "act-lalt": "Trigger Alt"
   },
   "gestureNames": {
+    "edge-top-wu": "Top Edge Wheel Up",
+    "edge-top-wd": "Top Edge Wheel Down",
+    "edge-bottom-wu": "Bottom Edge Wheel Up",
+    "edge-bottom-wd": "Bottom Edge Wheel Down",
+    "edge-left-wu": "Left Edge Wheel Up",
+    "edge-left-wd": "Left Edge Wheel Down",
+    "edge-right-wu": "Right Edge Wheel Up",
+    "edge-right-wd": "Right Edge Wheel Down",
+    "corner-tl": "Corner TL",
+    "corner-tr": "Corner TR",
+    "corner-bl": "Corner BL",
     "r-diagonal-ul": "Right Click 🡤",
     "r-diagonal-ur": "Right Click 🡥",
     "r-diagonal-dr": "Right Click 🡦",

@@ -13,8 +13,10 @@ import {
   Apps24Regular,
   Prohibited24Regular,
   HandDraw24Regular,
+  Desktop24Regular,
   Keyboard24Regular,
   Flash24Regular,
+  List24Regular,
   Settings24Regular,
 } from "@fluentui/react-icons";
 
@@ -22,8 +24,10 @@ export type NavTabId =
   | "targets"
   | "excluded"
   | "gestures"
+  | "screen"
   | "hotkeys"
   | "actions"
+  | "popup-menu"
   | "settings";
 
 const useStyles = makeStyles({
@@ -120,6 +124,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Tab value="gestures" icon={<HandDraw24Regular />}>
             {t("nav.gestures")}
           </Tab>
+          <Tab value="screen" icon={<Desktop24Regular />}>
+            {t("nav.screen")}
+          </Tab>
           <Tab value="hotkeys" icon={<Keyboard24Regular />}>
             {t("nav.hotkeys")}
           </Tab>
@@ -136,6 +143,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <Tab value="actions" icon={<Flash24Regular />}>
             {t("nav.actions")}
+          </Tab>
+          <Tab value="popup-menu" icon={<List24Regular />}>
+            {t("nav.popupMenu")}
           </Tab>
         </TabList>
       </div>

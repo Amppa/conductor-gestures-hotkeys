@@ -33,3 +33,7 @@ export function isKeyboardTrigger(trigger: GestureTrigger): boolean {
 export function isKeyboardTemplate(template: Gesture): boolean {
   return isKeyboardTrigger(template.trigger);
 }
+
+export function isScreenTemplate(template: Gesture): boolean {
+  return /^(Edge(Top|Bottom|Left|Right|TopL|TopR)|Corner(TL|TR|BL|BR))$/.test(template.trigger);
+}

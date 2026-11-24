@@ -6,6 +6,10 @@
 - Engine: Pure dynamic AHK v2 script (headless testable).
 
 ## 2. Core Domain Model
+
+The Popup Menu navigation entry currently displays an in-development placeholder. Its planned behavior is to open a menu at the mouse cursor after a keyboard or mouse Trigger, allowing the user to click a Command. Runtime behavior and persistence for this feature are not implemented yet.
+
+Trigger template navigation separates mouse gestures, Screen Edge & Corner Triggers, and keyboard hotkeys. Screen templates retain their existing `Edge*` / `Corner*` tokens in `gestureTemplates`; classification changes do not modify copied Rules. Editing one category preserves templates in the other categories.
 ```typescript
 interface Rule { scope: Scope; trigger: Trigger; commands: Command[]; }
 interface Scope { type: 'global' | 'app' | 'group' | 'allowlist'; targetList?: string[]; }
