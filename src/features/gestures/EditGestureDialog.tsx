@@ -18,6 +18,7 @@ import {
 import { Gesture, GestureTrigger } from "../../domain/types";
 import {
   formatStepSymbol,
+  formatGestureName,
   parseStrokeInput,
 } from "./gestureSymbols";
 import { MousePreview } from "./MousePreview";
@@ -101,19 +102,19 @@ interface EditGestureDialogProps {
 }
 
 const DIRECTION_BUTTONS = [
-  { key: "UL", label: "↖" },
-  { key: "U", label: "↑" },
-  { key: "UR", label: "↗" },
-  { key: "L", label: "←" },
+  { key: "UL", label: "🡤" },
+  { key: "U", label: "🡡" },
+  { key: "UR", label: "🡥" },
+  { key: "L", label: "🡠" },
   { key: "", label: "•" },
-  { key: "R", label: "→" },
-  { key: "DL", label: "↙" },
-  { key: "D", label: "↓" },
-  { key: "DR", label: "↘" },
+  { key: "R", label: "🡢" },
+  { key: "DL", label: "🡧" },
+  { key: "D", label: "🡣" },
+  { key: "DR", label: "🡦" },
 ];
 
-function buildCommandString(trig: GestureTrigger, steps: string[]): string {
-  const arrowStr = steps.map(formatStepSymbol).join("");
+function buildCommandString(trig: GestureTrigger, steps: string[], t?: any): string {
+  const arrowStr = steps.map((step) => formatStepSymbol(step, t)).join("");
   return `${trig}${arrowStr}`;
 }
 
@@ -132,10 +133,14 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
   const [name, setName] = useState(
     t("gestureNames." + gesture.id, { defaultValue: gesture.name })
   );
+  const [customName, setCustomName] = useState(() => !!gesture.name &&
+    gesture.name !== t("gestures.newGestureName") &&
+    !t(`gestureNames.${gesture.id}`, { defaultValue: "" }) &&
+    gesture.name !== formatGestureName(gesture.trigger, gesture.steps, t));
   const [trigger, setTrigger] = useState<GestureTrigger>(gesture.trigger);
   const [steps, setSteps] = useState<string[]>([...gesture.steps]);
   const [commandText, setCommandText] = useState<string>(
-    buildCommandString(gesture.trigger, gesture.steps)
+    buildCommandString(gesture.trigger, gesture.steps, t)
   );
 
   // Directly edit command string
@@ -151,7 +156,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
   // Click mouse SVG button to change trigger
   const handleSelectTrigger = (newTrigger: GestureTrigger) => {
     setTrigger(newTrigger);
-    const updatedCmd = `${newTrigger}${steps.map(formatStepSymbol).join("")}`;
+    const updatedCmd = `${newTrigger}${steps.map((step) => formatStepSymbol(step, t)).join("")}`;
     setCommandText(updatedCmd);
   };
 
@@ -167,7 +172,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
   const handleRecordFinished = (recTrigger: GestureTrigger, recSteps: string[]) => {
     setTrigger(recTrigger);
     setSteps(recSteps);
-    setCommandText(buildCommandString(recTrigger, recSteps));
+    setCommandText(buildCommandString(recTrigger, recSteps, t));
   };
 
   const handleSave = () => {
@@ -175,7 +180,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
     const parsed = parseStrokeInput(commandText, trigger);
     onSave({
       ...gesture,
-      name: name.trim() || gesture.name || t("gestures.newGestureName"),
+      name: customName && name.trim() ? name.trim() : formatGestureName(parsed.trigger, parsed.steps, t),
       trigger: (parsed.trigger as GestureTrigger) || trigger,
       steps: parsed.steps,
     });
@@ -193,8 +198,8 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
               <Subtitle2 className={styles.rowLabel}>{t("gestures.name")}：</Subtitle2>
               <Input
                 className={styles.rowInput}
-                value={name}
-                onChange={(_, data) => setName(data.value)}
+                value={customName ? name : formatGestureName(trigger, steps, t)}
+                onChange={(_, data) => { setCustomName(true); setName(data.value); }}
                 placeholder={t("dialogs.gestureNamePlaceholder")}
               />
             </div>

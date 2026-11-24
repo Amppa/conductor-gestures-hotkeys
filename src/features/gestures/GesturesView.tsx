@@ -12,7 +12,7 @@ import {
 } from "@fluentui/react-components";
 import { Add16Regular, Delete16Regular } from "@fluentui/react-icons";
 import { Gesture } from "../../domain/types";
-import { formatGestureLabel, formatTriggerSymbol } from "./gestureSymbols";
+import { formatGestureLabel, formatTriggerSymbol, formatGestureName } from "./gestureSymbols";
 import { EditGestureDialog } from "./EditGestureDialog";
 
 const useStyles = makeStyles({
@@ -160,7 +160,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
                 title={t("targets.doubleClickGestureTip")}
               >
                 <td className={styles.tdName}>
-                  {t("gestureNames." + gesture.id, { defaultValue: gesture.name })}
+                  {t(`gestureNames.${gesture.id}`, { defaultValue: "" }) ? formatGestureName(gesture.trigger, gesture.steps, t) : gesture.name}
                 </td>
                 <td className={styles.tdTrigger}>
                   <Badge appearance="tint" color="brand">

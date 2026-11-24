@@ -34,6 +34,7 @@ global gOsdDurationMs := 1000
 global gOsdFontSizePx := 20
 global gOsdOpacityPct := 90
 global gOsdUnknownGestureLabel := "未知手勢"
+global gWheelLabel := "滾輪"
 global gChordWheelTriggered := false
 global gLogFile := A_ScriptDir . "\gesture.log"
 
@@ -101,17 +102,18 @@ GetDirection(dx, dy) {
 ; Direction Arrow and Trigger Name Formatters
 ; ------------------------------------------------------------------------------
 FormatStepArrow(step) {
+    global gWheelLabel
     switch step {
-        case "U": return "↑"
-        case "D": return "↓"
-        case "L": return "←"
-        case "R": return "→"
-        case "UL": return "↖"
-        case "UR": return "↗"
-        case "DL": return "↙"
-        case "DR": return "↘"
-        case "WU": return "W↑"
-        case "WD": return "W↓"
+        case "U": return "🡡"
+        case "D": return "🡣"
+        case "L": return "🡠"
+        case "R": return "🡢"
+        case "UL": return "🡤"
+        case "UR": return "🡥"
+        case "DL": return "🡧"
+        case "DR": return "🡦"
+        case "WU": return gWheelLabel . "↑"
+        case "WD": return gWheelLabel . "↓"
         default: return step
     }
 }

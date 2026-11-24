@@ -202,8 +202,8 @@
     "presetVolDown": "降低音量",
     "noSteps": "無步驟 (單擊或觸控角)",
     "clickArrowTip": "點擊方向箭頭串接筆劃：",
-    "wheelUpBtn": "+ 滾輪上 (W↑)",
-    "wheelDownBtn": "+ 滾輪下 (W↓)",
+    "wheelUpBtn": "+ 滾輪↑",
+    "wheelDownBtn": "+ 滾輪↓",
     "tabStandard": "標準模式",
     "tabRecord": "錄製模式",
     "command": "指令",
@@ -231,8 +231,8 @@
     "LAlt": "左側 Alt (LAlt)",
     "LWin": "左側 Win (LWin)",
     "click": "單擊",
-    "wheelUp": "滾輪上 (W↑)",
-    "wheelDown": "滾輪下 (W↓)"
+    "wheelUp": "滾輪↑",
+    "wheelDown": "滾輪↓"
   },
   "actionNames": {
     "act-back": "上一頁",
@@ -250,6 +250,10 @@
     "act-lalt": "觸發 Alt 鍵"
   },
   "gestureNames": {
+    "r-diagonal-ul": "右鍵 🡤",
+    "r-diagonal-ur": "右鍵 🡥",
+    "r-diagonal-dr": "右鍵 🡦",
+    "r-diagonal-dl": "右鍵 🡧",
     "r-left": "向左",
     "r-right": "向右",
     "r-up": "向上",

@@ -3,38 +3,45 @@
  * Formats mouse triggers and direction arrows cleanly with i18n support.
  */
 
-export function formatStepSymbol(step: string): string {
+export function formatGestureName(trigger: string, steps: string[], t: any): string {
+  const key = normalizeTrigger(trigger);
+  const label = t(`triggers.${key}`, { defaultValue: key });
+  const button = label.replace(/^[RML] \((.*)\)$/, "$1");
+  return button + (steps.length ? " " + steps.map((step) => formatStepSymbol(step, t)).join("") : "");
+}
+
+export function formatStepSymbol(step: string, t?: any): string {
   switch (step.toUpperCase()) {
     case "U":
     case "UP":
-      return "↑";
+      return "🡡";
     case "D":
     case "DOWN":
-      return "↓";
+      return "🡣";
     case "L":
     case "LEFT":
-      return "←";
+      return "🡠";
     case "R":
     case "RIGHT":
-      return "→";
+      return "🡢";
     case "UL":
     case "UP_LEFT":
-      return "↖";
+      return "🡤";
     case "UR":
     case "UP_RIGHT":
-      return "↗";
+      return "🡥";
     case "DL":
     case "DOWN_LEFT":
-      return "↙";
+      return "🡧";
     case "DR":
     case "DOWN_RIGHT":
-      return "↘";
+      return "🡦";
     case "WU":
     case "WHEEL_UP":
-      return "W↑";
+      return t ? t("triggers.wheelUp") : "Wheel↑";
     case "WD":
     case "WHEEL_DOWN":
-      return "W↓";
+      return t ? t("triggers.wheelDown") : "Wheel↓";
     default:
       return step;
   }
@@ -107,12 +114,12 @@ export function formatGestureLabel(
 
   // Chord wheel or edge wheel
   if (steps[0] === "WU" || steps[0] === "WD") {
-    const wheelText = steps[0] === "WU" ? "W↑" : "W↓";
+    const wheelText = formatStepSymbol(steps[0], t);
     return `${trig} + ${wheelText}`;
   }
 
   // Direction arrows without space for mouse triggers (e.g. R←, R↓→)
-  const stepArrows = steps.map(formatStepSymbol).join("");
+  const stepArrows = steps.map((step) => formatStepSymbol(step, t)).join("");
   return isMouse ? `${trig}${stepArrows}` : `${trig} ${stepArrows}`;
 }
 
@@ -125,6 +132,15 @@ export function parseStrokeInput(
   fallbackTrigger: string = "R"
 ): { trigger: string; steps: string[] } {
   let text = rawInput.trim();
+  text = text.replace(/滾輪|wheel/gi, "W");
+  const previousArrows = ["🡐", "🡑", "🡒", "🡓", "🡔", "🡕", "🡖", "🡗"];
+  const standardArrows = ["←", "↑", "→", "↓", "↖", "↗", "↘", "↙"];
+  text = Array.from(text, (character) => {
+    const index = previousArrows.indexOf(character);
+    return index < 0 ? character : standardArrows[index];
+  }).join("");
+  const arrowAliases: Record<string, string> = { "🡠": "←", "🡡": "↑", "🡢": "→", "🡣": "↓", "🡤": "↖", "🡥": "↗", "🡦": "↘", "🡧": "↙", "⭠": "←", "⭡": "↑", "⭢": "→", "⭣": "↓" };
+  text = Array.from(text, (character) => arrowAliases[character] ?? character).join("");
   let trigger = fallbackTrigger;
 
   // 1. Check for leading trigger (e.g. "X1:", "X2 ", "R→", "M", etc.)

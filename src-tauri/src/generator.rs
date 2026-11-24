@@ -258,6 +258,7 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
     ));
 
     // Connect function hooks
+    s.push_str(&format!("global gWheelLabel := \"{}\"\n", if config.language == "zh-TW" { "滾輪" } else { "Wheel" }));
     s.push_str("global gFnIsProcessDisabled := GeneratedIsProcessDisabled\n");
     s.push_str("global gFnDispatchGestureAction := GeneratedDispatchGestureAction\n");
     s.push_str("global gFnGetGestureActionName := GeneratedGetGestureActionName\n\n");

@@ -26,6 +26,7 @@ interface Command { type: 'hotkey' | 'text' | 'script' | 'window'; value: string
 `Allowlist (放行名單)` > `App/Group (特定程式/群組)` > `Global (全域預設)`
 
 ## 4. Trigger & Spatial Notation
-- Mouse Triggers: `R, M, L, X1, X2` | Chord Wheel: `R + W↑`, `R + W↓`, `X1 + W↑`
+- Mouse Triggers: `R, M, L, X1, X2` | Chord wheel labels use `滾輪↑` / `滾輪↓` in Traditional Chinese and `Wheel↑` / `Wheel↓` in English. Wheel directions retain standard arrows; stored tokens remain `WU` / `WD`.
+- Gesture directions use U+1F860–U+1F867 consistently in names, stroke labels, standard-mode buttons, and OSD: `L 🡠`, `U 🡡`, `R 🡢`, `D 🡣`, `UL 🡤`, `UR 🡥`, `DR 🡦`, `DL 🡧`. Automatic names combine the localized trigger and directions (for example, `右鍵🡥`). Legacy arrow input remains supported; persisted direction tokens are unchanged.
 - Hot Corners: `CornerTL`, `CornerTR`, `CornerBL`, `CornerBR`
 - Screen Edges: `EdgeTopL`, `EdgeTopR`, `EdgeLeft`, `EdgeRight`, `EdgeBottomL`, `EdgeBottomR`

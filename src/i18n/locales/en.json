@@ -202,8 +202,8 @@
     "presetVolDown": "Volume Down",
     "noSteps": "No steps (Single click or hot corner)",
     "clickArrowTip": "Click direction arrows to chain strokes:",
-    "wheelUpBtn": "+ Wheel Up (W↑)",
-    "wheelDownBtn": "+ Wheel Down (W↓)",
+    "wheelUpBtn": "+ Wheel↑",
+    "wheelDownBtn": "+ Wheel↓",
     "tabStandard": "Standard Mode",
     "tabRecord": "Record Mode",
     "command": "Command",
@@ -232,8 +232,8 @@
     "LAlt": "Left Alt (LAlt)",
     "LWin": "Left Win (LWin)",
     "click": "Click",
-    "wheelUp": "Wheel Up (W↑)",
-    "wheelDown": "Wheel Down (W↓)"
+    "wheelUp": "Wheel↑",
+    "wheelDown": "Wheel↓"
   },
   "actionNames": {
     "act-back": "Back",
@@ -251,6 +251,10 @@
     "act-lalt": "Trigger Alt"
   },
   "gestureNames": {
+    "r-diagonal-ul": "Right Click 🡤",
+    "r-diagonal-ur": "Right Click 🡥",
+    "r-diagonal-dr": "Right Click 🡦",
+    "r-diagonal-dl": "Right Click 🡧",
     "r-left": "Left",
     "r-right": "Right",
     "r-up": "Up",

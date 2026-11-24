@@ -202,6 +202,10 @@ pub fn default_app_config() -> AppConfig {
             action: "volume".into(),
         },
         gesture_templates: vec![
+            GestureTemplate { id: "r-diagonal-ul".into(), name: "Right Button Up-Left".into(), trigger: "R".into(), steps: vec!["UL".into()] },
+            GestureTemplate { id: "r-diagonal-ur".into(), name: "Right Button Up-Right".into(), trigger: "R".into(), steps: vec!["UR".into()] },
+            GestureTemplate { id: "r-diagonal-dr".into(), name: "Right Button Down-Right".into(), trigger: "R".into(), steps: vec!["DR".into()] },
+            GestureTemplate { id: "r-diagonal-dl".into(), name: "Right Button Down-Left".into(), trigger: "R".into(), steps: vec!["DL".into()] },
             GestureTemplate {
                 id: "r-left".into(),
                 name: "Left".into(),
@@ -602,6 +606,10 @@ mod tests {
         assert_eq!(
             ids,
             vec![
+                "r-diagonal-ul",
+                "r-diagonal-ur",
+                "r-diagonal-dr",
+                "r-diagonal-dl",
                 "r-left",
                 "r-right",
                 "r-up",

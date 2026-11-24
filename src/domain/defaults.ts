@@ -244,6 +244,10 @@ export const DEFAULT_CONFIG: AppConfig = {
     action: "volume",
   },
   gestureTemplates: [
+    { id: "r-diagonal-ul", name: "Right Button Up-Left", trigger: "R", steps: ["UL"] },
+    { id: "r-diagonal-ur", name: "Right Button Up-Right", trigger: "R", steps: ["UR"] },
+    { id: "r-diagonal-dr", name: "Right Button Down-Right", trigger: "R", steps: ["DR"] },
+    { id: "r-diagonal-dl", name: "Right Button Down-Left", trigger: "R", steps: ["DL"] },
     { id: "r-left", name: "Left", trigger: "R", steps: ["L"] },
     { id: "r-right", name: "Right", trigger: "R", steps: ["R"] },
     { id: "r-up", name: "Up", trigger: "R", steps: ["U"] },
