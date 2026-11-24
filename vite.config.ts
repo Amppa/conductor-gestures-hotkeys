@@ -16,5 +16,23 @@ export default defineConfig({
     target: "chrome105",
     minify: process.env.TAURI_ENV_DEBUG ? false : "esbuild",
     sourcemap: !!process.env.TAURI_ENV_DEBUG,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("@fluentui")) {
+              return "vendor-fluent";
+            }
+            if (id.includes("react") || id.includes("scheduler")) {
+              return "vendor-react";
+            }
+            if (id.includes("i18next")) {
+              return "vendor-i18n";
+            }
+            return "vendor";
+          }
+        },
+      },
+    },
   },
 });
