@@ -21,7 +21,7 @@
 ```bash
 # Quality Gates (Must 100% pass before merge)
 npm run verify                                     # Run all gates below
-npm run test:engine                                # Gate 1: AHK gesture engine suite
+npm run test:engine                                # Gate 1: AHK engine suite (engine/tests, runs in temp dir)
 npm run test:i18n                                  # Gate 2: Translation key validation
 npm run build                                      # Gate 3: Frontend TS build
 npm run test:rust                                  # Gate 4: Rust unit and doc tests

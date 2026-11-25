@@ -37,6 +37,10 @@ global gOsdUnknownGestureLabel := "未知手勢"
 global gWheelLabel := "滾輪"
 global gChordWheelTriggered := false
 global gLogFile := A_ScriptDir . "\gesture.log"
+global gPauseFlagFile := A_ScriptDir . "\paused.flag"
+; Placeholders; the generated script replaces these with its own maps.
+global gGeneratedRemapState := Map()
+global gGeneratedRemapDestinationCounts := Map()
 
 ; Dynamic Dispatch Hooks (Callable objects overridden by generated script)
 global gFnIsProcessDisabled := (procName) => false
@@ -53,6 +57,49 @@ LogGesture(msg) {
     try {
         timeStr := FormatTime(, "yyyy-MM-dd HH:mm:ss")
         FileAppend("[" . timeStr . "] " . msg . "`n", gLogFile, "UTF-8")
+    }
+}
+
+; ------------------------------------------------------------------------------
+; Pause State (flag file written by the Tauri host)
+; ------------------------------------------------------------------------------
+UpdatePauseState() {
+    global gIsPaused, gPauseFlagFile
+    pausedNow := FileExist(gPauseFlagFile) ? true : false
+    if (pausedNow = gIsPaused)
+        return
+    gIsPaused := pausedNow
+    Suspend(gIsPaused)
+    if (gIsPaused)
+        ResetGestureState()
+}
+
+ResetGestureState() {
+    global gState, gSteps, gChordWheelTriggered
+    gState := STATE_IDLE
+    gSteps := []
+    gChordWheelTriggered := false
+    SetTimer(TrackGesture, 0)
+    HideGestureOSD()
+    ReleaseGeneratedKeys()
+}
+
+; Release any synthetic keys held by generated remap hotkeys so pausing never
+; leaves a key stuck down.
+ReleaseGeneratedKeys() {
+    global gGeneratedRemapState, gGeneratedRemapDestinationCounts
+    if !IsObject(gGeneratedRemapState)
+        return
+    previousLevel := SendLevel(0)
+    try {
+        SetKeyDelay(-1)
+        for source, destination in gGeneratedRemapState.Clone()
+            Send("{Blind}{" destination " Up}")
+        gGeneratedRemapState.Clear()
+        if IsObject(gGeneratedRemapDestinationCounts)
+            gGeneratedRemapDestinationCounts.Clear()
+    } finally {
+        SendLevel(previousLevel)
     }
 }
 
@@ -382,6 +429,9 @@ PollHotCorner() {
         gLastCorner := ""
     }
 }
+; Adopt the host's pause state immediately; a flag may survive an engine restart.
+UpdatePauseState()
+SetTimer(UpdatePauseState, 200)
 SetTimer(PollHotCorner, 50)
 
 ; ------------------------------------------------------------------------------
@@ -563,7 +613,10 @@ HandleSpatialWheel(wheelDir) {
 ; ------------------------------------------------------------------------------
 HandleChordWheel(wheelDir) {
     global gState, gTrigger, gStartProcess, gChordWheelTriggered, gFnDispatchGestureAction
-    global gSteps
+    global gSteps, gIsPaused
+
+    if (gIsPaused)
+        return false
 
     if (gState != STATE_PENDING && gState != STATE_DRAWING)
         return false

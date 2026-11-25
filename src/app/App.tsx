@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { makeStyles, tokens } from "@fluentui/react-components";
 import { useTranslation } from "react-i18next";
 import { Sidebar, NavTabId } from "./Sidebar";
@@ -63,8 +63,49 @@ export const App: React.FC = () => {
 
   const isDirty = JSON.stringify(config) !== JSON.stringify(savedConfig);
 
+  const configRef = useRef(config);
+  const applySeqRef = useRef(0);
+  const initStartedRef = useRef(false);
+
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
+
+  const runApply = async (target: AppConfig) => {
+    const applyId = ++applySeqRef.current;
+    setIsApplying(true);
+    setApplyError(null);
+    try {
+      const result = await applyConfig(target);
+      if (applyId !== applySeqRef.current) {
+        return;
+      }
+      if (!result.success) {
+        setApplyError(
+          result.msg || t("app.applyFailed", { err: "Engine failed to apply" }),
+        );
+      } else {
+        setSavedConfig(target);
+      }
+    } catch (error) {
+      if (applyId !== applySeqRef.current) {
+        return;
+      }
+      setApplyError(t("app.applyFailed", { err: errorMessage(error) }));
+    } finally {
+      if (applyId === applySeqRef.current) {
+        setIsApplying(false);
+      }
+    }
+  };
+
   useEffect(() => {
     const initApp = async () => {
+      if (initStartedRef.current) {
+        return;
+      }
+      initStartedRef.current = true;
+
       const loaded = await loadConfig();
       if (!loaded) {
         return;
@@ -77,16 +118,7 @@ export const App: React.FC = () => {
         i18n.changeLanguage(activeConfig.language);
       }
 
-      try {
-        const result = await applyConfig(activeConfig);
-        if (!result.success) {
-          setApplyError(
-            result.msg || t("app.applyFailed", { err: "Engine failed to start" }),
-          );
-        }
-      } catch (error) {
-        setApplyError(t("app.applyFailed", { err: errorMessage(error) }));
-      }
+      await runApply(activeConfig);
 
       const autostart = await readAutostartEnabled();
       if (autostart !== null) {
@@ -102,23 +134,8 @@ export const App: React.FC = () => {
     await writeAutostartEnabled(enabled);
   };
 
-  const handleReload = async () => {
-    setIsApplying(true);
-    setApplyError(null);
-    try {
-      const result = await applyConfig(config);
-      if (!result.success) {
-        setApplyError(
-          result.msg || t("app.applyFailed", { err: "Engine failed to reload" }),
-        );
-      } else {
-        setSavedConfig(config);
-      }
-    } catch (error) {
-      setApplyError(t("app.applyFailed", { err: errorMessage(error) }));
-    } finally {
-      setIsApplying(false);
-    }
+  const handleReload = () => {
+    void runApply(configRef.current);
   };
 
   const handleDiscardChanges = () => {

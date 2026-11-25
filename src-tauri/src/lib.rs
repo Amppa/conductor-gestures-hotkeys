@@ -13,6 +13,8 @@ use tauri_plugin_autostart::MacosLauncher;
 pub struct AppState {
     pub paused: AtomicBool,
     pub engine_process: Mutex<Option<Child>>,
+    pub apply_lock: Mutex<()>,
+    pub pause_item: Mutex<Option<tauri::menu::MenuItem<tauri::Wry>>>,
 }
 
 pub fn run() {
@@ -20,6 +22,8 @@ pub fn run() {
         .manage(AppState {
             paused: AtomicBool::new(false),
             engine_process: Mutex::new(None),
+            apply_lock: Mutex::new(()),
+            pause_item: Mutex::new(None),
         })
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_autostart::init(
@@ -27,6 +31,8 @@ pub fn run() {
             None::<Vec<&str>>,
         ))
         .setup(|app| {
+            // A pause flag from a previous session must not start the engine paused.
+            commands::write_pause_flag(app.handle(), false).map_err(std::io::Error::other)?;
             tray::setup_tray(app.handle())?;
             Ok(())
         })
@@ -39,6 +45,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::load_config,
+            commands::validate_imported_config,
             commands::save_config,
             commands::apply_config,
             commands::get_runtime_status,

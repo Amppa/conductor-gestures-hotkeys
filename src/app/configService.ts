@@ -18,6 +18,14 @@ export async function loadConfig(): Promise<AppConfig | null> {
   }
 }
 
+/**
+ * Validates a backup file on the host before it replaces the working config.
+ * Rejects malformed JSON, schema mismatches, and newer format versions.
+ */
+export async function validateImportedConfig(content: string): Promise<AppConfig> {
+  return invokeTauri<AppConfig>("validate_imported_config", { content });
+}
+
 export async function applyConfig(config: AppConfig): Promise<ApplyResult> {
   return invokeTauri<ApplyResult>("apply_config", { config });
 }

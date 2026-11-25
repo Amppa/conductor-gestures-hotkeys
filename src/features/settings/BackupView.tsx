@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { AppConfig, BackupData } from "../../domain/types";
 import { DEFAULT_CONFIG } from "../../domain/defaults";
 import { normalizeImportedConfig } from "../../domain/configNormalization";
+import { validateImportedConfig } from "../../app/configService";
 import { invokeTauri } from "../../shared/tauri";
 
 const useStyles = makeStyles({
@@ -202,26 +203,50 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
     }
   };
 
+  const reportInvalidImport = (msg?: unknown) => {
+    setFeedback({
+      isError: true,
+      msg: typeof msg === "string" && msg ? msg : t("backup.importInvalidFormat"),
+    });
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
+      const text = event.target?.result;
+      if (typeof text !== "string") {
+        reportInvalidImport();
+        return;
+      }
+
+      // The host owns schema validation; only the plain-browser dev build falls
+      // back to the weaker local shape check.
+      if ("__TAURI_INTERNALS__" in window) {
+        try {
+          setPendingConfig(await validateImportedConfig(text));
+          setIsImportWarningOpen(true);
+        } catch (error) {
+          reportInvalidImport(error);
+        }
+        return;
+      }
+
       try {
-        const text = event.target?.result as string;
         const parsed = JSON.parse(text);
         const targetConfig: AppConfig = parsed.header && parsed.config ? parsed.config : parsed;
 
         if (!targetConfig || !Array.isArray(targetConfig.targets)) {
-          setFeedback({ isError: true, msg: t("backup.importInvalidFormat") });
+          reportInvalidImport();
           return;
         }
 
         setPendingConfig(targetConfig);
         setIsImportWarningOpen(true);
       } catch {
-        setFeedback({ isError: true, msg: t("backup.importInvalidFormat") });
+        reportInvalidImport();
       }
     };
     reader.readAsText(file);

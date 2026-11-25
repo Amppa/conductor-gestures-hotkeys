@@ -1,5 +1,8 @@
 use serde::{Deserialize, Deserializer, Serialize};
 
+/// Persisted configuration format version. Bump only when the on-disk shape changes.
+pub const CURRENT_CONFIG_VERSION: u8 = 1;
+
 // -----------------------------------------------------------------------------
 // Data Types Matching Config Schema
 // -----------------------------------------------------------------------------
@@ -475,7 +478,7 @@ fn default_targets() -> Vec<Target> {
 
 pub fn default_app_config() -> AppConfig {
     AppConfig {
-        version: 1,
+        version: CURRENT_CONFIG_VERSION,
         language: "zh-TW".into(),
         engine: default_engine_config(),
         edge_scroll: default_edge_scroll_config(),
