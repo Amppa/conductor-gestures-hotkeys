@@ -20,9 +20,8 @@ import {
 import { Gesture, GestureTrigger } from "../../domain/types";
 import {
   formatGestureLabel,
-  parseStrokeInput,
-  validateStrokeInput,
 } from "./gestureSymbols";
+import { parseGestureInput } from "../../domain/triggers/gestureInput";
 import { MousePreview } from "./MousePreview";
 import { GestureRecorderCanvas } from "./GestureRecorderCanvas";
 
@@ -146,7 +145,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
   // Directly edit command string
   const handleCommandTextChange = (raw: string) => {
     setCommandText(raw);
-    const parsed = parseStrokeInput(raw, trigger);
+    const parsed = parseGestureInput(raw, trigger);
     if (parsed.trigger) {
       setTrigger(parsed.trigger);
     }
@@ -179,11 +178,9 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
   };
 
   const handleSave = () => {
-    const validation = validateStrokeInput(commandText, trigger);
-    setError(validation);
-    if (validation) return;
-    // Parse final text in command input box to guarantee 100% sync
-    const parsed = parseStrokeInput(commandText, trigger);
+    const parsed = parseGestureInput(commandText, trigger);
+    setError(parsed.error);
+    if (parsed.error) return;
     onSave({
       ...gesture,
       trigger: parsed.trigger || trigger,
