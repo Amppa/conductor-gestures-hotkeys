@@ -21,6 +21,7 @@
 ```bash
 # Quality Gates (Must 100% pass before merge)
 npm run verify                                     # Run all gates below
+npm run lint                                       # React Hooks rules and dependency checks
 npm run test:engine                                # Gate 1: AHK engine suite (engine/tests, runs in temp dir)
 npm run test:i18n                                  # Gate 2: Translation key validation
 npm run build                                      # Gate 3: Frontend TS build

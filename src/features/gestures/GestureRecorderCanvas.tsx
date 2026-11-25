@@ -83,6 +83,7 @@ export const GestureRecorderCanvas: React.FC<GestureRecorderCanvasProps> = ({
   const styles = useStyles();
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const listenersRef = useRef<AbortController | null>(null);
 
   // Synchronous tracking state to prevent React state batching latency
   const trackingRef = useRef<{
@@ -128,10 +129,8 @@ export const GestureRecorderCanvas: React.FC<GestureRecorderCanvasProps> = ({
     trackingRef.current.isRecording = false;
 
     // Clean up window listeners
-    window.removeEventListener("pointerup", handleGlobalRelease, true);
-    window.removeEventListener("mouseup", handleGlobalRelease, true);
-    window.removeEventListener("contextmenu", handleGlobalContextMenu, true);
-    window.removeEventListener("pointercancel", handleGlobalRelease, true);
+    listenersRef.current?.abort();
+    listenersRef.current = null;
 
     const { trigger: finalTrigger, steps: finalSteps } = trackingRef.current;
     onRecordFinished(finalTrigger, [...finalSteps]);
@@ -149,10 +148,8 @@ export const GestureRecorderCanvas: React.FC<GestureRecorderCanvasProps> = ({
 
   useEffect(() => {
     return () => {
-      window.removeEventListener("pointerup", handleGlobalRelease, true);
-      window.removeEventListener("mouseup", handleGlobalRelease, true);
-      window.removeEventListener("contextmenu", handleGlobalContextMenu, true);
-      window.removeEventListener("pointercancel", handleGlobalRelease, true);
+      listenersRef.current?.abort();
+      listenersRef.current = null;
     };
   }, [handleGlobalRelease, handleGlobalContextMenu]);
 
@@ -163,10 +160,14 @@ export const GestureRecorderCanvas: React.FC<GestureRecorderCanvasProps> = ({
     if (!canvas) return;
 
     // Listen on window capture phase so right-click release or contextmenu is never swallowed
-    window.addEventListener("pointerup", handleGlobalRelease, true);
-    window.addEventListener("mouseup", handleGlobalRelease, true);
-    window.addEventListener("contextmenu", handleGlobalContextMenu, true);
-    window.addEventListener("pointercancel", handleGlobalRelease, true);
+    listenersRef.current?.abort();
+    const controller = new AbortController();
+    listenersRef.current = controller;
+    const options = { capture: true, signal: controller.signal };
+    window.addEventListener("pointerup", handleGlobalRelease, options);
+    window.addEventListener("mouseup", handleGlobalRelease, options);
+    window.addEventListener("contextmenu", handleGlobalContextMenu, options);
+    window.addEventListener("pointercancel", handleGlobalRelease, options);
 
     // Only set pointer capture for left click (Chromium can swallow pointerup on right-click capture)
     if (e.button === 0) {

@@ -5,13 +5,14 @@
     "type":  "module",
     "scripts":  {
                     "dev":  "vite",
+                    "lint":  "eslint src",
                     "build":  "node scripts/build-frontend.mjs",
                     "test:engine":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-engine.ps1",
                     "test:i18n":  "node scripts/test-i18n.mjs",
                     "test:rules":  "vitest run",
                     "test:rust":  "cargo test --manifest-path src-tauri/Cargo.toml",
                     "check:rust":  "cargo check --manifest-path src-tauri/Cargo.toml",
-                    "verify":  "npm run test:engine \u0026\u0026 npm run test:i18n \u0026\u0026 npm run test:rules \u0026\u0026 npm run build \u0026\u0026 npm run test:rust \u0026\u0026 npm run check:rust",
+                    "verify":  "npm run lint && npm run test:engine && npm run test:i18n && npm run test:rules && npm run build && npm run test:rust && npm run check:rust",
                     "package:portable":  "npm run tauri -- build --no-bundle \u0026\u0026 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-portable.ps1",
                     "release":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1",
                     "tauri":  "tauri",
@@ -30,6 +31,9 @@
                          "react-i18next":  "^18.0.3"
                      },
     "devDependencies":  {
+                            "@typescript-eslint/parser":  "^8.74.0",
+                            "eslint":  "^10.15.0",
+                            "eslint-plugin-react-hooks":  "^7.1.1",
                             "@tauri-apps/cli":  "^2.12.0",
                             "@types/react":  "^19.2.0",
                             "@types/react-dom":  "^19.2.0",
