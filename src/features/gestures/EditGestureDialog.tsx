@@ -155,8 +155,12 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
 
   // Click mouse SVG button to change trigger
   const handleSelectTrigger = (newTrigger: GestureTrigger) => {
-    setTrigger(newTrigger);
-    setCommandText(buildCommandString(newTrigger, steps, t));
+    const selected = trigger.split("+");
+    const next = ["L", "M", "R", "X1", "X2"].filter((key) =>
+      key === newTrigger ? !selected.includes(key) : selected.includes(key),
+    ).join("+");
+    setTrigger(next);
+    setCommandText(buildCommandString(next, steps, t));
   };
 
   // Click 3x3 arrow grid button to append stroke

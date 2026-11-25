@@ -165,7 +165,13 @@ export function parseStrokeInput(
   let text = normalizeArrows(rawInput.trim().replace(/滾輪|wheel/gi, "W"));
   let trigger: GestureTrigger = fallbackTrigger;
 
-  for (const knownTrigger of KNOWN_TRIGGERS) {
+  const buttons = /^(?:X[12]|[LMR])(?:\+(?:X[12]|[LMR]))+(?=\s|,|$)/.exec(text);
+  if (buttons) {
+    trigger = buttons[0];
+    text = text.slice(buttons[0].length);
+  }
+
+  for (const knownTrigger of buttons ? [] : KNOWN_TRIGGERS) {
     if (text.startsWith(knownTrigger)) {
       trigger = knownTrigger;
       text = text.slice(knownTrigger.length).replace(/^[:\s+]+/, "");
@@ -216,10 +222,13 @@ export function parseStrokeInput(
 
 export function validateStrokeInput(raw: string, fallback: string): string | null {
   let text = normalizeArrows(raw.trim().replace(/滾輪|wheel/gi, "W"));
+  const buttons = /^(?:X[12]|[LMR])(?:\+(?:X[12]|[LMR]))+(?=\s|,|$)/.exec(text);
+  if (buttons) text = text.slice(buttons[0].length);
   if (!text || /,\s*(,|$)/.test(text)) return "invalidStroke";
   const source = KNOWN_TRIGGERS.find((key) => text.startsWith(key));
   const symbolSource = KNOWN_TRIGGERS.find((key) => text.startsWith(formatTriggerSymbol(key)));
-  const trigger = source ?? symbolSource ?? fallback;
+  const trigger = buttons?.[0] ?? source ?? symbolSource ?? fallback;
+  if (!trigger) return "invalidStroke";
   if (source) text = text.slice(source.length);
   else if (symbolSource) text = text.slice(formatTriggerSymbol(symbolSource).length);
   text = text.replace(/^\s*,?\s*/, "");

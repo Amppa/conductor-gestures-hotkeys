@@ -105,11 +105,12 @@ export const MousePreview: React.FC<MousePreviewProps> = ({
 }) => {
   const styles = useStyles();
 
-  const isL = selectedTrigger === "L";
-  const isR = selectedTrigger === "R";
-  const isM = selectedTrigger === "M";
-  const isX1 = selectedTrigger === "X1";
-  const isX2 = selectedTrigger === "X2";
+  const selected = selectedTrigger.split("+");
+  const isL = selected.includes("L");
+  const isR = selected.includes("R");
+  const isM = selected.includes("M");
+  const isX1 = selected.includes("X1");
+  const isX2 = selected.includes("X2");
 
   return (
     <div className={styles.container}>
