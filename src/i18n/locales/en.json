@@ -55,6 +55,8 @@
     "cancel": "Cancel"
   },
   "targets": {
+    "sortNow": "Sort now",
+    "dragRule": "Drag to reorder rules",
     "globalTitle": "Global Default",
     "disabledTitle": "Excluded Apps",
     "group01Title": "Group 01",

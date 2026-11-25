@@ -55,6 +55,8 @@
     "cancel": "取消"
   },
   "targets": {
+    "sortNow": "立即排序",
+    "dragRule": "拖曳調整規則順序",
     "globalTitle": "全域預設",
     "disabledTitle": "排除程式",
     "group01Title": "群組01",

@@ -91,8 +91,16 @@ const useStyles = makeStyles({
     },
   },
   tdCheckbox: {
-    width: "40px",
+    width: "72px",
     padding: "6px 8px",
+    whiteSpace: "nowrap",
+    verticalAlign: "middle",
+  },
+  ruleControls: {
+    display: "inline-flex",
+    alignItems: "center",
+    flexWrap: "nowrap",
+    gap: "4px",
   },
   tdGesture: {
     padding: "2px 4px",
@@ -348,6 +356,21 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
   };
 
   const globalTarget = targets.find((target) => target.kind === "global");
+  const [dragging, setDragging] = useState<{ targetId: string; bindingId: string } | null>(null);
+  const [dropLine, setDropLine] = useState<{ id: string; after: boolean } | null>(null);
+  const { i18n } = useTranslation();
+  const sortRules = () => {
+    const english = i18n.getFixedT("en");
+    const label = (binding: Binding) => (isKeyboardTemplate(binding.gesture)
+      ? formatHotkeyTrigger(binding.gesture.trigger)
+      : formatGestureLabel(binding.gesture.trigger, binding.gesture.steps, english))
+      .replace(/^[⬒⬓◧◨◰◱◲◳]\s*/, "");
+    const compare = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
+    onUpdateTargets(targets.map((target) => ({ ...target, bindings: [...target.bindings].sort((a, b) =>
+      Number(b.enabled) - Number(a.enabled) || compare(label(a), label(b)) ||
+      (!a.enabled && !b.enabled ? compare(formatActionName(english, a.action), formatActionName(english, b.action)) : 0),
+    ) })));
+  };
   const specificGroups = targets.filter((target) => target.kind === "group");
 
   const renderBindingsTable = (target: Target) => (
@@ -368,8 +391,36 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
           const invalid = isBindingInvalid(target, binding);
 
           return (
-            <tr key={binding.id} className={`${page.row} ${styles.scopesRow}`}>
+            <tr key={binding.id} className={`${page.row} ${styles.scopesRow}`}
+              style={dropLine?.id === binding.id ? { boxShadow: `inset 0 ${dropLine.after ? "-2px" : "2px"} ${tokens.colorBrandStroke1}` } : undefined}
+              onDragOver={(event) => {
+                if (dragging?.targetId !== target.id || dragging.bindingId === binding.id) return;
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+                const rect = event.currentTarget.getBoundingClientRect();
+                setDropLine({ id: binding.id, after: event.clientY > rect.top + rect.height / 2 });
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                if (!dragging || dragging.targetId !== target.id || !dropLine) return;
+                const source = target.bindings.find((item) => item.id === dragging.bindingId);
+                if (!source || source.id === binding.id) return;
+                const bindings = target.bindings.filter((item) => item.id !== source.id);
+                const index = bindings.findIndex((item) => item.id === binding.id);
+                bindings.splice(index + (dropLine.after ? 1 : 0), 0, source);
+                onUpdateTargets(targets.map((item) => item.id === target.id ? { ...item, bindings } : item));
+                setDragging(null); setDropLine(null);
+              }}>
               <td className={styles.tdCheckbox}>
+                <div className={styles.ruleControls}>
+                <span draggable title={t("targets.dragRule")} aria-label={t("targets.dragRule")}
+                  style={{ cursor: "grab", userSelect: "none", fontSize: 20 }}
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = "move";
+                    event.dataTransfer.setData("text/plain", binding.id);
+                    setDragging({ targetId: target.id, bindingId: binding.id });
+                  }}
+                  onDragEnd={() => { setDragging(null); setDropLine(null); }}>⠿</span>
                 <Checkbox
                   checked={!invalid && binding.enabled}
                   disabled={invalid}
@@ -384,6 +435,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                       : undefined
                   }
                 />
+                </div>
               </td>
               <td className={styles.tdGesture}>
                 <Menu>
@@ -536,7 +588,10 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
 
   return (
     <div className={page.container}>
-      <PageHeader title={t("nav.targets")} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <PageHeader title={t("nav.targets")} />
+        <Button onClick={sortRules}>{t("targets.sortNow")}</Button>
+      </div>
 
       {globalTarget && (
         <div className={styles.section}>
