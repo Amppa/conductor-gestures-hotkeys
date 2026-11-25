@@ -54,7 +54,8 @@ import {
   setBindingEnabled,
 } from "../../domain/targetMutations";
 import { formatGestureLabel } from "../gestures/gestureSymbols";
-import { isKeyboardTemplate, isScreenTemplate } from "../../domain/triggerTypes";
+import { isKeyboardTemplate, isScreenTemplate, type TriggerCategory } from "../../domain/triggerTypes";
+import { TriggerPresetMenu } from "./TriggerPresetMenu";
 import { formatHotkeyTrigger } from "../hotkeys/hotkeyTrigger";
 import { EditGestureDialog } from "../gestures/EditGestureDialog";
 import { EditHotkeyDialog } from "../hotkeys/EditHotkeyDialog";
@@ -210,8 +211,8 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
     setCollapsedGroups((previous) => ({ ...previous, [id]: !previous[id] }));
   };
 
-  const [creationCategory, setCreationCategory] = useState<"gestures" | "screen" | "hotkeys" | null>(null);
-  const handleCreateTrigger = (targetId: string, bindingId: string, category: "gestures" | "screen" | "hotkeys") => {
+  const [creationCategory, setCreationCategory] = useState<TriggerCategory | null>(null);
+  const handleCreateTrigger = (targetId: string, bindingId: string, category: TriggerCategory) => {
     const binding = findBinding(targetId, bindingId);
     if (!binding) return;
     setCreationCategory(category);
@@ -457,8 +458,12 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                 </div>
               </td>
               <td className={styles.tdGesture}>
-                <Menu>
-                  <MenuTrigger disableButtonEnhancement>
+                <TriggerPresetMenu
+                  templates={gestureTemplates}
+                  menuClassName={styles.menuList}
+                  onSelect={(template) => handleSelectPresetGesture(target.id, binding.id, template)}
+                  onCreate={(category) => handleCreateTrigger(target.id, binding.id, category)}
+                >
                     <div
                       className={styles.cellTriggerArea}
                       title={t("targets.doubleClickGestureTip")}
@@ -490,45 +495,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                         }}
                       />
                     </div>
-                  </MenuTrigger>
-                  <MenuPopover>
-                    <MenuList className={styles.menuList}>
-                      {(["gestures", "screen", "hotkeys"] as const).map((category) => (
-                        <Menu key={category}>
-                          <MenuTrigger disableButtonEnhancement>
-                            <MenuItem>{t(`nav.${category}`)}</MenuItem>
-                          </MenuTrigger>
-                          <MenuPopover>
-                            <MenuList className={styles.menuList}>
-                      {gestureTemplates.filter((template) => category === "hotkeys"
-                        ? isKeyboardTemplate(template)
-                        : category === "screen"
-                          ? isScreenTemplate(template)
-                          : !isKeyboardTemplate(template) && !isScreenTemplate(template)).map((template) => (
-                        <MenuItem
-                          key={template.id}
-                          onClick={() =>
-                            handleSelectPresetGesture(target.id, binding.id, template)
-                          }
-                        >
-                          {category === "hotkeys" ? formatHotkeyTrigger(template.trigger) : formatGestureLabel(
-                            template.trigger,
-                            template.steps,
-                            t,
-                          )}
-                        </MenuItem>
-                      ))}
-                              <MenuDivider />
-                              <MenuItem icon={<Add16Regular />} onClick={() => handleCreateTrigger(target.id, binding.id, category)}>
-                                {t(category === "hotkeys" ? "hotkeys.add" : "gestures.add")}
-                              </MenuItem>
-                            </MenuList>
-                          </MenuPopover>
-                        </Menu>
-                      ))}
-                    </MenuList>
-                  </MenuPopover>
-                </Menu>
+                </TriggerPresetMenu>
               </td>
               <td className={styles.tdAction}>
                 <Menu>

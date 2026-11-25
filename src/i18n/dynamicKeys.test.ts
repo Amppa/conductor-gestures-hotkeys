@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import en from "./locales/en.json";
 import zhTW from "./locales/zh-TW.json";
 import { DEFAULT_CONFIG } from "../domain/defaults";
-import { MOUSE_BUTTONS } from "../domain/triggerTypes";
+import { MOUSE_BUTTONS, TRIGGER_CATEGORIES } from "../domain/triggerTypes";
 import { SCREEN_ZONES } from "../domain/triggers/screen";
 import { TRIGGER_INPUT_ERRORS } from "../domain/triggers/stroke";
 import { COMMON_HOTKEYS, ACTION_TYPE_LABEL_KEYS } from "../features/commands/commandPresets";
@@ -18,6 +18,7 @@ function requireText(locale: object, path: string): void {
 
 describe.each(Object.entries({ en, "zh-TW": zhTW }))("dynamic i18n contracts: %s", (_, locale) => {
   it("covers the actual screen catalog and all mouse buttons", () => {
+    for (const category of TRIGGER_CATEGORIES) requireText(locale, `nav.${category}`);
     expect(Object.keys(locale.screenLabels).sort()).toEqual(Object.keys(SCREEN_ZONES).sort());
     for (const trigger of Object.keys(SCREEN_ZONES)) {
       requireText(locale, `screenLabels.${trigger}`);
