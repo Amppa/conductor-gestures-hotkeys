@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { makeStyles, tokens } from "@fluentui/react-components";
 import { useTranslation } from "react-i18next";
 import { Sidebar, NavTabId } from "./Sidebar";
@@ -71,7 +71,7 @@ export const App: React.FC = () => {
     configRef.current = config;
   }, [config]);
 
-  const runApply = async (target: AppConfig) => {
+  const runApply = useCallback(async (target: AppConfig) => {
     const applyId = ++applySeqRef.current;
     setIsApplying(true);
     setApplyError(null);
@@ -97,7 +97,7 @@ export const App: React.FC = () => {
         setIsApplying(false);
       }
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     const initApp = async () => {
@@ -127,7 +127,7 @@ export const App: React.FC = () => {
     };
 
     void initApp();
-  }, []);
+  }, [i18n, runApply]);
 
   const handleToggleAutostart = async (enabled: boolean) => {
     setAutostartEnabled(enabled);

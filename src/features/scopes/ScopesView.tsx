@@ -7,17 +7,7 @@ import {
   Tooltip,
   Subtitle2,
   Caption1,
-  Badge,
   Button,
-  Checkbox,
-  Tag,
-  Input,
-  Menu,
-  MenuTrigger,
-  MenuPopover,
-  MenuList,
-  MenuItem,
-  MenuDivider,
   Dialog,
   DialogSurface,
   DialogTitle,
@@ -27,23 +17,10 @@ import {
 } from "@fluentui/react-components";
 import {
   Add16Regular,
-  Delete16Regular,
-  ChevronDown16Regular,
-  ChevronRight16Regular,
-  Edit16Regular,
-  Checkmark16Regular,
-  Dismiss16Regular,
 } from "@fluentui/react-icons";
 import { Target, Binding, Gesture, Action } from "../../domain/types";
 import {
-  isActionIncomplete,
-  isBindingInvalid,
-  isDuplicateGesture,
-  isGestureIncomplete,
-} from "../../domain/bindingRules";
-import {
   addBinding,
-  moveBinding,
   addExecutable,
   createEmptyBinding,
   removeBinding,
@@ -54,7 +31,10 @@ import {
   setBindingEnabled,
 } from "../../domain/targetMutations";
 import { formatGestureLabel } from "../gestures/gestureSymbols";
-import { isKeyboardTemplate, isScreenTemplate } from "../../domain/triggerTypes";
+import { isKeyboardTemplate, isScreenTemplate, type TriggerCategory } from "../../domain/triggerTypes";
+import { RuleTable } from "./RuleTable";
+import { ScopeGroupCard } from "./ScopeGroupCard";
+import { useRuleDragDrop } from "./useRuleDragDrop";
 import { formatHotkeyTrigger } from "../hotkeys/hotkeyTrigger";
 import { EditGestureDialog } from "../gestures/EditGestureDialog";
 import { EditHotkeyDialog } from "../hotkeys/EditHotkeyDialog";
@@ -75,84 +55,7 @@ const useStyles = makeStyles({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  groupHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    cursor: "pointer",
-    userSelect: "none",
-  },
-  groupTitleArea: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  scopesRow: {
-    ":hover": {
-      backgroundColor: tokens.colorNeutralBackground2,
-    },
-  },
-  tdCheckbox: {
-    width: "72px",
-    padding: "6px 8px",
-    whiteSpace: "nowrap",
-    verticalAlign: "middle",
-  },
-  ruleControls: {
-    display: "inline-flex",
-    alignItems: "center",
-    flexWrap: "nowrap",
-    gap: "4px",
-  },
-  tdGesture: {
-    padding: "2px 4px",
-    fontWeight: 600,
-    userSelect: "none",
-  },
-  tdAction: {
-    padding: "2px 4px",
-    userSelect: "none",
-    color: tokens.colorBrandForeground1,
-  },
-  cellTriggerArea: {
-    padding: "6px 8px",
-    cursor: "pointer",
-    borderRadius: tokens.borderRadiusSmall,
-    transition: "background-color 0.15s ease",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "6px",
-    ":hover": {
-      backgroundColor: tokens.colorNeutralBackground3Hover,
-    },
-  },
-  tagList: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-    alignItems: "center",
-  },
-  emptyValue: {
-    color: tokens.colorNeutralForeground4,
-    fontStyle: "italic",
-  },
-  gestureValue: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  menuList: {
-    width: "max-content",
-    maxWidth: "min(480px, calc(100vw - 48px))",
-    maxHeight: "260px",
-    overflowY: "auto",
-    overflowX: "hidden",
-    "& [role='menuitem']": {
-      whiteSpace: "normal",
-      overflowWrap: "anywhere",
-    },
-  },
+
 });
 
 interface ScopesViewProps {
@@ -210,8 +113,8 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
     setCollapsedGroups((previous) => ({ ...previous, [id]: !previous[id] }));
   };
 
-  const [creationCategory, setCreationCategory] = useState<"gestures" | "screen" | "hotkeys" | null>(null);
-  const handleCreateTrigger = (targetId: string, bindingId: string, category: "gestures" | "screen" | "hotkeys") => {
+  const [creationCategory, setCreationCategory] = useState<TriggerCategory | null>(null);
+  const handleCreateTrigger = (targetId: string, bindingId: string, category: TriggerCategory) => {
     const binding = findBinding(targetId, bindingId);
     if (!binding) return;
     setCreationCategory(category);
@@ -349,8 +252,6 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
   };
 
   const globalTarget = targets.find((target) => target.kind === "global");
-  const [dragging, setDragging] = useState<{ targetId: string; bindingId: string } | null>(null);
-  const [dropLine, setDropLine] = useState<{ id: string; after: boolean } | null>(null);
   const { i18n } = useTranslation();
   const sortRules = () => {
     const english = i18n.getFixedT("en");
@@ -365,244 +266,22 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
     ) })));
   };
   const specificGroups = targets.filter((target) => target.kind === "group");
-  const [hoverScope, setHoverScope] = useState<string | null>(null);
-  const [moveNotice, setMoveNotice] = useState("");
-  const scopeName = (target: Target) => target.kind === "global"
-    ? t("targets.globalTitle", { defaultValue: target.name })
-    : t(`targets.${target.id}Title`, { defaultValue: target.name });
-  const moveRule = (destination: Target, beforeId?: string, after = false) => {
-    if (!dragging) return;
-    const result = moveBinding(targets, dragging.targetId, destination.id, dragging.bindingId, beforeId, after);
-    if (result.moved) {
-      onUpdateTargets(result.targets);
-      setMoveNotice(t(result.conflict ? "targets.movedDisabled" : "targets.movedRule", { name: scopeName(destination) }));
-    }
-    setDragging(null); setDropLine(null); setHoverScope(null);
-  };
-  const scopeDropProps = (target: Target) => ({
-    onDragOver: (event: React.DragEvent) => {
-      if (!dragging) return;
-      event.preventDefault(); event.dataTransfer.dropEffect = "move";
-      setDropLine(null);
-      setHoverScope(target.id);
-    },
-    onDragLeave: (event: React.DragEvent) => {
-      if (!event.currentTarget.contains(event.relatedTarget as Node)) setHoverScope(null);
-    },
-    onDrop: (event: React.DragEvent) => {
-      event.preventDefault(); event.stopPropagation(); moveRule(target);
-    },
-    style: hoverScope === target.id ? { outline: `2px solid ${tokens.colorBrandStroke1}` } : undefined,
-  });
+  const { hoverScope, moveNotice, scopeName, scopeDropProps, rowDropProps, dragHandleProps } = useRuleDragDrop(targets, onUpdateTargets);
 
   const renderBindingsTable = (target: Target) => (
-    <table className={page.table}>
-      <thead>
-        <tr>
-          <th className={page.th}></th>
-          <th className={page.th}>{t("targets.tableGesture")}</th>
-          <th className={page.th}>{t("targets.tableAction")}</th>
-          <th className={page.th}></th>
-        </tr>
-      </thead>
-      <tbody>
-        {target.bindings.map((binding) => {
-          const emptyGesture = isGestureIncomplete(binding.gesture);
-          const emptyAction = isActionIncomplete(binding.action);
-          const duplicate = isDuplicateGesture(target, binding);
-          const invalid = isBindingInvalid(target, binding);
-
-          return (
-            <tr key={binding.id} className={`${page.row} ${styles.scopesRow}`}
-              style={dropLine?.id === binding.id ? { boxShadow: `inset 0 ${dropLine.after ? "-2px" : "2px"} ${tokens.colorBrandStroke1}` } : undefined}
-              onDragOver={(event) => {
-                if (!dragging || dragging.bindingId === binding.id) return;
-                event.preventDefault();
-                event.stopPropagation();
-                setHoverScope(null);
-                event.dataTransfer.dropEffect = "move";
-                const rect = event.currentTarget.getBoundingClientRect();
-                setDropLine({ id: binding.id, after: event.clientY > rect.top + rect.height / 2 });
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                const rect = event.currentTarget.getBoundingClientRect();
-                moveRule(target, binding.id, event.clientY > rect.top + rect.height / 2);
-              }}>
-              <td className={styles.tdCheckbox}>
-                <div className={styles.ruleControls}>
-                <span draggable title={t("targets.dragRule")} aria-label={t("targets.dragRule")}
-                  style={{ cursor: "grab", userSelect: "none", fontSize: 20 }}
-                  onDragStart={(event) => {
-                    event.dataTransfer.effectAllowed = "move";
-                    event.dataTransfer.setData("text/plain", binding.id);
-                    setDragging({ targetId: target.id, bindingId: binding.id });
-                  }}
-                  onDragEnd={() => { setDragging(null); setDropLine(null); setHoverScope(null); }}>⠿</span>
-                <Checkbox
-                  checked={!invalid && binding.enabled}
-                  disabled={invalid}
-                  onChange={(_, data) =>
-                    handleToggleBinding(target.id, binding.id, !!data.checked)
-                  }
-                  title={
-                    invalid
-                      ? duplicate
-                        ? t("targets.duplicateTooltip")
-                        : t("targets.incompleteTooltip")
-                      : undefined
-                  }
-                />
-                </div>
-              </td>
-              <td className={styles.tdGesture}>
-                <Menu>
-                  <MenuTrigger disableButtonEnhancement>
-                    <div
-                      className={styles.cellTriggerArea}
-                      title={t("targets.doubleClickGestureTip")}
-                    >
-                      {emptyGesture ? (
-                        <span className={styles.emptyValue}>
-                          {t("targets.noGesture")}
-                        </span>
-                      ) : (
-                        <div className={styles.gestureValue}>
-                          <span>
-                            {formatGestureLabel(
-                              binding.gesture.trigger,
-                              binding.gesture.steps,
-                              t,
-                            )}
-                          </span>
-                          {duplicate && (
-                            <Badge appearance="tint" color="danger" size="small">
-                              {t("targets.duplicateGesture")}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                      <ChevronDown16Regular
-                        style={{
-                          color: tokens.colorNeutralForeground4,
-                          flexShrink: 0,
-                        }}
-                      />
-                    </div>
-                  </MenuTrigger>
-                  <MenuPopover>
-                    <MenuList className={styles.menuList}>
-                      {(["gestures", "screen", "hotkeys"] as const).map((category) => (
-                        <Menu key={category}>
-                          <MenuTrigger disableButtonEnhancement>
-                            <MenuItem>{t(`nav.${category}`)}</MenuItem>
-                          </MenuTrigger>
-                          <MenuPopover>
-                            <MenuList className={styles.menuList}>
-                      {gestureTemplates.filter((template) => category === "hotkeys"
-                        ? isKeyboardTemplate(template)
-                        : category === "screen"
-                          ? isScreenTemplate(template)
-                          : !isKeyboardTemplate(template) && !isScreenTemplate(template)).map((template) => (
-                        <MenuItem
-                          key={template.id}
-                          onClick={() =>
-                            handleSelectPresetGesture(target.id, binding.id, template)
-                          }
-                        >
-                          {category === "hotkeys" ? formatHotkeyTrigger(template.trigger) : formatGestureLabel(
-                            template.trigger,
-                            template.steps,
-                            t,
-                          )}
-                        </MenuItem>
-                      ))}
-                              <MenuDivider />
-                              <MenuItem icon={<Add16Regular />} onClick={() => handleCreateTrigger(target.id, binding.id, category)}>
-                                {t(category === "hotkeys" ? "hotkeys.add" : "gestures.add")}
-                              </MenuItem>
-                            </MenuList>
-                          </MenuPopover>
-                        </Menu>
-                      ))}
-                    </MenuList>
-                  </MenuPopover>
-                </Menu>
-              </td>
-              <td className={styles.tdAction}>
-                <Menu>
-                  <MenuTrigger disableButtonEnhancement>
-                    <div
-                      className={styles.cellTriggerArea}
-                      title={
-                        binding.action.value
-                          ? `${t("targets.doubleClickActionTip")} (${binding.action.value})`
-                          : t("targets.doubleClickActionTip")
-                      }
-                    >
-                      {emptyAction ? (
-                        <span className={styles.emptyValue}>
-                          {t("targets.noAction")}
-                        </span>
-                      ) : (
-                        <span>
-                          {formatActionName(t, binding.action) ||
-                            binding.action.value}
-                        </span>
-                      )}
-                      <ChevronDown16Regular
-                        style={{
-                          color: tokens.colorNeutralForeground4,
-                          flexShrink: 0,
-                        }}
-                      />
-                    </div>
-                  </MenuTrigger>
-                  <MenuPopover>
-                    <MenuList className={styles.menuList}>
-                      {actionTemplates.map((template) => (
-                        <MenuItem
-                          key={template.id}
-                          onClick={() =>
-                            handleSelectPresetAction(target.id, binding.id, template)
-                          }
-                        >
-                          {formatActionName(t, template)} ({template.value})
-                        </MenuItem>
-                      ))}
-                      <MenuDivider />
-                      <MenuItem
-                        icon={<Add16Regular />}
-                        onClick={() => handleOpenActionEditor(target.id, binding.id)}
-                      >
-                        {t("targets.addNewAction")}
-                      </MenuItem>
-                    </MenuList>
-                  </MenuPopover>
-                </Menu>
-              </td>
-              <td className={page.opsCell}>
-                <Button
-                  size="small"
-                  appearance="subtle"
-                  icon={<Delete16Regular />}
-                  onClick={() => handleDeleteBinding(target.id, binding.id)}
-                  title={t("targets.deleteGestureTip")}
-                />
-              </td>
-            </tr>
-          );
-        })}
-        {target.bindings.length === 0 && (
-          <tr>
-            <td colSpan={4} className={page.emptyCell}>
-              {t("targets.emptyBindings")}
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </table>
+    <RuleTable
+      target={target}
+      gestureTemplates={gestureTemplates}
+      actionTemplates={actionTemplates}
+      rowDropProps={rowDropProps}
+      dragHandleProps={dragHandleProps}
+      onToggle={handleToggleBinding}
+      onSelectGesture={handleSelectPresetGesture}
+      onCreateTrigger={handleCreateTrigger}
+      onSelectAction={handleSelectPresetAction}
+      onEditAction={handleOpenActionEditor}
+      onDelete={handleDeleteBinding}
+    />
   );
 
   return (
@@ -665,148 +344,30 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
           </Button>
         </div>
 
-        {specificGroups.map((group) => {
-          const isCollapsed = collapsedGroups[group.id];
-          const groupDisplayName =
-            group.name !== "Browsers" && group.name !== "Group 01"
-              ? group.name
-              : t(`targets.${group.id}Title`, { defaultValue: group.name });
-
-          return (
-            <Tooltip key={group.id} content={t("targets.moveTo", { name: groupDisplayName })} relationship="description" visible={hoverScope === group.id}>
-            <Card className={page.card} {...scopeDropProps(group)}>
-              <div className={styles.groupHeader}>
-                <div
-                  className={styles.groupTitleArea}
-                  onClick={() => !editingGroupId && toggleGroupCollapse(group.id)}
-                >
-                  {isCollapsed ? <ChevronRight16Regular /> : <ChevronDown16Regular />}
-                  {editingGroupId === group.id ? (
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: "4px" }}
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <Input
-                        size="small"
-                        value={tempGroupName}
-                        autoFocus
-                        placeholder={t("targets.renameGroupPlaceholder")}
-                        onChange={(_, data) => setTempGroupName(data.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            handleSaveRename(group.id);
-                          } else if (event.key === "Escape") {
-                            handleCancelRename();
-                          }
-                        }}
-                      />
-                      <Button
-                        size="small"
-                        appearance="subtle"
-                        icon={<Checkmark16Regular />}
-                        onClick={() => handleSaveRename(group.id)}
-                      />
-                      <Button
-                        size="small"
-                        appearance="subtle"
-                        icon={<Dismiss16Regular />}
-                        onClick={handleCancelRename}
-                      />
-                    </div>
-                  ) : (
-                    <>
-                      <span
-                        style={{ fontWeight: 600, cursor: "pointer" }}
-                        title={t("targets.renameGroupTip")}
-                        onDoubleClick={(event) => {
-                          event.stopPropagation();
-                          handleStartRename(group.id, groupDisplayName);
-                        }}
-                      >
-                        {groupDisplayName}
-                      </span>
-                      <Button
-                        size="small"
-                        appearance="subtle"
-                        icon={<Edit16Regular />}
-                        title={t("targets.renameGroupTip")}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleStartRename(group.id, groupDisplayName);
-                        }}
-                      />
-                      <Button
-                        size="small"
-                        appearance="subtle"
-                        icon={<Delete16Regular />}
-                        title={t("targets.deleteGroup")}
-                        aria-label={t("targets.deleteGroup")}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setPendingDeleteGroupId(group.id);
-                        }}
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {!isCollapsed && (
-                <>
-                  <div className={styles.tagList}>
-                    <Caption1
-                      style={{
-                        color: tokens.colorNeutralForeground3,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {t("targets.includedApps")}
-                    </Caption1>
-                    {group.executables.map((executable) => (
-                      <Tag
-                        key={executable}
-                        size="small"
-                        dismissible
-                        dismissIcon={{ "aria-label": "remove" }}
-                        onClick={() => handleDeleteExe(group.id, executable)}
-                      >
-                        {executable}
-                      </Tag>
-                    ))}
-                    <Button
-                      size="small"
-                      appearance="subtle"
-                      icon={<Add16Regular />}
-                      onClick={() => setAddProcessTargetId(group.id)}
-                    >
-                      {t("targets.addApp")}
-                    </Button>
-                  </div>
-
-                  <div style={{ marginTop: "4px" }}>
-                    {renderBindingsTable(group)}
-                  </div>
-
-                  <div>
-                    <Button
-                      size="small"
-                      appearance="subtle"
-                      icon={<Add16Regular />}
-                      onClick={() =>
-                        onUpdateTargets(
-                          addBinding(targets, group.id, createEmptyBinding()),
-                        )
-                      }
-                    >
-                      {t("targets.addGesture")}
-                    </Button>
-                  </div>
-                </>
-              )}
-            </Card>
-            </Tooltip>
-          );
-        })}
+        {specificGroups.map((group) => (
+          <ScopeGroupCard
+            key={group.id}
+            group={group}
+            isCollapsed={!!collapsedGroups[group.id]}
+            isDropTarget={hoverScope === group.id}
+            dropProps={scopeDropProps(group)}
+            rename={{
+              editingId: editingGroupId,
+              draft: tempGroupName,
+              onStart: handleStartRename,
+              onChange: setTempGroupName,
+              onSave: handleSaveRename,
+              onCancel: handleCancelRename,
+            }}
+            onToggleCollapse={toggleGroupCollapse}
+            onDelete={setPendingDeleteGroupId}
+            onDeleteExecutable={handleDeleteExe}
+            onAddProcess={setAddProcessTargetId}
+            onAddRule={() => onUpdateTargets(addBinding(targets, group.id, createEmptyBinding()))}
+          >
+            {renderBindingsTable(group)}
+          </ScopeGroupCard>
+        ))}
       </div>
 
       {editingGesture && creationCategory === "hotkeys" && (

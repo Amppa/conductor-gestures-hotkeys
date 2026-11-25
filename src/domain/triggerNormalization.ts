@@ -1,4 +1,5 @@
 import { AppConfig, Binding, Gesture, Target } from "./types";
+import { MOUSE_BUTTONS } from "./triggerTypes";
 
 /**
  * Maps legacy trigger aliases to their canonical token.
@@ -6,7 +7,7 @@ import { AppConfig, Binding, Gesture, Target } from "./types";
  */
 export function normalizeTrigger(trigger: string): string {
   const buttons = trigger.split("+");
-  const order = ["L", "M", "R", "X1", "X2"];
+  const order: readonly string[] = MOUSE_BUTTONS;
   if (buttons.length > 1 && buttons.every((key) => order.includes(key))) {
     return order.filter((key) => buttons.includes(key)).join("+");
   }
