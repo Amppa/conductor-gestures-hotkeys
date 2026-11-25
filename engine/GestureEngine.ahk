@@ -563,16 +563,25 @@ HandleSpatialWheel(wheelDir) {
 ; ------------------------------------------------------------------------------
 HandleChordWheel(wheelDir) {
     global gState, gTrigger, gStartProcess, gChordWheelTriggered, gFnDispatchGestureAction
+    global gSteps
 
     if (gState != STATE_PENDING && gState != STATE_DRAWING)
         return false
 
     gChordWheelTriggered := true
     LogGesture("Chord Wheel: Trigger=" . gTrigger . " Wheel=" . wheelDir . " Process=" . gStartProcess)
-    UpdateGestureOSD(gTrigger, [wheelDir], gStartProcess)
+    if (gSteps.Length > 0) {
+        gSteps.Push(wheelDir)
+        stepStr := ""
+        for i, step in gSteps
+            stepStr .= (i == 1 ? "" : ",") . step
+    } else {
+        stepStr := wheelDir
+    }
+    UpdateGestureOSD(gTrigger, gSteps.Length ? gSteps : [wheelDir], gStartProcess)
     ScheduleHideGestureOSD()
 
-    gFnDispatchGestureAction(gTrigger, wheelDir, gStartProcess)
+    gFnDispatchGestureAction(gTrigger, stepStr, gStartProcess)
     return true
 }
 

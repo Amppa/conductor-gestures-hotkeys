@@ -19,15 +19,16 @@ import {
 } from "@fluentui/react-components";
 import { Gesture, GestureTrigger } from "../../domain/types";
 import {
-  formatStepSymbol,
+  formatGestureLabel,
   parseStrokeInput,
+  validateStrokeInput,
 } from "./gestureSymbols";
 import { MousePreview } from "./MousePreview";
 import { GestureRecorderCanvas } from "./GestureRecorderCanvas";
 
 const useStyles = makeStyles({
   surface: {
-    maxWidth: "480px",
+    maxWidth: "600px",
     width: "100%",
   },
   content: {
@@ -120,8 +121,7 @@ function buildCommandString(
   steps: string[],
   t: TFunction,
 ): string {
-  const arrowString = steps.map((step) => formatStepSymbol(step, t)).join("");
-  return `${trigger}${arrowString}`;
+  return formatGestureLabel(trigger, steps, t);
 }
 
 export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
@@ -135,6 +135,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
   const { t } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<GestureDialogTab>("standard");
+  const [error, setError] = useState<string | null>(null);
 
   const [trigger, setTrigger] = useState<GestureTrigger>(gesture.trigger);
   const [steps, setSteps] = useState<string[]>([...gesture.steps]);
@@ -159,11 +160,11 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
   };
 
   // Click 3x3 arrow grid button to append stroke
-  const handleAddArrow = (dirKey: string, dirLabel: string) => {
+  const handleAddArrow = (dirKey: string) => {
     if (!dirKey) return;
     const nextSteps = [...steps, dirKey];
     setSteps(nextSteps);
-    setCommandText((prev) => prev + dirLabel);
+    setCommandText(buildCommandString(trigger, nextSteps, t));
   };
 
   // Recording mode finished
@@ -174,6 +175,9 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
   };
 
   const handleSave = () => {
+    const validation = validateStrokeInput(commandText, trigger);
+    setError(validation);
+    if (validation) return;
     // Parse final text in command input box to guarantee 100% sync
     const parsed = parseStrokeInput(commandText, trigger);
     onSave({
@@ -200,6 +204,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
                 placeholder={t("dialogs.gestureStrokePlaceholder")}
               />
             </div>
+            {error && <div role="alert">{t(`gestures.${error}`)}</div>}
 
             {screenMode && <>
               <Select aria-label={t("targets.tableGesture")} value={trigger} onChange={(_, data) => {
@@ -228,6 +233,8 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
 
             {/* Standard Mode: Mouse SVG on the left, 3x3 Arrow Grid on the right */}
             {!screenMode && activeTab === "standard" && (
+              <>
+              <div style={{ whiteSpace: "pre-line" }}>{t("gestures.inputDescription")}</div>
               <div className={styles.standardContentRow}>
                 <div className={styles.mouseCol}>
                   <MousePreview
@@ -235,7 +242,15 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
                     onSelectTrigger={handleSelectTrigger}
                   />
                 </div>
-
+                <div aria-hidden="true" style={{ alignSelf: "stretch", width: 1, backgroundColor: tokens.colorNeutralStroke2 }} />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                  <Button onClick={() => handleAddArrow("WU")}>{t("triggers.wheelUp")}</Button>
+                  <svg width="64" height="88" viewBox="0 0 64 88" aria-hidden="true">
+                    <rect x="12" y="2" width="40" height="84" rx="20" fill={tokens.colorNeutralBackground4} stroke={tokens.colorNeutralStroke1} strokeWidth="1.2" />
+                    {[22, 33, 44, 55, 66].map((y) => <path key={y} d={`M20 ${y} H44`} stroke={tokens.colorNeutralStroke2} strokeWidth="1.2" />)}
+                  </svg>
+                  <Button onClick={() => handleAddArrow("WD")}>{t("triggers.wheelDown")}</Button>
+                </div>
                 <div className={styles.gridCol}>
                   <div className={styles.arrowGrid}>
                     {DIRECTION_BUTTONS.map((btn, idx) => (
@@ -244,7 +259,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
                         appearance={btn.key ? "secondary" : "subtle"}
                         disabled={!btn.key}
                         className={styles.arrowBtn}
-                        onClick={() => handleAddArrow(btn.key, btn.label)}
+                        onClick={() => handleAddArrow(btn.key)}
                       >
                         {btn.label}
                       </Button>
@@ -252,6 +267,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
                   </div>
                 </div>
               </div>
+              </>
             )}
 
             {/* Record Mode: Interactive Canvas */}

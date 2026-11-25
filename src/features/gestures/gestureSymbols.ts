@@ -213,3 +213,24 @@ export function parseStrokeInput(
 
   return { trigger, steps };
 }
+
+export function validateStrokeInput(raw: string, fallback: string): string | null {
+  let text = normalizeArrows(raw.trim().replace(/滾輪|wheel/gi, "W"));
+  if (!text || /,\s*(,|$)/.test(text)) return "invalidStroke";
+  const source = KNOWN_TRIGGERS.find((key) => text.startsWith(key));
+  const symbolSource = KNOWN_TRIGGERS.find((key) => text.startsWith(formatTriggerSymbol(key)));
+  const trigger = source ?? symbolSource ?? fallback;
+  if (source) text = text.slice(source.length);
+  else if (symbolSource) text = text.slice(formatTriggerSymbol(symbolSource).length);
+  text = text.replace(/^\s*,?\s*/, "");
+  let count = 0;
+  while (text) {
+    const match = /^(W[↑↓]|WU|WD|UL|UR|DL|DR|[UDLR←↑→↓↖↗↙↘])/i.exec(text);
+    if (!match) return "invalidStroke";
+    count++;
+    text = text.slice(match[0].length).replace(/^\s*,?\s*/, "");
+  }
+  if (!count && ["R", "M", "L"].includes(trigger)) return "singleClickUnsupported";
+  if (!count && trigger.startsWith("Edge")) return "invalidStroke";
+  return null;
+}

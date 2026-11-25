@@ -96,6 +96,9 @@
     "addNewAction": "Set Command..."
   },
   "gestures": {
+    "inputDescription": "Mouse gesture = trigger button + movement.\nHold the trigger button, then move the mouse or scroll the wheel.",
+    "invalidStroke": "Invalid trigger. Use valid directions or wheel up/down operations and check the commas.",
+    "singleClickUnsupported": "This mouse button does not support click-only triggers. Add a direction or wheel operation.",
     "screenDescription": "⬒ represents the top screen edge, and ◰ represents the top-left screen corner. Other edges and corners follow the position indicated in each symbol.",
     "title": "Gesture Triggers",
     "subtitle": "Define reusable gesture triggers and stroke directions across targets.",

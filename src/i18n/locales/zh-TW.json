@@ -96,6 +96,9 @@
     "addNewAction": "設定執行指令..."
   },
   "gestures": {
+    "inputDescription": "滑鼠手勢=滑鼠觸發鍵+移動。\n按住滑鼠觸發鍵，再移動滑鼠或滾動滾輪。",
+    "invalidStroke": "觸發方式不合法，請使用有效的方向或滾輪上下操作，並檢查逗號。",
+    "singleClickUnsupported": "此滑鼠按鍵不支援單擊觸發，請加入方向筆畫或滾輪操作。",
     "screenDescription": "⬒ 代表螢幕上緣，◰ 代表螢幕左上角；其他邊緣與角落依符號中的位置辨識。",
     "title": "滑鼠觸發",
     "subtitle": "手勢範本庫。備註：修改手勢範本，並不會改變已綁定的手勢動作。",
