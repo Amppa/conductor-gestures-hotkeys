@@ -1,7 +1,6 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { makeStyles, tokens, Button, Badge, Subtitle2, Caption1 } from "@fluentui/react-components";
-import { ArrowReset20Regular } from "@fluentui/react-icons";
+import { makeStyles, tokens, Caption1 } from "@fluentui/react-components";
 import { GestureTrigger } from "../../domain/types";
 
 const useStyles = makeStyles({
@@ -55,16 +54,6 @@ const useStyles = makeStyles({
     borderLeft: `1px solid ${tokens.colorNeutralStroke3}`,
     borderRight: `1px solid ${tokens.colorNeutralStroke3}`,
   },
-  resultArea: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  resultLabel: {
-    fontSize: tokens.fontSizeBase500,
-    fontWeight: 700,
-    color: tokens.colorBrandForeground1,
-  },
 });
 
 interface GestureRecorderCanvasProps {
@@ -95,10 +84,6 @@ export const GestureRecorderCanvas: React.FC<GestureRecorderCanvasProps> = ({
   const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const [currentTrigger, setCurrentTrigger] = useState<GestureTrigger>(initialTrigger);
-  const [recordedSteps, setRecordedSteps] = useState<string[]>([]);
-  const [hasDrawn, setHasDrawn] = useState(false);
-
   // Synchronous tracking state to prevent React state batching latency
   const trackingRef = useRef<{
     isRecording: boolean;
@@ -122,19 +107,6 @@ export const GestureRecorderCanvas: React.FC<GestureRecorderCanvasProps> = ({
 
   const THRESHOLD = 10;
   const STEP_THRESHOLD = 14;
-
-  const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setRecordedSteps([]);
-    setHasDrawn(false);
-    trackingRef.current.steps = [];
-    trackingRef.current.isDrawing = false;
-    trackingRef.current.isRecording = false;
-  };
 
   // Resize canvas according to client dimensions
   useEffect(() => {
@@ -227,9 +199,6 @@ export const GestureRecorderCanvas: React.FC<GestureRecorderCanvasProps> = ({
       isDrawing: false,
     };
 
-    setCurrentTrigger(trig);
-    setRecordedSteps([]);
-    setHasDrawn(true);
 
     const ctx = canvas.getContext("2d");
     if (ctx) {
@@ -277,7 +246,6 @@ export const GestureRecorderCanvas: React.FC<GestureRecorderCanvasProps> = ({
         t.steps.push(dir);
         t.lastX = curX;
         t.lastY = curY;
-        setRecordedSteps([...t.steps]);
       }
     } else {
       const dxStep = curX - t.lastX;
@@ -288,7 +256,6 @@ export const GestureRecorderCanvas: React.FC<GestureRecorderCanvasProps> = ({
         const dir = getDirection(dxStep, dyStep);
         if (t.steps.length === 0 || t.steps[t.steps.length - 1] !== dir) {
           t.steps.push(dir);
-          setRecordedSteps([...t.steps]);
         }
         t.lastX = curX;
         t.lastY = curY;

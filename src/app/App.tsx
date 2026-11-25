@@ -199,13 +199,6 @@ export const App: React.FC = () => {
     });
   };
 
-  const handleAddActionTemplate = (action: Action) => {
-    setConfig((previous) => ({
-      ...previous,
-      actionTemplates: [...previous.actionTemplates, action],
-    }));
-  };
-
   const handleUpdateActions = (actions: Action[]) => {
     setConfig((previous) => ({ ...previous, actionTemplates: actions }));
   };
@@ -222,7 +215,6 @@ export const App: React.FC = () => {
               actionTemplates={config.actionTemplates}
               onUpdateTargets={handleUpdateTargets}
               onAddGestureTemplate={handleAddGestureTemplate}
-              onAddActionTemplate={handleAddActionTemplate}
             />
           )}
           {selectedTab === "excluded" && (

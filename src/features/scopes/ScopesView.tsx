@@ -161,7 +161,6 @@ interface ScopesViewProps {
   actionTemplates?: Action[];
   onUpdateTargets: (updated: Target[]) => void;
   onAddGestureTemplate?: (newTemplate: Gesture) => void;
-  onAddActionTemplate?: (newAction: Action) => void;
 }
 
 export const ScopesView: React.FC<ScopesViewProps> = ({
@@ -209,14 +208,6 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
 
   const toggleGroupCollapse = (id: string) => {
     setCollapsedGroups((previous) => ({ ...previous, [id]: !previous[id] }));
-  };
-
-  const handleOpenGestureEditor = (targetId: string, bindingId: string) => {
-    setCreationCategory(null);
-    const binding = findBinding(targetId, bindingId);
-    if (binding) {
-      setEditingGesture({ targetId, binding });
-    }
   };
 
   const [creationCategory, setCreationCategory] = useState<"gestures" | "screen" | "hotkeys" | null>(null);
