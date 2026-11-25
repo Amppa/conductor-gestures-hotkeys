@@ -95,6 +95,10 @@
     "addNewGesture": "設定滑鼠觸發...",
     "addNewAction": "設定執行指令..."
   },
+  "screenLabels": {
+    "EdgeTop": "上側", "EdgeBottom": "下側", "EdgeLeft": "左側", "EdgeRight": "右側",
+    "CornerTL": "左上角", "CornerBL": "左下角", "CornerBR": "右下角", "CornerTR": "右上角"
+  },
   "gestures": {
     "inputDescription": "滑鼠手勢=滑鼠觸發鍵+移動。\n按住滑鼠觸發鍵，再移動滑鼠或滾動滾輪。",
     "invalidStroke": "觸發方式不合法，請使用有效的方向或滾輪上下操作，並檢查逗號。",

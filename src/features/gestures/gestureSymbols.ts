@@ -65,6 +65,10 @@ const KNOWN_TRIGGERS: GestureTrigger[] = [
 
 const MOUSE_TRIGGERS = ["R", "M", "L", "X1", "X2"];
 
+function stripScreenLabel(text: string): string {
+  return text.replace(/^([⬒⬓◧◨◰◱◲◳])\s*(?:Edge [TBLR]|Corner (?:TL|BL|BR|TR)|上側|下側|左側|右側|左上角|左下角|右下角|右上角)(?=\s|,|$)/i, "$1");
+}
+
 function normalizeArrows(text: string): string {
   return Array.from(text, (character) => ARROW_ALIASES[character] ?? character).join(
     "",
@@ -148,9 +152,12 @@ export function formatGestureLabel(
   t?: TFunction,
 ): string {
   const normalized = normalizeTrigger(trigger);
-  const label = MOUSE_TRIGGERS.includes(normalized)
+  let label = MOUSE_TRIGGERS.includes(normalized)
     ? normalized
     : formatTriggerSymbol(normalized);
+  if (/^(Edge|Corner)/.test(normalized) && t) {
+    label += " " + t(`screenLabels.${normalized}`);
+  }
   return [label, ...steps.map((step) => formatStepSymbol(step, t))].join(", ");
 }
 
@@ -162,8 +169,13 @@ export function parseStrokeInput(
   rawInput: string,
   fallbackTrigger: string = "R",
 ): { trigger: GestureTrigger; steps: string[] } {
-  let text = normalizeArrows(rawInput.trim().replace(/滾輪|wheel/gi, "W"));
+  let text = normalizeArrows(stripScreenLabel(rawInput).trim().replace(/滾輪|wheel/gi, "W"));
   let trigger: GestureTrigger = fallbackTrigger;
+  const spatial = KNOWN_TRIGGERS.find((key) => /^(Edge|Corner)/.test(key) && text.startsWith(formatTriggerSymbol(key)));
+  if (spatial) {
+    trigger = spatial;
+    text = text.slice(formatTriggerSymbol(spatial).length);
+  }
 
   const buttons = /^(?:X[12]|[LMR])(?:\+(?:X[12]|[LMR]))+(?=\s|,|$)/.exec(text);
   if (buttons) {
@@ -221,7 +233,7 @@ export function parseStrokeInput(
 }
 
 export function validateStrokeInput(raw: string, fallback: string): string | null {
-  let text = normalizeArrows(raw.trim().replace(/滾輪|wheel/gi, "W"));
+  let text = normalizeArrows(stripScreenLabel(raw).trim().replace(/滾輪|wheel/gi, "W"));
   const buttons = /^(?:X[12]|[LMR])(?:\+(?:X[12]|[LMR]))+(?=\s|,|$)/.exec(text);
   if (buttons) text = text.slice(buttons[0].length);
   if (!text || /,\s*(,|$)/.test(text)) return "invalidStroke";

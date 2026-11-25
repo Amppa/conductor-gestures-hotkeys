@@ -95,6 +95,10 @@
     "addNewGesture": "Set Trigger...",
     "addNewAction": "Set Command..."
   },
+  "screenLabels": {
+    "EdgeTop": "Edge T", "EdgeBottom": "Edge B", "EdgeLeft": "Edge L", "EdgeRight": "Edge R",
+    "CornerTL": "Corner TL", "CornerBL": "Corner BL", "CornerBR": "Corner BR", "CornerTR": "Corner TR"
+  },
   "gestures": {
     "inputDescription": "Mouse gesture = trigger button + movement.\nHold the trigger button, then move the mouse or scroll the wheel.",
     "invalidStroke": "Invalid trigger. Use valid directions or wheel up/down operations and check the commas.",
