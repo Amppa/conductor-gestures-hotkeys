@@ -8,8 +8,6 @@ import {
   Subtitle2,
   Caption1,
   Button,
-  Tag,
-  Input,
   Dialog,
   DialogSurface,
   DialogTitle,
@@ -19,12 +17,6 @@ import {
 } from "@fluentui/react-components";
 import {
   Add16Regular,
-  Delete16Regular,
-  ChevronDown16Regular,
-  ChevronRight16Regular,
-  Edit16Regular,
-  Checkmark16Regular,
-  Dismiss16Regular,
 } from "@fluentui/react-icons";
 import { Target, Binding, Gesture, Action } from "../../domain/types";
 import {
@@ -41,6 +33,7 @@ import {
 import { formatGestureLabel } from "../gestures/gestureSymbols";
 import { isKeyboardTemplate, isScreenTemplate, type TriggerCategory } from "../../domain/triggerTypes";
 import { RuleTable } from "./RuleTable";
+import { ScopeGroupCard } from "./ScopeGroupCard";
 import { useRuleDragDrop } from "./useRuleDragDrop";
 import { formatHotkeyTrigger } from "../hotkeys/hotkeyTrigger";
 import { EditGestureDialog } from "../gestures/EditGestureDialog";
@@ -60,24 +53,6 @@ const useStyles = makeStyles({
   sectionHeader: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
-  },
-  groupHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    cursor: "pointer",
-    userSelect: "none",
-  },
-  groupTitleArea: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  tagList: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
     alignItems: "center",
   },
 
@@ -369,148 +344,30 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
           </Button>
         </div>
 
-        {specificGroups.map((group) => {
-          const isCollapsed = collapsedGroups[group.id];
-          const groupDisplayName =
-            group.name !== "Browsers" && group.name !== "Group 01"
-              ? group.name
-              : t(`targets.${group.id}Title`, { defaultValue: group.name });
-
-          return (
-            <Tooltip key={group.id} content={t("targets.moveTo", { name: groupDisplayName })} relationship="description" visible={hoverScope === group.id}>
-            <Card className={page.card} {...scopeDropProps(group)}>
-              <div className={styles.groupHeader}>
-                <div
-                  className={styles.groupTitleArea}
-                  onClick={() => !editingGroupId && toggleGroupCollapse(group.id)}
-                >
-                  {isCollapsed ? <ChevronRight16Regular /> : <ChevronDown16Regular />}
-                  {editingGroupId === group.id ? (
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: "4px" }}
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      <Input
-                        size="small"
-                        value={tempGroupName}
-                        autoFocus
-                        placeholder={t("targets.renameGroupPlaceholder")}
-                        onChange={(_, data) => setTempGroupName(data.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            handleSaveRename(group.id);
-                          } else if (event.key === "Escape") {
-                            handleCancelRename();
-                          }
-                        }}
-                      />
-                      <Button
-                        size="small"
-                        appearance="subtle"
-                        icon={<Checkmark16Regular />}
-                        onClick={() => handleSaveRename(group.id)}
-                      />
-                      <Button
-                        size="small"
-                        appearance="subtle"
-                        icon={<Dismiss16Regular />}
-                        onClick={handleCancelRename}
-                      />
-                    </div>
-                  ) : (
-                    <>
-                      <span
-                        style={{ fontWeight: 600, cursor: "pointer" }}
-                        title={t("targets.renameGroupTip")}
-                        onDoubleClick={(event) => {
-                          event.stopPropagation();
-                          handleStartRename(group.id, groupDisplayName);
-                        }}
-                      >
-                        {groupDisplayName}
-                      </span>
-                      <Button
-                        size="small"
-                        appearance="subtle"
-                        icon={<Edit16Regular />}
-                        title={t("targets.renameGroupTip")}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleStartRename(group.id, groupDisplayName);
-                        }}
-                      />
-                      <Button
-                        size="small"
-                        appearance="subtle"
-                        icon={<Delete16Regular />}
-                        title={t("targets.deleteGroup")}
-                        aria-label={t("targets.deleteGroup")}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setPendingDeleteGroupId(group.id);
-                        }}
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {!isCollapsed && (
-                <>
-                  <div className={styles.tagList}>
-                    <Caption1
-                      style={{
-                        color: tokens.colorNeutralForeground3,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {t("targets.includedApps")}
-                    </Caption1>
-                    {group.executables.map((executable) => (
-                      <Tag
-                        key={executable}
-                        size="small"
-                        dismissible
-                        dismissIcon={{ "aria-label": "remove" }}
-                        onClick={() => handleDeleteExe(group.id, executable)}
-                      >
-                        {executable}
-                      </Tag>
-                    ))}
-                    <Button
-                      size="small"
-                      appearance="subtle"
-                      icon={<Add16Regular />}
-                      onClick={() => setAddProcessTargetId(group.id)}
-                    >
-                      {t("targets.addApp")}
-                    </Button>
-                  </div>
-
-                  <div style={{ marginTop: "4px" }}>
-                    {renderBindingsTable(group)}
-                  </div>
-
-                  <div>
-                    <Button
-                      size="small"
-                      appearance="subtle"
-                      icon={<Add16Regular />}
-                      onClick={() =>
-                        onUpdateTargets(
-                          addBinding(targets, group.id, createEmptyBinding()),
-                        )
-                      }
-                    >
-                      {t("targets.addGesture")}
-                    </Button>
-                  </div>
-                </>
-              )}
-            </Card>
-            </Tooltip>
-          );
-        })}
+        {specificGroups.map((group) => (
+          <ScopeGroupCard
+            key={group.id}
+            group={group}
+            isCollapsed={!!collapsedGroups[group.id]}
+            isDropTarget={hoverScope === group.id}
+            dropProps={scopeDropProps(group)}
+            rename={{
+              editingId: editingGroupId,
+              draft: tempGroupName,
+              onStart: handleStartRename,
+              onChange: setTempGroupName,
+              onSave: handleSaveRename,
+              onCancel: handleCancelRename,
+            }}
+            onToggleCollapse={toggleGroupCollapse}
+            onDelete={setPendingDeleteGroupId}
+            onDeleteExecutable={handleDeleteExe}
+            onAddProcess={setAddProcessTargetId}
+            onAddRule={() => onUpdateTargets(addBinding(targets, group.id, createEmptyBinding()))}
+          >
+            {renderBindingsTable(group)}
+          </ScopeGroupCard>
+        ))}
       </div>
 
       {editingGesture && creationCategory === "hotkeys" && (
