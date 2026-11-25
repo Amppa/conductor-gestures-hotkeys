@@ -52,7 +52,10 @@ import {
   setBindingEnabled,
 } from "../../domain/targetMutations";
 import { formatGestureLabel } from "../gestures/gestureSymbols";
+import { isKeyboardTemplate, isScreenTemplate } from "../../domain/triggerTypes";
+import { formatHotkeyTrigger } from "../hotkeys/hotkeyTrigger";
 import { EditGestureDialog } from "../gestures/EditGestureDialog";
+import { EditHotkeyDialog } from "../hotkeys/EditHotkeyDialog";
 import { EditCommandDialog } from "../commands/EditCommandDialog";
 import { AddProcessDialog } from "./AddProcessDialog";
 import { PageHeader, usePageStyles } from "../../shared/pageStyles";
@@ -130,8 +133,15 @@ const useStyles = makeStyles({
     gap: "8px",
   },
   menuList: {
+    width: "max-content",
+    maxWidth: "min(480px, calc(100vw - 48px))",
     maxHeight: "260px",
     overflowY: "auto",
+    overflowX: "hidden",
+    "& [role='menuitem']": {
+      whiteSpace: "normal",
+      overflowWrap: "anywhere",
+    },
   },
 });
 
@@ -192,10 +202,23 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
   };
 
   const handleOpenGestureEditor = (targetId: string, bindingId: string) => {
+    setCreationCategory(null);
     const binding = findBinding(targetId, bindingId);
     if (binding) {
       setEditingGesture({ targetId, binding });
     }
+  };
+
+  const [creationCategory, setCreationCategory] = useState<"gestures" | "screen" | "hotkeys" | null>(null);
+  const handleCreateTrigger = (targetId: string, bindingId: string, category: "gestures" | "screen" | "hotkeys") => {
+    const binding = findBinding(targetId, bindingId);
+    if (!binding) return;
+    setCreationCategory(category);
+    setEditingGesture({ targetId, binding: { ...binding, gesture: {
+      id: createId("gesture"),
+      trigger: category === "screen" ? "EdgeTop" : category === "hotkeys" ? "" : "R",
+      steps: category === "screen" ? ["WU"] : [],
+    } } });
   };
 
   const handleOpenActionEditor = (targetId: string, bindingId: string) => {
@@ -255,7 +278,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
       updatedGesture,
     );
 
-    if (addToTemplates && onAddGestureTemplate) {
+    if ((addToTemplates || creationCategory) && onAddGestureTemplate) {
       onAddGestureTemplate({
         ...updatedGesture,
         id: createId("gesture"),
@@ -399,27 +422,39 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                   </MenuTrigger>
                   <MenuPopover>
                     <MenuList className={styles.menuList}>
-                      {gestureTemplates.map((template) => (
+                      {(["gestures", "screen", "hotkeys"] as const).map((category) => (
+                        <Menu key={category}>
+                          <MenuTrigger disableButtonEnhancement>
+                            <MenuItem>{t(`nav.${category}`)}</MenuItem>
+                          </MenuTrigger>
+                          <MenuPopover>
+                            <MenuList className={styles.menuList}>
+                      {gestureTemplates.filter((template) => category === "hotkeys"
+                        ? isKeyboardTemplate(template)
+                        : category === "screen"
+                          ? isScreenTemplate(template)
+                          : !isKeyboardTemplate(template) && !isScreenTemplate(template)).map((template) => (
                         <MenuItem
                           key={template.id}
                           onClick={() =>
                             handleSelectPresetGesture(target.id, binding.id, template)
                           }
                         >
-                          {formatGestureLabel(
+                          {category === "hotkeys" ? formatHotkeyTrigger(template.trigger) : formatGestureLabel(
                             template.trigger,
                             template.steps,
                             t,
                           )}
                         </MenuItem>
                       ))}
-                      <MenuDivider />
-                      <MenuItem
-                        icon={<Add16Regular />}
-                        onClick={() => handleOpenGestureEditor(target.id, binding.id)}
-                      >
-                        {t("targets.addNewGesture")}
-                      </MenuItem>
+                              <MenuDivider />
+                              <MenuItem icon={<Add16Regular />} onClick={() => handleCreateTrigger(target.id, binding.id, category)}>
+                                {t(category === "hotkeys" ? "hotkeys.add" : "gestures.add")}
+                              </MenuItem>
+                            </MenuList>
+                          </MenuPopover>
+                        </Menu>
+                      ))}
                     </MenuList>
                   </MenuPopover>
                 </Menu>
@@ -695,8 +730,18 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
         })}
       </div>
 
-      {editingGesture && (
+      {editingGesture && creationCategory === "hotkeys" && (
+        <EditHotkeyDialog
+          hotkey={editingGesture.binding.gesture}
+          existingHotkeys={gestureTemplates.filter(isKeyboardTemplate)}
+          isCreating
+          onSave={handleSaveGesture}
+          onCancel={() => setEditingGesture(null)}
+        />
+      )}
+      {editingGesture && creationCategory !== "hotkeys" && (
         <EditGestureDialog
+          screenMode={creationCategory === "screen" || (!creationCategory && isScreenTemplate(editingGesture.binding.gesture))}
           open={!!editingGesture}
           gesture={editingGesture.binding.gesture}
           onSave={handleSaveGesture}
