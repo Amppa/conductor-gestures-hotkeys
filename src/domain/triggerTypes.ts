@@ -1,5 +1,7 @@
 import { Gesture, GestureTrigger } from "./types";
 
+export const MOUSE_BUTTONS = ["L", "M", "R", "X1", "X2"] as const;
+
 const MOUSE_OR_SPATIAL_TRIGGERS = new Set<string>([
   "R",
   "RB",
@@ -31,7 +33,7 @@ export function isKeyboardTrigger(trigger: GestureTrigger): boolean {
 }
 
 export function isMouseTrigger(trigger: string): boolean {
-  return /^(L|M|R|X1|X2)(\+(L|M|R|X1|X2))*$/.test(trigger);
+  return trigger.split("+").every((key) => MOUSE_BUTTONS.some((button) => button === key));
 }
 
 export function isKeyboardTemplate(template: Gesture): boolean {
