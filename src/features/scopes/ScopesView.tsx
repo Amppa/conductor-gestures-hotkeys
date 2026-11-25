@@ -43,7 +43,6 @@ import {
 } from "../../domain/bindingRules";
 import {
   addBinding,
-  moveBinding,
   addExecutable,
   createEmptyBinding,
   removeBinding,
@@ -56,6 +55,7 @@ import {
 import { formatGestureLabel } from "../gestures/gestureSymbols";
 import { isKeyboardTemplate, isScreenTemplate, type TriggerCategory } from "../../domain/triggerTypes";
 import { TriggerPresetMenu } from "./TriggerPresetMenu";
+import { useRuleDragDrop } from "./useRuleDragDrop";
 import { formatHotkeyTrigger } from "../hotkeys/hotkeyTrigger";
 import { EditGestureDialog } from "../gestures/EditGestureDialog";
 import { EditHotkeyDialog } from "../hotkeys/EditHotkeyDialog";
@@ -350,8 +350,6 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
   };
 
   const globalTarget = targets.find((target) => target.kind === "global");
-  const [dragging, setDragging] = useState<{ targetId: string; bindingId: string } | null>(null);
-  const [dropLine, setDropLine] = useState<{ id: string; after: boolean } | null>(null);
   const { i18n } = useTranslation();
   const sortRules = () => {
     const english = i18n.getFixedT("en");
@@ -366,35 +364,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
     ) })));
   };
   const specificGroups = targets.filter((target) => target.kind === "group");
-  const [hoverScope, setHoverScope] = useState<string | null>(null);
-  const [moveNotice, setMoveNotice] = useState("");
-  const scopeName = (target: Target) => target.kind === "global"
-    ? t("targets.globalTitle", { defaultValue: target.name })
-    : t(`targets.${target.id}Title`, { defaultValue: target.name });
-  const moveRule = (destination: Target, beforeId?: string, after = false) => {
-    if (!dragging) return;
-    const result = moveBinding(targets, dragging.targetId, destination.id, dragging.bindingId, beforeId, after);
-    if (result.moved) {
-      onUpdateTargets(result.targets);
-      setMoveNotice(t(result.conflict ? "targets.movedDisabled" : "targets.movedRule", { name: scopeName(destination) }));
-    }
-    setDragging(null); setDropLine(null); setHoverScope(null);
-  };
-  const scopeDropProps = (target: Target) => ({
-    onDragOver: (event: React.DragEvent) => {
-      if (!dragging) return;
-      event.preventDefault(); event.dataTransfer.dropEffect = "move";
-      setDropLine(null);
-      setHoverScope(target.id);
-    },
-    onDragLeave: (event: React.DragEvent) => {
-      if (!event.currentTarget.contains(event.relatedTarget as Node)) setHoverScope(null);
-    },
-    onDrop: (event: React.DragEvent) => {
-      event.preventDefault(); event.stopPropagation(); moveRule(target);
-    },
-    style: hoverScope === target.id ? { outline: `2px solid ${tokens.colorBrandStroke1}` } : undefined,
-  });
+  const { hoverScope, moveNotice, scopeName, scopeDropProps, rowDropProps, dragHandleProps } = useRuleDragDrop(targets, onUpdateTargets);
 
   const renderBindingsTable = (target: Target) => (
     <table className={page.table}>
@@ -415,32 +385,12 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
 
           return (
             <tr key={binding.id} className={`${page.row} ${styles.scopesRow}`}
-              style={dropLine?.id === binding.id ? { boxShadow: `inset 0 ${dropLine.after ? "-2px" : "2px"} ${tokens.colorBrandStroke1}` } : undefined}
-              onDragOver={(event) => {
-                if (!dragging || dragging.bindingId === binding.id) return;
-                event.preventDefault();
-                event.stopPropagation();
-                setHoverScope(null);
-                event.dataTransfer.dropEffect = "move";
-                const rect = event.currentTarget.getBoundingClientRect();
-                setDropLine({ id: binding.id, after: event.clientY > rect.top + rect.height / 2 });
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                const rect = event.currentTarget.getBoundingClientRect();
-                moveRule(target, binding.id, event.clientY > rect.top + rect.height / 2);
-              }}>
+              {...rowDropProps(target, binding.id)}>
               <td className={styles.tdCheckbox}>
                 <div className={styles.ruleControls}>
-                <span draggable title={t("targets.dragRule")} aria-label={t("targets.dragRule")}
-                  style={{ cursor: "grab", userSelect: "none", fontSize: 20 }}
-                  onDragStart={(event) => {
-                    event.dataTransfer.effectAllowed = "move";
-                    event.dataTransfer.setData("text/plain", binding.id);
-                    setDragging({ targetId: target.id, bindingId: binding.id });
-                  }}
-                  onDragEnd={() => { setDragging(null); setDropLine(null); setHoverScope(null); }}>⠿</span>
+                <span {...dragHandleProps(target.id, binding.id)}
+                  title={t("targets.dragRule")} aria-label={t("targets.dragRule")}
+                  style={{ cursor: "grab", userSelect: "none", fontSize: 20 }}>⠿</span>
                 <Checkbox
                   checked={!invalid && binding.enabled}
                   disabled={invalid}
