@@ -38,6 +38,11 @@ global gWheelLabel := "滾輪"
 global gChordWheelTriggered := false
 global gLogFile := A_ScriptDir . "\gesture.log"
 global gPauseFlagFile := A_ScriptDir . "\paused.flag"
+global gMouseTriggers := ["RButton", "XButton1", "XButton2"]
+global gCapturedButtons := Map()
+global gNativeLeftDown := false
+global gPendingLeftX := 0
+global gPendingLeftY := 0
 ; Placeholders; the generated script replaces these with its own maps.
 global gGeneratedRemapState := Map()
 global gGeneratedRemapDestinationCounts := Map()
@@ -82,6 +87,136 @@ ResetGestureState() {
     SetTimer(TrackGesture, 0)
     HideGestureOSD()
     ReleaseGeneratedKeys()
+    global gCapturedButtons, gNativeLeftDown
+    SetTimer(TrackLeftPassthrough, 0)
+    if gNativeLeftDown
+        SendEvent("{LButton Up}")
+    gNativeLeftDown := false
+    gCapturedButtons.Clear()
+}
+
+SetMouseTriggers(triggers) {
+    global gMouseTriggers
+    gMouseTriggers := triggers
+}
+
+MouseTriggerForHeld(held) {
+    global gMouseTriggers
+    best := ""
+    bestCount := 0
+    for trigger in gMouseTriggers {
+        buttons := StrSplit(trigger, "+")
+        matches := true
+        for button in buttons {
+            if !held.Has(button) {
+                matches := false
+                break
+            }
+        }
+        if (matches && buttons.Length > bestCount) {
+            best := trigger
+            bestCount := buttons.Length
+        }
+    }
+    return best
+}
+
+HeldMouseButtons() {
+    held := Map()
+    for button in ["LButton", "MButton", "RButton", "XButton1", "XButton2"] {
+        if GetKeyState(button, "P")
+            held[button] := true
+    }
+    return held
+}
+
+ShouldCaptureMouse(button) {
+    global gMouseTriggers, gIsPaused, gFnIsProcessDisabled, gCapturedButtons
+    if gIsPaused
+        return false
+    if gCapturedButtons.Has(button)
+        return true
+    MouseGetPos(, , &hwnd)
+    try {
+        if gFnIsProcessDisabled(WinGetProcessName(hwnd))
+            return false
+    }
+    held := HeldMouseButtons()
+    held[button] := true
+    trigger := MouseTriggerForHeld(held)
+    for candidate in gMouseTriggers {
+        if InStr("+" candidate "+", "+" button "+")
+            return true
+    }
+    return false
+}
+
+OnMouseDown(button) {
+    global gCapturedButtons, gState, gTrigger, gNativeLeftDown, gPendingLeftX, gPendingLeftY
+    for captured, consumed in gCapturedButtons {
+        if consumed {
+            gCapturedButtons[button] := true
+            return
+        }
+    }
+    gCapturedButtons[button] := false
+    held := HeldMouseButtons()
+    held[button] := true
+    trigger := MouseTriggerForHeld(held)
+    if (button == "LButton" && trigger == "") {
+        MouseGetPos(&gPendingLeftX, &gPendingLeftY)
+        SetTimer(TrackLeftPassthrough, 10)
+    }
+    if (trigger == "" || (gState != STATE_IDLE && trigger == gTrigger))
+        return
+    ; End a native left-button hold when it becomes part of a gesture chord.
+    SetTimer(TrackLeftPassthrough, 0)
+    if (InStr(trigger, "LButton") && gNativeLeftDown) {
+        SendEvent("{LButton Up}")
+        gNativeLeftDown := false
+    }
+    OnTriggerDown(trigger)
+}
+
+; Delay a left-only press until movement or release so stationary L-first chords
+; do not send a native click. Ordinary left dragging still starts at its origin.
+TrackLeftPassthrough() {
+    global gCapturedButtons, gNativeLeftDown, gPendingLeftX, gPendingLeftY, gState
+    if (!gCapturedButtons.Has("LButton") || gState != STATE_IDLE || gNativeLeftDown) {
+        SetTimer(TrackLeftPassthrough, 0)
+        return
+    }
+    MouseGetPos(&x, &y)
+    if (Abs(x - gPendingLeftX) + Abs(y - gPendingLeftY) < 2)
+        return
+    MouseMove(gPendingLeftX, gPendingLeftY, 0)
+    SendEvent("{LButton Down}")
+    MouseMove(x, y, 0)
+    gNativeLeftDown := true
+    SetTimer(TrackLeftPassthrough, 0)
+}
+
+OnMouseUp(button) {
+    global gCapturedButtons, gState, gTrigger, gNativeLeftDown
+    if !gCapturedButtons.Has(button)
+        return
+    used := gCapturedButtons[button]
+    gCapturedButtons.Delete(button)
+    if (button == "LButton") {
+        SetTimer(TrackLeftPassthrough, 0)
+        if gNativeLeftDown {
+            SendEvent("{LButton Up}")
+            gNativeLeftDown := false
+            return
+        }
+    }
+    if (gState != STATE_IDLE && InStr("+" gTrigger "+", "+" button "+")) {
+        for captured, _ in gCapturedButtons
+            gCapturedButtons[captured] := true
+        OnTriggerUp(button)
+    } else if !used {
+        SendEvent("{" button "}")
+    }
 }
 
 ; Release any synthetic keys held by generated remap hotkeys so pausing never
@@ -544,7 +679,8 @@ OnTriggerUp(btnName) {
         ; Normal click passthrough
         gState := STATE_IDLE
         HideGestureOSD()
-        SendEvent("{" btnName "}")
+        if !gFnDispatchGestureAction(gTrigger, "", gStartProcess)
+            SendEvent("{" btnName "}")
         return
     }
 
@@ -641,14 +777,27 @@ HandleChordWheel(wheelDir) {
 ; ------------------------------------------------------------------------------
 ; Hotkey Hooks for RButton, XButton1, XButton2
 ; ------------------------------------------------------------------------------
-*RButton::OnTriggerDown("RButton")
-*RButton Up::OnTriggerUp("RButton")
-
-*XButton1::OnTriggerDown("XButton1")
-*XButton1 Up::OnTriggerUp("XButton1")
-
-*XButton2::OnTriggerDown("XButton2")
-*XButton2 Up::OnTriggerUp("XButton2")
+#HotIf ShouldCaptureMouse("RButton")
+*RButton::OnMouseDown("RButton")
+#HotIf gCapturedButtons.Has("RButton")
+*RButton Up::OnMouseUp("RButton")
+#HotIf ShouldCaptureMouse("MButton")
+*MButton::OnMouseDown("MButton")
+#HotIf gCapturedButtons.Has("MButton")
+*MButton Up::OnMouseUp("MButton")
+#HotIf ShouldCaptureMouse("LButton")
+*LButton::OnMouseDown("LButton")
+#HotIf gCapturedButtons.Has("LButton")
+*LButton Up::OnMouseUp("LButton")
+#HotIf ShouldCaptureMouse("XButton1")
+*XButton1::OnMouseDown("XButton1")
+#HotIf gCapturedButtons.Has("XButton1")
+*XButton1 Up::OnMouseUp("XButton1")
+#HotIf ShouldCaptureMouse("XButton2")
+*XButton2::OnMouseDown("XButton2")
+#HotIf gCapturedButtons.Has("XButton2")
+*XButton2 Up::OnMouseUp("XButton2")
+#HotIf
 
 ; ------------------------------------------------------------------------------
 ; Wheel Interception: Chord Wheel > Spatial Edge/Corner > Native Wheel

@@ -113,7 +113,14 @@ const ACTION_NAMES_EN: &[(&str, &str)] = &[
     ("act-lalt", "Trigger Alt"),
 ];
 
-pub fn trigger_to_ahk_name(t: &str) -> &str {
+pub fn trigger_to_ahk_name(t: &str) -> String {
+    if is_mouse_combo(t) {
+        return crate::config::normalize_trigger(t)
+            .split('+')
+            .map(trigger_to_ahk_name)
+            .collect::<Vec<_>>()
+            .join("+");
+    }
     match t {
         "RB" | "R" => "RButton",
         "MB" | "M" => "MButton",
@@ -122,10 +129,18 @@ pub fn trigger_to_ahk_name(t: &str) -> &str {
         "X2" | "X2B" => "XButton2",
         other => other,
     }
+    .to_string()
+}
+
+fn is_mouse_combo(trigger: &str) -> bool {
+    trigger.contains('+')
+        && trigger
+            .split('+')
+            .all(|key| ["L", "M", "R", "X1", "X2"].contains(&key))
 }
 
 pub fn is_mouse_or_spatial_trigger(trig: &str) -> bool {
-    MOUSE_OR_SPATIAL_TRIGGERS.contains(&trig)
+    MOUSE_OR_SPATIAL_TRIGGERS.contains(&trig) || is_mouse_combo(trig)
 }
 
 pub fn ahk_quote(s: &str) -> String {
@@ -307,6 +322,30 @@ fn write_header(script: &mut String, config: &AppConfig, revision: u64) {
     script.push_str("global gFnIsProcessDisabled := GeneratedIsProcessDisabled\n");
     script.push_str("global gFnDispatchGestureAction := GeneratedDispatchGestureAction\n");
     script.push_str("global gFnGetGestureActionName := GeneratedGetGestureActionName\n\n");
+    let mut triggers = Vec::new();
+    for target in config
+        .targets
+        .iter()
+        .filter(|target| target.enabled && target.kind != "disabled")
+    {
+        for binding in target.bindings.iter().filter(|binding| binding.enabled) {
+            let trigger = crate::config::normalize_trigger(&binding.gesture.trigger);
+            if ["M", "R", "X1", "X2"].contains(&trigger.as_str()) || is_mouse_combo(&trigger) {
+                let name = trigger_to_ahk_name(&trigger);
+                if !triggers.contains(&name) {
+                    triggers.push(name);
+                }
+            }
+        }
+    }
+    script.push_str(&format!(
+        "SetMouseTriggers([{}])\n",
+        triggers
+            .iter()
+            .map(|trigger| format!("\"{}\"", ahk_quote(trigger)))
+            .collect::<Vec<_>>()
+            .join(", ")
+    ));
 }
 
 fn collect_disabled_executables(config: &AppConfig) -> Vec<String> {
@@ -659,6 +698,25 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn mouse_chords_are_canonical_gestures_not_keyboard_hotkeys() {
+        let mut config = crate::config::default_app_config();
+        let mut binding = keyboard_binding("chord", "X1+R", "keys", "^w");
+        binding.gesture.steps = vec!["D".into()];
+        config
+            .targets
+            .iter_mut()
+            .find(|target| target.kind == "global")
+            .unwrap()
+            .bindings
+            .push(binding);
+        let script = super::generate_ahk_script(&config, 1);
+        assert!(super::is_mouse_or_spatial_trigger("X1+R"));
+        assert_eq!(super::trigger_to_ahk_name("X1+R"), "RButton+XButton1");
+        assert!(script.contains("\"RButton+XButton1\""));
+        assert!(!script.contains("*X1+R::"));
+        assert!(script.contains("SetMouseTriggers(["));
+    }
     use super::*;
     use crate::config::{default_app_config, Action, Binding, Gesture};
 

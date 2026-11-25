@@ -164,6 +164,40 @@ gState := STATE_IDLE
 tc7_pass := (!gIsPaused && !A_IsSuspended)
 gTestResults.Push({ name: "Removing Pause Flag Resumes Hotkeys", pass: tc7_pass, actual: "paused=" . (gIsPaused ? "true" : "false") })
 
+SetMouseTriggers(["MButton", "RButton", "RButton+XButton1", "LButton+RButton"])
+held := Map("XButton1", true)
+partial := MouseTriggerForHeld(held)
+held["RButton"] := true
+forward := MouseTriggerForHeld(held)
+reverse := MouseTriggerForHeld(Map("RButton", true, "XButton1", true))
+gTestResults.Push({ name: "Chord Requires All Buttons And Ignores Press Order", pass: partial == "" && forward == "RButton+XButton1" && reverse == forward, actual: forward })
+gTestResults.Push({ name: "Middle Button Is Supported", pass: MouseTriggerForHeld(Map("MButton", true)) == "MButton", actual: "MButton" })
+gTestResults.Push({ name: "Left Alone Does Not Start A Gesture", pass: MouseTriggerForHeld(Map("LButton", true)) == "", actual: "LButton" })
+
+; Exercise the real release handler: releasing either member ends the chord once.
+gLastDispatched := { trigger: "", steps: "", proc: "" }
+gState := STATE_DRAWING
+gTrigger := "RButton+XButton1"
+gSteps := ["D"]
+gCapturedButtons := Map("RButton", false, "XButton1", false)
+OnMouseUp("XButton1")
+ended := gState == STATE_IDLE && gLastDispatched.trigger == "RButton+XButton1" && gLastDispatched.steps == "D"
+gLastDispatched := { trigger: "", steps: "", proc: "" }
+OnMouseUp("RButton")
+gTestResults.Push({ name: "Either Chord Release Ends Once", pass: ended && gLastDispatched.steps == "" && gCapturedButtons.Count == 0, actual: "release" })
+
+; A chord without movement dispatches once when its first member is released.
+gLastDispatched := { trigger: "", steps: "", proc: "" }
+gState := STATE_PENDING
+gTrigger := "RButton+XButton1"
+gSteps := []
+gCapturedButtons := Map("RButton", false, "XButton1", false)
+OnMouseUp("RButton")
+clicked := gState == STATE_IDLE && gLastDispatched.trigger == "RButton+XButton1" && gLastDispatched.steps == ""
+gLastDispatched := { trigger: "", steps: "", proc: "" }
+OnMouseUp("XButton1")
+gTestResults.Push({ name: "Chord Without Movement Dispatches Once", pass: clicked && gLastDispatched.trigger == "", actual: "chord-click" })
+
 ; Compile Summary Report to JSON
 allPassed := true
 jsonItems := ""

@@ -491,12 +491,21 @@ pub fn default_app_config() -> AppConfig {
 
 /// Maps legacy trigger aliases to their canonical token.
 pub(crate) fn normalize_trigger(trigger: &str) -> String {
+    let buttons = trigger.split('+').collect::<Vec<_>>();
+    let order = ["L", "M", "R", "X1", "X2"];
+    if buttons.len() > 1 && buttons.iter().all(|key| order.contains(key)) {
+        return order
+            .into_iter()
+            .filter(|key| buttons.contains(key))
+            .collect::<Vec<_>>()
+            .join("+");
+    }
     match trigger {
-        "RB" => "R".into(),
-        "MB" => "M".into(),
-        "LB" => "L".into(),
-        "X1B" => "X1".into(),
-        "X2B" => "X2".into(),
+        "RB" | "RButton" => "R".into(),
+        "MB" | "MButton" => "M".into(),
+        "LB" | "LButton" => "L".into(),
+        "X1B" | "XButton1" => "X1".into(),
+        "X2B" | "XButton2" => "X2".into(),
         "EdgeTopL" | "EdgeTopR" => "EdgeTop".into(),
         other => other.to_string(),
     }

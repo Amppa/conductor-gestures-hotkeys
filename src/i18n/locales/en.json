@@ -105,6 +105,7 @@
     "CornerTL": "Corner TL", "CornerBL": "Corner BL", "CornerBR": "Corner BR", "CornerTR": "Corner TR"
   },
   "gestures": {
+    "leftOnlyUnsupported": "The left button must be combined with another mouse button.",
     "inputDescription": "Mouse gesture = trigger button + movement.\nHold the trigger button, then move the mouse or scroll the wheel.",
     "invalidStroke": "Invalid trigger. Use valid directions or wheel up/down operations and check the commas.",
     "singleClickUnsupported": "This mouse button does not support click-only triggers. Add a direction or wheel operation.",

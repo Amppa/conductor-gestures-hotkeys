@@ -5,16 +5,26 @@ import { AppConfig, Binding, Gesture, Target } from "./types";
  * Persisted direction tokens and canonical triggers are returned unchanged.
  */
 export function normalizeTrigger(trigger: string): string {
+  const buttons = trigger.split("+");
+  const order = ["L", "M", "R", "X1", "X2"];
+  if (buttons.length > 1 && buttons.every((key) => order.includes(key))) {
+    return order.filter((key) => buttons.includes(key)).join("+");
+  }
   switch (trigger) {
     case "RB":
+    case "RButton":
       return "R";
     case "MB":
+    case "MButton":
       return "M";
     case "LB":
+    case "LButton":
       return "L";
     case "X1B":
+    case "XButton1":
       return "X1";
     case "X2B":
+    case "XButton2":
       return "X2";
     case "EdgeTopL":
     case "EdgeTopR":

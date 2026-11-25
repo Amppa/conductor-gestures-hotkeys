@@ -96,6 +96,13 @@ fn validate_enabled_binding_duplicates(config: &AppConfig) -> Result<(), String>
     for target in &config.targets {
         let mut seen = HashSet::new();
         for binding in target.bindings.iter().filter(|binding| binding.enabled) {
+            let mouse_trigger = normalize_trigger(binding.gesture.trigger.trim());
+            if mouse_trigger == "L"
+                || ((mouse_trigger == "M" || mouse_trigger == "R")
+                    && binding.gesture.steps.is_empty())
+            {
+                return Err(format!("Scope「{}」規則「{}」的滑鼠觸發不完整：左鍵不能單獨使用，單獨中鍵或右鍵需加入移動或滾輪操作。", target.name, binding.id));
+            }
             let trigger = normalize_trigger(binding.gesture.trigger.trim()).to_ascii_lowercase();
             let steps = binding
                 .gesture
@@ -536,6 +543,32 @@ pub fn set_engine_paused(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn mouse_validation_rejects_left_only_and_detects_reordered_chord_duplicates() {
+        let mut config = crate::config::default_app_config();
+        let target = config
+            .targets
+            .iter_mut()
+            .find(|target| target.kind == "global")
+            .unwrap();
+        target.bindings.retain(|binding| binding.enabled);
+        target.bindings[0].gesture.trigger = "L".into();
+        assert!(super::validate_enabled_binding_duplicates(&config).is_err());
+        let target = config
+            .targets
+            .iter_mut()
+            .find(|target| target.kind == "global")
+            .unwrap();
+        target.bindings[0].gesture.trigger = "R+X1".into();
+        target.bindings[0].gesture.steps.clear();
+        assert!(super::validate_enabled_binding_duplicates(&config).is_ok());
+        let target = config.targets.iter_mut().find(|target| target.kind == "global").unwrap();
+        let mut duplicate = target.bindings[0].clone();
+        duplicate.id = "chord-copy".into();
+        duplicate.gesture.trigger = "X1+R".into();
+        target.bindings.push(duplicate);
+        assert!(super::validate_enabled_binding_duplicates(&config).is_err());
+    }
     use super::{
         deploy_runtime_pair, portable_data_dir_for_executable, replace_file, restore_runtime_pair,
         stage_and_validate_script, validate_enabled_binding_duplicates, validate_imported_config,

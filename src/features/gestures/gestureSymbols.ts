@@ -179,7 +179,7 @@ export function parseStrokeInput(
 
   const buttons = /^(?:X[12]|[LMR])(?:\+(?:X[12]|[LMR]))+(?=\s|,|$)/.exec(text);
   if (buttons) {
-    trigger = buttons[0];
+    trigger = normalizeTrigger(buttons[0]);
     text = text.slice(buttons[0].length);
   }
 
@@ -236,11 +236,13 @@ export function validateStrokeInput(raw: string, fallback: string): string | nul
   let text = normalizeArrows(stripScreenLabel(raw).trim().replace(/滾輪|wheel/gi, "W"));
   const buttons = /^(?:X[12]|[LMR])(?:\+(?:X[12]|[LMR]))+(?=\s|,|$)/.exec(text);
   if (buttons) text = text.slice(buttons[0].length);
-  if (!text || /,\s*(,|$)/.test(text)) return "invalidStroke";
+  if ((!text && !buttons) || /,\s*(,|$)/.test(text)) return "invalidStroke";
   const source = KNOWN_TRIGGERS.find((key) => text.startsWith(key));
   const symbolSource = KNOWN_TRIGGERS.find((key) => text.startsWith(formatTriggerSymbol(key)));
   const trigger = buttons?.[0] ?? source ?? symbolSource ?? fallback;
   if (!trigger) return "invalidStroke";
+  if (trigger === "L") return "leftOnlyUnsupported";
+  if (new Set(trigger.split("+")).size !== trigger.split("+").length) return "invalidStroke";
   if (source) text = text.slice(source.length);
   else if (symbolSource) text = text.slice(formatTriggerSymbol(symbolSource).length);
   text = text.replace(/^\s*,?\s*/, "");
@@ -251,7 +253,7 @@ export function validateStrokeInput(raw: string, fallback: string): string | nul
     count++;
     text = text.slice(match[0].length).replace(/^\s*,?\s*/, "");
   }
-  if (!count && ["R", "M", "L"].includes(trigger)) return "singleClickUnsupported";
+  if (!count && ["R", "M"].includes(trigger)) return "singleClickUnsupported";
   if (!count && trigger.startsWith("Edge")) return "invalidStroke";
   return null;
 }

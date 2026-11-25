@@ -1,5 +1,6 @@
 import { hasEnabledGestureDuplicate } from "./ruleValidation";
 import { Action, Binding, Gesture, Target } from "./types";
+import { isMouseTrigger } from "./triggerTypes";
 
 const EMPTY_STEP_ALLOWED_TRIGGERS = new Set(["Insert", "LAlt", "LWin", "X1", "X2"]);
 
@@ -25,6 +26,11 @@ export function isGestureIncomplete(
   }
 
   const { trigger } = gesture;
+  if (trigger === "L") return true;
+  if (isMouseTrigger(trigger) && trigger.includes("+")) return false;
+  if (isMouseTrigger(trigger) && trigger !== "X1" && trigger !== "X2") {
+    return !gesture.steps?.length;
+  }
   const allowsEmptySteps =
     trigger.startsWith("Corner") ||
     EMPTY_STEP_ALLOWED_TRIGGERS.has(trigger) ||
