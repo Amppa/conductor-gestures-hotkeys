@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addBinding,
+  moveBinding,
   addExecutable,
   createEmptyBinding,
   removeBinding,
@@ -35,6 +36,27 @@ function targets(bindings: Binding[] = []): Target[] {
 }
 
 describe("binding mutations", () => {
+  it("moves a rule across scopes and disables conflicting enabled triggers", () => {
+    const source = binding("source", true, leftGesture, keysAction);
+    const existing = binding("existing", true, leftGesture, noopAction);
+    const original = targets([source]);
+    original.push({ ...original[0], id: "group", kind: "group", bindings: [existing] });
+    const result = moveBinding(original, "global", "group", "source");
+    expect(result.conflict).toBe(true);
+    expect(result.targets[0].bindings).toEqual([]);
+    expect(result.targets[1].bindings.map((item) => item.id)).toEqual(["existing", "source"]);
+    expect(result.targets[1].bindings[1].enabled).toBe(false);
+    expect(source.enabled).toBe(true);
+    expect(original[0].bindings).toHaveLength(1);
+  });
+
+  it("reorders within a scope without disabling the moved rule", () => {
+    const first = binding("first", true, leftGesture, keysAction);
+    const second = binding("second", false, rightGesture, noopAction);
+    const result = moveBinding(targets([first, second]), "global", "global", "first", "second", true);
+    expect(result.targets[0].bindings).toEqual([second, first]);
+    expect(result.conflict).toBe(false);
+  });
   it("enables a complete gesture replacement", () => {
     const original = targets([binding("b1", false, leftGesture, keysAction)]);
     const updated = replaceBindingGesture(original, "global", "b1", rightGesture);

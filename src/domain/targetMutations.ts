@@ -5,6 +5,34 @@ import { Action, Binding, Gesture, Target } from "./types";
 
 type BindingUpdater = (target: Target, binding: Binding) => Binding;
 
+export function moveBinding(
+  targets: Target[], sourceId: string, destinationId: string,
+  bindingId: string, beforeId?: string, after = false,
+): { targets: Target[]; conflict: boolean; moved: boolean } {
+  const source = targets.find((target) => target.id === sourceId);
+  const destination = targets.find((target) => target.id === destinationId);
+  const binding = source?.bindings.find((item) => item.id === bindingId);
+  if (!binding || !destination || destination.kind === "disabled" || bindingId === beforeId ||
+      (beforeId && !destination.bindings.some((item) => item.id === beforeId))) {
+    return { targets, conflict: false, moved: false };
+  }
+  const conflict = sourceId !== destinationId && binding.enabled &&
+    hasEnabledGestureDuplicate(destination.bindings, binding.id, binding.gesture);
+  const movedBinding = conflict ? { ...binding, enabled: false } : binding;
+  return {
+    conflict, moved: true,
+    targets: targets.map((target) => {
+      if (target.id !== sourceId && target.id !== destinationId) return target;
+      const bindings = target.bindings.filter((item) => item.id !== bindingId);
+      if (target.id === destinationId) {
+        const index = beforeId ? bindings.findIndex((item) => item.id === beforeId) : bindings.length;
+        bindings.splice(index + (beforeId && after ? 1 : 0), 0, movedBinding);
+      }
+      return { ...target, bindings };
+    }),
+  };
+}
+
 function updateBinding(
   targets: Target[],
   targetId: string,

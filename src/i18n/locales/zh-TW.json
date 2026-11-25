@@ -55,6 +55,9 @@
     "cancel": "取消"
   },
   "targets": {
+    "moveTo": "移至{{name}}",
+    "movedRule": "已移至{{name}}",
+    "movedDisabled": "已移至{{name}}；因觸發方式重複，移入規則已停用。",
     "sortNow": "立即排序",
     "dragRule": "拖曳調整規則順序",
     "globalTitle": "全域預設",

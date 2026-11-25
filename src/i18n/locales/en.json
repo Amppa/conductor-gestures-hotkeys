@@ -55,6 +55,9 @@
     "cancel": "Cancel"
   },
   "targets": {
+    "moveTo": "Move to {{name}}",
+    "movedRule": "Moved to {{name}}",
+    "movedDisabled": "Moved to {{name}}; the moved rule was disabled because its trigger is already in use.",
     "sortNow": "Sort now",
     "dragRule": "Drag to reorder rules",
     "globalTitle": "Global Default",

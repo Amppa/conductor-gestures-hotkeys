@@ -4,6 +4,7 @@ import {
   makeStyles,
   tokens,
   Card,
+  Tooltip,
   Subtitle2,
   Caption1,
   Badge,
@@ -42,6 +43,7 @@ import {
 } from "../../domain/bindingRules";
 import {
   addBinding,
+  moveBinding,
   addExecutable,
   createEmptyBinding,
   removeBinding,
@@ -372,6 +374,35 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
     ) })));
   };
   const specificGroups = targets.filter((target) => target.kind === "group");
+  const [hoverScope, setHoverScope] = useState<string | null>(null);
+  const [moveNotice, setMoveNotice] = useState("");
+  const scopeName = (target: Target) => target.kind === "global"
+    ? t("targets.globalTitle", { defaultValue: target.name })
+    : t(`targets.${target.id}Title`, { defaultValue: target.name });
+  const moveRule = (destination: Target, beforeId?: string, after = false) => {
+    if (!dragging) return;
+    const result = moveBinding(targets, dragging.targetId, destination.id, dragging.bindingId, beforeId, after);
+    if (result.moved) {
+      onUpdateTargets(result.targets);
+      setMoveNotice(t(result.conflict ? "targets.movedDisabled" : "targets.movedRule", { name: scopeName(destination) }));
+    }
+    setDragging(null); setDropLine(null); setHoverScope(null);
+  };
+  const scopeDropProps = (target: Target) => ({
+    onDragOver: (event: React.DragEvent) => {
+      if (!dragging) return;
+      event.preventDefault(); event.dataTransfer.dropEffect = "move";
+      setDropLine(null);
+      setHoverScope(target.id);
+    },
+    onDragLeave: (event: React.DragEvent) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node)) setHoverScope(null);
+    },
+    onDrop: (event: React.DragEvent) => {
+      event.preventDefault(); event.stopPropagation(); moveRule(target);
+    },
+    style: hoverScope === target.id ? { outline: `2px solid ${tokens.colorBrandStroke1}` } : undefined,
+  });
 
   const renderBindingsTable = (target: Target) => (
     <table className={page.table}>
@@ -394,22 +425,19 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
             <tr key={binding.id} className={`${page.row} ${styles.scopesRow}`}
               style={dropLine?.id === binding.id ? { boxShadow: `inset 0 ${dropLine.after ? "-2px" : "2px"} ${tokens.colorBrandStroke1}` } : undefined}
               onDragOver={(event) => {
-                if (dragging?.targetId !== target.id || dragging.bindingId === binding.id) return;
+                if (!dragging || dragging.bindingId === binding.id) return;
                 event.preventDefault();
+                event.stopPropagation();
+                setHoverScope(null);
                 event.dataTransfer.dropEffect = "move";
                 const rect = event.currentTarget.getBoundingClientRect();
                 setDropLine({ id: binding.id, after: event.clientY > rect.top + rect.height / 2 });
               }}
               onDrop={(event) => {
                 event.preventDefault();
-                if (!dragging || dragging.targetId !== target.id || !dropLine) return;
-                const source = target.bindings.find((item) => item.id === dragging.bindingId);
-                if (!source || source.id === binding.id) return;
-                const bindings = target.bindings.filter((item) => item.id !== source.id);
-                const index = bindings.findIndex((item) => item.id === binding.id);
-                bindings.splice(index + (dropLine.after ? 1 : 0), 0, source);
-                onUpdateTargets(targets.map((item) => item.id === target.id ? { ...item, bindings } : item));
-                setDragging(null); setDropLine(null);
+                event.stopPropagation();
+                const rect = event.currentTarget.getBoundingClientRect();
+                moveRule(target, binding.id, event.clientY > rect.top + rect.height / 2);
               }}>
               <td className={styles.tdCheckbox}>
                 <div className={styles.ruleControls}>
@@ -420,7 +448,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                     event.dataTransfer.setData("text/plain", binding.id);
                     setDragging({ targetId: target.id, bindingId: binding.id });
                   }}
-                  onDragEnd={() => { setDragging(null); setDropLine(null); }}>⠿</span>
+                  onDragEnd={() => { setDragging(null); setDropLine(null); setHoverScope(null); }}>⠿</span>
                 <Checkbox
                   checked={!invalid && binding.enabled}
                   disabled={invalid}
@@ -592,6 +620,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
         <PageHeader title={t("nav.targets")} />
         <Button onClick={sortRules}>{t("targets.sortNow")}</Button>
       </div>
+      {moveNotice && <div role="status">{moveNotice}</div>}
 
       {globalTarget && (
         <div className={styles.section}>
@@ -600,7 +629,8 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
               {t("targets.globalTitle", { defaultValue: globalTarget.name })}
             </Subtitle2>
           </div>
-          <Card className={page.card}>
+          <Tooltip content={t("targets.moveTo", { name: scopeName(globalTarget) })} relationship="description" visible={hoverScope === globalTarget.id}>
+          <Card className={page.card} {...scopeDropProps(globalTarget)}>
             {renderBindingsTable(globalTarget)}
             <div>
               <Button
@@ -617,6 +647,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
               </Button>
             </div>
           </Card>
+          </Tooltip>
         </div>
       )}
 
@@ -651,7 +682,8 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
               : t(`targets.${group.id}Title`, { defaultValue: group.name });
 
           return (
-            <Card key={group.id} className={page.card}>
+            <Tooltip key={group.id} content={t("targets.moveTo", { name: groupDisplayName })} relationship="description" visible={hoverScope === group.id}>
+            <Card className={page.card} {...scopeDropProps(group)}>
               <div className={styles.groupHeader}>
                 <div
                   className={styles.groupTitleArea}
@@ -781,6 +813,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                 </>
               )}
             </Card>
+            </Tooltip>
           );
         })}
       </div>
