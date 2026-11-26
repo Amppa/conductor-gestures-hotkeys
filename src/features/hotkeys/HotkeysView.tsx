@@ -119,7 +119,7 @@ export const HotkeysView: React.FC<HotkeysViewProps> = ({
             icon={<Add16Regular />}
             onClick={handleAdd}
           >
-            {t("hotkeys.add")}
+            {t("common.add")}
           </Button>
         </div>
       </Card>

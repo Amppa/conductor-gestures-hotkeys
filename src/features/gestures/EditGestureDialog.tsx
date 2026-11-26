@@ -97,6 +97,7 @@ const useStyles = makeStyles({
 export type GestureDialogTab = "standard" | "record";
 
 interface EditGestureDialogProps {
+  isCreating?: boolean;
   buttonMode?: boolean;
   screenMode?: boolean;
   open: boolean;
@@ -126,6 +127,7 @@ function buildCommandString(
 }
 
 export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
+  isCreating = false,
   buttonMode = false,
   screenMode = false,
   open,
@@ -202,7 +204,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
     <Dialog open={open} onOpenChange={(_, data) => !data.open && onCancel()}>
       <DialogSurface className={styles.surface}>
         <DialogBody>
-          <DialogTitle>{t(buttonMode ? "gestures.editButton" : "dialogs.editGesture")}</DialogTitle>
+          <DialogTitle>{t(isCreating ? "common.add" : "common.edit")}</DialogTitle>
 
           <DialogContent className={styles.content}>
             {/* Command */}

@@ -8,6 +8,8 @@
     "applyFailed": "套用失敗: {{err}}"
   },
   "common": {
+    "add": "新增",
+    "edit": "編輯",
     "inDevelopment": "開發中"
   },
   "nav": {

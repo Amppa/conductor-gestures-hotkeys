@@ -152,13 +152,14 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
             icon={<Add16Regular />}
             onClick={handleOpenAddDialog}
           >
-            {t(buttonMode ? "gestures.addButton" : "gestures.add")}
+            {t("common.add")}
           </Button>
         </div>
       </Card>
 
       {editingGesture && (
         <EditGestureDialog
+          isCreating={isCreating}
           screenMode={screenMode}
           buttonMode={buttonMode}
           open={!!editingGesture}

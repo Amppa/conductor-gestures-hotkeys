@@ -85,7 +85,7 @@ export const EditHotkeyDialog: React.FC<EditHotkeyDialogProps> = ({
       <DialogSurface className={styles.surface}>
         <DialogBody>
           <DialogTitle>
-            {t(isCreating ? "hotkeys.addTitle" : "hotkeys.editTitle")}
+            {t(isCreating ? "common.add" : "common.edit")}
           </DialogTitle>
           <DialogContent className={styles.content}>
             <Field

@@ -8,6 +8,8 @@
     "applyFailed": "Apply failed: {{err}}"
   },
   "common": {
+    "add": "Add",
+    "edit": "Edit",
     "inDevelopment": "In Development"
   },
   "nav": {

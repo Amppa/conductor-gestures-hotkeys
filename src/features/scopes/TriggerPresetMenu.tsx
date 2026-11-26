@@ -40,7 +40,7 @@ export function TriggerPresetMenu({ templates, menuClassName, children, onSelect
                   ))}
                   <MenuDivider />
                   <MenuItem icon={<Add16Regular />} onClick={() => onCreate(category)}>
-                    {t(category === "hotkeys" ? "hotkeys.add" : category === "mouseButtons" ? "gestures.addButton" : "gestures.add")}
+                    {t("common.add")}
                   </MenuItem>
                 </MenuList>
               </MenuPopover>

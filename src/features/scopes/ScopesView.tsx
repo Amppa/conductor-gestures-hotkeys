@@ -385,6 +385,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
       )}
       {editingGesture && creationCategory !== "hotkeys" && (
         <EditGestureDialog
+          isCreating={creationCategory !== null}
           buttonMode={creationCategory === "mouseButtons"}
           screenMode={creationCategory === "screen" || (!creationCategory && isScreenTemplate(editingGesture.binding.gesture))}
           open={!!editingGesture}
