@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { makeStyles, tokens, Card, Badge, Button } from "@fluentui/react-components";
+import { makeStyles, tokens, Card, Button } from "@fluentui/react-components";
+import { getCommandCategory, type CommandCategory } from "../../domain/commandCategories";
 import { Add16Regular, Delete16Regular } from "@fluentui/react-icons";
 import { Action } from "../../domain/types";
 import { EditCommandDialog } from "./EditCommandDialog";
@@ -13,10 +14,6 @@ const useStyles = makeStyles({
     padding: "8px 12px",
     fontWeight: 600,
     userSelect: "none",
-  },
-  tdType: {
-    width: "120px",
-    padding: "8px 12px",
   },
   tdAction: {
     padding: "8px 12px",
@@ -34,12 +31,14 @@ const useStyles = makeStyles({
 });
 
 interface CommandsViewProps {
+  category: CommandCategory;
   actions: Action[];
   onUpdateActions?: (updated: Action[]) => void;
 }
 
 export const CommandsView: React.FC<CommandsViewProps> = ({
   actions,
+  category,
   onUpdateActions,
 }) => {
   const page = usePageStyles();
@@ -53,7 +52,7 @@ export const CommandsView: React.FC<CommandsViewProps> = ({
     setEditingAction({
       id: createId("action"),
       name: t("actions.newActionName"),
-      type: "keys",
+      type: category === "scriptCommands" ? "ahk" : "keys",
       value: "",
     });
   };
@@ -82,22 +81,19 @@ export const CommandsView: React.FC<CommandsViewProps> = ({
 
   return (
     <div className={page.container}>
-      <PageHeader title={t("nav.actions")} />
+      <PageHeader title={t(`nav.${category}`)} />
 
       <Card className={page.card}>
         <table className={page.table}>
           <thead>
             <tr>
               <th className={page.th}>{t("actions.tableName")}</th>
-              <th className={page.th} style={{ width: "120px" }}>
-                {t("actions.tableType")}
-              </th>
               <th className={page.th}>{t("actions.tableAction")}</th>
               <th className={page.th} style={{ width: "48px" }}></th>
             </tr>
           </thead>
           <tbody>
-            {actions.map((action) => (
+            {actions.filter((action) => getCommandCategory(action) === category).map((action) => (
               <tr
                 key={action.id}
                 className={`${page.row} ${page.clickableRow}`}
@@ -105,11 +101,6 @@ export const CommandsView: React.FC<CommandsViewProps> = ({
                 title={t("targets.doubleClickActionTip")}
               >
                 <td className={styles.tdName}>{formatActionName(t, action)}</td>
-                <td className={styles.tdType}>
-                  <Badge appearance="tint" color="informative">
-                    {action.type}
-                  </Badge>
-                </td>
                 <td className={styles.tdAction}>
                   <span className={styles.codeValue}>
                     {action.value || t("actions.emptyValue")}
@@ -129,9 +120,9 @@ export const CommandsView: React.FC<CommandsViewProps> = ({
                 </td>
               </tr>
             ))}
-            {actions.length === 0 && (
+            {!actions.some((action) => getCommandCategory(action) === category) && (
               <tr>
-                <td colSpan={4} className={page.emptyCell}>
+                <td colSpan={3} className={page.emptyCell}>
                   {t("targets.emptyBindings")}
                 </td>
               </tr>
@@ -155,6 +146,7 @@ export const CommandsView: React.FC<CommandsViewProps> = ({
         <EditCommandDialog
           open={!!editingAction}
           action={editingAction}
+          category={category}
           onSave={handleSaveAction}
           onCancel={() => {
             setEditingAction(null);

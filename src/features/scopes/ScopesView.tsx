@@ -39,6 +39,7 @@ import { formatHotkeyTrigger } from "../hotkeys/hotkeyTrigger";
 import { EditGestureDialog } from "../gestures/EditGestureDialog";
 import { EditHotkeyDialog } from "../hotkeys/EditHotkeyDialog";
 import { EditCommandDialog } from "../commands/EditCommandDialog";
+import type { CommandCategory } from "../../domain/commandCategories";
 import { AddProcessDialog } from "./AddProcessDialog";
 import { PageHeader, usePageStyles } from "../../shared/pageStyles";
 import { formatActionName } from "../../shared/displayNames";
@@ -84,6 +85,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
   const [editingAction, setEditingAction] = useState<{
     targetId: string;
     binding: Binding;
+    category: CommandCategory;
   } | null>(null);
   const [addProcessTargetId, setAddProcessTargetId] = useState<string | null>(null);
   const [pendingDeleteGroupId, setPendingDeleteGroupId] = useState<string | null>(null);
@@ -125,10 +127,12 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
     } } });
   };
 
-  const handleOpenActionEditor = (targetId: string, bindingId: string) => {
+  const handleOpenActionEditor = (targetId: string, bindingId: string, category: CommandCategory) => {
     const binding = findBinding(targetId, bindingId);
     if (binding) {
-      setEditingAction({ targetId, binding });
+      setEditingAction({ targetId, category, binding: { ...binding, action: {
+        id: createId("action"), name: t("actions.newActionName"), type: category === "scriptCommands" ? "ahk" : "keys", value: "",
+      } } });
     }
   };
 
@@ -394,6 +398,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
         <EditCommandDialog
           open={!!editingAction}
           action={editingAction.binding.action}
+          category={editingAction.category}
           onSave={handleSaveAction}
           onCancel={() => setEditingAction(null)}
         />

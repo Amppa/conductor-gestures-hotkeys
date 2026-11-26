@@ -6,6 +6,7 @@ import { MOUSE_BUTTONS, TRIGGER_CATEGORIES } from "../domain/triggerTypes";
 import { SCREEN_ZONES } from "../domain/triggers/screen";
 import { TRIGGER_INPUT_ERRORS } from "../domain/triggers/stroke";
 import { COMMON_HOTKEYS, ACTION_TYPE_LABEL_KEYS } from "../features/commands/commandPresets";
+import { COMMAND_CATEGORIES, SYSTEM_COMMANDS } from "../domain/commandCategories";
 
 function requireText(locale: object, path: string): void {
   let value: unknown = locale;
@@ -35,6 +36,8 @@ describe.each(Object.entries({ en, "zh-TW": zhTW }))("dynamic i18n contracts: %s
   it("covers command type labels and the actual common preset catalog", () => {
     for (const key of Object.values(ACTION_TYPE_LABEL_KEYS)) requireText(locale, key);
     for (const preset of COMMON_HOTKEYS) requireText(locale, `dialogs.${preset.key}`);
+    for (const category of COMMAND_CATEGORIES) requireText(locale, `nav.${category}`);
+    for (const preset of SYSTEM_COMMANDS) requireText(locale, `dialogs.${preset.label}`);
   });
 
   it("covers all parser errors and built-in scope titles", () => {

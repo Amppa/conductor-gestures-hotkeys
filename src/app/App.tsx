@@ -258,8 +258,10 @@ export const App: React.FC = () => {
               onUpdateHotkeys={handleUpdateHotkeys}
             />
           )}
-          {selectedTab === "actions" && (
+          {(selectedTab === "keyboardCommands" || selectedTab === "systemCommands" || selectedTab === "scriptCommands") && (
             <CommandsView
+              key={selectedTab}
+              category={selectedTab}
               actions={config.actionTemplates}
               onUpdateActions={handleUpdateActions}
             />

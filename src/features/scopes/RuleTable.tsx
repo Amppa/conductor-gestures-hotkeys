@@ -1,5 +1,7 @@
-import { makeStyles, tokens, Badge, Button, Checkbox, Menu, MenuTrigger, MenuPopover, MenuList, MenuItem, MenuDivider } from "@fluentui/react-components";
-import { Add16Regular, Delete16Regular, ChevronDown16Regular } from "@fluentui/react-icons";
+import { makeStyles, tokens, Badge, Button, Checkbox } from "@fluentui/react-components";
+import { Delete16Regular, ChevronDown16Regular } from "@fluentui/react-icons";
+import type { CommandCategory } from "../../domain/commandCategories";
+import { CommandPresetMenu } from "./CommandPresetMenu";
 import { useTranslation } from "react-i18next";
 import type { Target, Gesture, Action } from "../../domain/types";
 import type { TriggerCategory } from "../../domain/triggerTypes";
@@ -83,7 +85,7 @@ interface RuleTableProps {
   onSelectGesture: (targetId: string, bindingId: string, template: Gesture) => void;
   onCreateTrigger: (targetId: string, bindingId: string, category: TriggerCategory) => void;
   onSelectAction: (targetId: string, bindingId: string, template: Action) => void;
-  onEditAction: (targetId: string, bindingId: string) => void;
+  onEditAction: (targetId: string, bindingId: string, category: CommandCategory) => void;
   onDelete: (targetId: string, bindingId: string) => void;
 }
 
@@ -178,8 +180,9 @@ export function RuleTable({
                 </TriggerPresetMenu>
               </td>
               <td className={styles.tdAction}>
-                <Menu>
-                  <MenuTrigger disableButtonEnhancement>
+                <CommandPresetMenu templates={actionTemplates} menuClassName={styles.menuList}
+                  onSelect={(template) => handleSelectPresetAction(target.id, binding.id, template)}
+                  onCreate={(category) => handleOpenActionEditor(target.id, binding.id, category)}>
                     <div
                       className={styles.cellTriggerArea}
                       title={
@@ -205,29 +208,7 @@ export function RuleTable({
                         }}
                       />
                     </div>
-                  </MenuTrigger>
-                  <MenuPopover>
-                    <MenuList className={styles.menuList}>
-                      {actionTemplates.map((template) => (
-                        <MenuItem
-                          key={template.id}
-                          onClick={() =>
-                            handleSelectPresetAction(target.id, binding.id, template)
-                          }
-                        >
-                          {formatActionName(t, template)} ({template.value})
-                        </MenuItem>
-                      ))}
-                      <MenuDivider />
-                      <MenuItem
-                        icon={<Add16Regular />}
-                        onClick={() => handleOpenActionEditor(target.id, binding.id)}
-                      >
-                        {t("targets.addNewAction")}
-                      </MenuItem>
-                    </MenuList>
-                  </MenuPopover>
-                </Menu>
+                </CommandPresetMenu>
               </td>
               <td className={page.opsCell}>
                 <Button

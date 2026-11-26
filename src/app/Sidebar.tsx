@@ -28,7 +28,9 @@ export type NavTabId =
   | "mouseButtons"
   | "screen"
   | "hotkeys"
-  | "actions"
+  | "keyboardCommands"
+  | "systemCommands"
+  | "scriptCommands"
   | "popup-menu"
   | "settings";
 
@@ -60,6 +62,8 @@ const useStyles = makeStyles({
     display: "flex",
     flexDirection: "column",
     gap: "2px",
+    minHeight: 0,
+    overflowY: "auto",
   },
   tabList: {
     display: "flex",
@@ -146,9 +150,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onTabSelect={(_, data) => onTabSelect(data.value as NavTabId)}
           className={styles.tabList}
         >
-          <Tab value="actions" icon={<Flash24Regular />}>
-            {t("nav.actions")}
-          </Tab>
+          <Tab value="keyboardCommands" icon={<Keyboard24Regular />}>{t("nav.keyboardCommands")}</Tab>
+          <Tab value="systemCommands" icon={<Desktop24Regular />}>{t("nav.systemCommands")}</Tab>
+          <Tab value="scriptCommands" icon={<Flash24Regular />}>{t("nav.scriptCommands")}</Tab>
           <Tab value="popup-menu" icon={<List24Regular />}>
             {t("nav.popupMenu")}
           </Tab>
