@@ -29,12 +29,14 @@ const useStyles = makeStyles({
 
 interface GesturesViewProps {
   screenMode?: boolean;
+  buttonMode?: boolean;
   gestures: Gesture[];
   onUpdateGestures: (updated: Gesture[]) => void;
 }
 
 export const GesturesView: React.FC<GesturesViewProps> = ({
   screenMode = false,
+  buttonMode = false,
   gestures,
   onUpdateGestures,
 }) => {
@@ -48,7 +50,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
     setIsCreating(true);
     setEditingGesture({
       id: createId("gesture"),
-      trigger: screenMode ? "EdgeTop" : "R",
+      trigger: screenMode ? "EdgeTop" : buttonMode ? "X1" : "R",
       steps: screenMode ? ["WU"] : [],
     });
   };
@@ -85,8 +87,8 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
   return (
     <div className={page.container}>
       <PageHeader
-        title={t(screenMode ? "nav.screen" : "nav.gestures")}
-        description={screenMode ? t("gestures.screenDescription") : undefined}
+        title={t(screenMode ? "nav.screen" : buttonMode ? "nav.mouseButtons" : "nav.gestures")}
+        description={t(screenMode ? "gestures.screenDescription" : buttonMode ? "gestures.buttonDescription" : "gestures.inputDescription")}
       />
 
       <Card className={page.card}>
@@ -148,7 +150,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
             icon={<Add16Regular />}
             onClick={handleOpenAddDialog}
           >
-            {t("gestures.add")}
+            {t(buttonMode ? "gestures.addButton" : "gestures.add")}
           </Button>
         </div>
       </Card>
@@ -156,6 +158,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
       {editingGesture && (
         <EditGestureDialog
           screenMode={screenMode}
+          buttonMode={buttonMode}
           open={!!editingGesture}
           gesture={editingGesture}
           onSave={handleSaveGesture}

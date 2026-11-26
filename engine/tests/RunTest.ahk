@@ -21,6 +21,8 @@ global gTestResults := []
 global gFnIsProcessDisabled := (proc) => false
 
 DispatchHandler(trigger, steps, proc) {
+    global gDispatchCount
+    gDispatchCount += 1
     global gLastDispatched := { trigger: trigger, steps: steps, proc: proc }
     return true
 }
@@ -28,6 +30,7 @@ DispatchHandler(trigger, steps, proc) {
 global gFnDispatchGestureAction := DispatchHandler
 global gFnGetGestureActionName := (trigger, steps, proc) => ""
 global gLastDispatched := { trigger: "", steps: "", proc: "" }
+global gDispatchCount := 0
 
 ; ------------------------------------------------------------------------------
 ; Stream Simulator
@@ -136,8 +139,8 @@ gTrigger := "RButton"
 gSteps := ["R"]
 gStartProcess := "chrome.exe"
 HandleChordWheel("WU")
-tc5_pass := (gLastDispatched.trigger = "RButton" && gLastDispatched.steps = "R,WU")
-gTestResults.Push({ name: "Stroke Plus Chord Wheel (R + WU)", pass: tc5_pass, actual: gLastDispatched.steps })
+tc5_pass := (gLastDispatched.trigger = "" && gSteps.Length == 1)
+gTestResults.Push({ name: "Mixed Direction And Wheel Does Not Dispatch", pass: tc5_pass, actual: gLastDispatched.steps })
 
 ; Test Case 6: Pause flag suspends hotkeys, resets state, and blocks chord dispatch
 gLastDispatched := { trigger: "", steps: "", proc: "" }
@@ -164,14 +167,14 @@ gState := STATE_IDLE
 tc7_pass := (!gIsPaused && !A_IsSuspended)
 gTestResults.Push({ name: "Removing Pause Flag Resumes Hotkeys", pass: tc7_pass, actual: "paused=" . (gIsPaused ? "true" : "false") })
 
-SetMouseTriggers(["MButton", "RButton", "RButton+XButton1", "LButton+RButton"])
+SetMouseTriggers(["MButton+RButton", "RButton", "RButton+XButton1", "LButton+RButton"])
 held := Map("XButton1", true)
 partial := MouseTriggerForHeld(held)
 held["RButton"] := true
 forward := MouseTriggerForHeld(held)
 reverse := MouseTriggerForHeld(Map("RButton", true, "XButton1", true))
 gTestResults.Push({ name: "Chord Requires All Buttons And Ignores Press Order", pass: partial == "" && forward == "RButton+XButton1" && reverse == forward, actual: forward })
-gTestResults.Push({ name: "Middle Button Is Supported", pass: MouseTriggerForHeld(Map("MButton", true)) == "MButton", actual: "MButton" })
+gTestResults.Push({ name: "Middle Button Is Only Used In Chords", pass: MouseTriggerForHeld(Map("MButton", true)) == "" && MouseTriggerForHeld(Map("MButton", true, "RButton", true)) == "MButton+RButton", actual: "MButton+RButton" })
 gTestResults.Push({ name: "Left Alone Does Not Start A Gesture", pass: MouseTriggerForHeld(Map("LButton", true)) == "", actual: "LButton" })
 
 ; Exercise the real release handler: releasing either member ends the chord once.
@@ -197,6 +200,19 @@ clicked := gState == STATE_IDLE && gLastDispatched.trigger == "RButton+XButton1"
 gLastDispatched := { trigger: "", steps: "", proc: "" }
 OnMouseUp("XButton1")
 gTestResults.Push({ name: "Chord Without Movement Dispatches Once", pass: clicked && gLastDispatched.trigger == "", actual: "chord-click" })
+
+; Pure wheel gestures execute once per notch and may reverse direction.
+gState := STATE_PENDING
+gTrigger := "RButton"
+gSteps := []
+gChordWheelTriggered := false
+gDispatchCount := 0
+HandleChordWheel("WU")
+HandleChordWheel("WU")
+HandleChordWheel("WD")
+repeatOK := gDispatchCount == 3 && gLastDispatched.steps == "WD" && gSteps.Length == 0
+OnTriggerUp("RButton")
+gTestResults.Push({ name: "Wheel Repeats Per Notch Without Release Dispatch", pass: repeatOK && gDispatchCount == 3, actual: "count=" gDispatchCount })
 
 ; Compile Summary Report to JSON
 allPassed := true

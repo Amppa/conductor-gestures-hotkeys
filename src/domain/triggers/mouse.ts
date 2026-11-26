@@ -1,5 +1,5 @@
 import { normalizeTrigger } from "../triggerNormalization";
-import { isMouseTrigger } from "../triggerTypes";
+import { isMouseTrigger, mouseTriggerKind } from "../triggerTypes";
 import { parseSteps, StrokeInput } from "./stroke";
 
 export function parseMouseInput(raw: string, fallback = "R"): StrokeInput {
@@ -11,6 +11,8 @@ export function parseMouseInput(raw: string, fallback = "R"): StrokeInput {
   if (!text || !isMouseTrigger(trigger)) error = "invalidStroke";
   else if (source && new Set(source.split("+")).size !== source.split("+").length) error = "invalidStroke";
   else if (trigger === "L") error = "leftOnlyUnsupported";
+  else if (trigger === "M") error = "unsupportedMouseGesture";
   else if (!error && !parsed.steps.length && ["R", "M"].includes(trigger)) error = "singleClickUnsupported";
+  else if (!error && !mouseTriggerKind({ trigger, steps: parsed.steps })) error = "unsupportedMouseGesture";
   return { trigger, steps: parsed.steps, error };
 }

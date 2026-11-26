@@ -57,7 +57,7 @@ describe("migrateConfig", () => {
     const legacy: AppConfig = {
       ...DEFAULT_CONFIG,
       gestureTemplates: [
-        { id: "legacy", name: "Legacy", trigger: "RB", steps: [] },
+        { id: "legacy", name: "Legacy", trigger: "RB", steps: ["U"] },
       ],
       targets: DEFAULT_CONFIG.targets.map((target) =>
         target.kind === "global"
@@ -66,7 +66,7 @@ describe("migrateConfig", () => {
               bindings: [
                 {
                   ...target.bindings[0],
-                  gesture: { ...target.bindings[0].gesture, trigger: "MB" },
+                  gesture: { ...target.bindings[0].gesture, trigger: "X1B" },
                 },
               ],
             }
@@ -77,7 +77,7 @@ describe("migrateConfig", () => {
     const migrated = migrateConfig(legacy);
 
     expect(migrated.gestureTemplates[0].trigger).toBe("R");
-    expect(globalTarget(migrated).bindings[0].gesture.trigger).toBe("M");
+    expect(globalTarget(migrated).bindings[0].gesture.trigger).toBe("X1");
     expect(legacy.gestureTemplates[0].trigger).toBe("RB");
   });
 });

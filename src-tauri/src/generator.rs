@@ -701,8 +701,7 @@ mod tests {
     #[test]
     fn mouse_chords_are_canonical_gestures_not_keyboard_hotkeys() {
         let mut config = crate::config::default_app_config();
-        let mut binding = keyboard_binding("chord", "X1+R", "keys", "^w");
-        binding.gesture.steps = vec!["D".into()];
+        let binding = keyboard_binding("chord", "X1+R", "keys", "^w");
         config
             .targets
             .iter_mut()

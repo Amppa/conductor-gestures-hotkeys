@@ -758,19 +758,14 @@ HandleChordWheel(wheelDir) {
         return false
 
     gChordWheelTriggered := true
+    if (InStr(gTrigger, "+") || gSteps.Length > 0)
+        return true
+    SetTimer(TrackGesture, 0)
     LogGesture("Chord Wheel: Trigger=" . gTrigger . " Wheel=" . wheelDir . " Process=" . gStartProcess)
-    if (gSteps.Length > 0) {
-        gSteps.Push(wheelDir)
-        stepStr := ""
-        for i, step in gSteps
-            stepStr .= (i == 1 ? "" : ",") . step
-    } else {
-        stepStr := wheelDir
-    }
-    UpdateGestureOSD(gTrigger, gSteps.Length ? gSteps : [wheelDir], gStartProcess)
+    UpdateGestureOSD(gTrigger, [wheelDir], gStartProcess)
     ScheduleHideGestureOSD()
 
-    gFnDispatchGestureAction(gTrigger, stepStr, gStartProcess)
+    gFnDispatchGestureAction(gTrigger, wheelDir, gStartProcess)
     return true
 }
 

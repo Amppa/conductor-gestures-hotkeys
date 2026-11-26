@@ -15,8 +15,8 @@ describe("mouse trigger contract", () => {
 
   it("rejects left-only and incomplete chords while allowing middle and mixed gestures", () => {
     expect(validateStrokeInput("L, 🡣", "L")).toBe("leftOnlyUnsupported");
-    expect(validateStrokeInput("L+R, 🡣", "R")).toBeNull();
-    expect(validateStrokeInput("M, 滾輪↑", "M")).toBeNull();
+    expect(validateStrokeInput("L+R, 🡣", "R")).toBe("unsupportedMouseGesture");
+    expect(validateStrokeInput("M, 滾輪↑", "M")).toBe("unsupportedMouseGesture");
     expect(validateStrokeInput("R+R, 🡣", "R")).toBe("invalidStroke");
     expect(isGestureIncomplete({ trigger: "L", steps: ["D"] })).toBe(true);
     expect(isGestureIncomplete({ trigger: "R+X1", steps: [] })).toBe(false);

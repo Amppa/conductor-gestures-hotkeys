@@ -11,7 +11,7 @@ import { CommandsView } from "../features/commands/CommandsView";
 import { SettingsView } from "../features/settings/SettingsView";
 import { DEFAULT_CONFIG } from "../domain/defaults";
 import { AppConfig, Target, Gesture, Action } from "../domain/types";
-import { isKeyboardTemplate, isScreenTemplate } from "../domain/triggerTypes";
+import { isKeyboardTemplate, isScreenTemplate, getTriggerCategory } from "../domain/triggerTypes";
 import { migrateConfig } from "../domain/configNormalization";
 import {
   applyConfig,
@@ -156,7 +156,7 @@ export const App: React.FC = () => {
       gestureTemplates: [
         ...gestures,
         ...previous.gestureTemplates.filter(
-          (template) => isKeyboardTemplate(template) || isScreenTemplate(template),
+          (template) => getTriggerCategory(template) !== "gestures",
         ),
       ],
     }));
@@ -172,6 +172,13 @@ export const App: React.FC = () => {
         ...templates,
       ],
     }));
+  };
+
+  const handleUpdateMouseButtons = (templates: Gesture[]) => {
+    setConfig((previous) => ({ ...previous, gestureTemplates: [
+      ...previous.gestureTemplates.filter((template) => getTriggerCategory(template) !== "mouseButtons"),
+      ...templates,
+    ] }));
   };
 
   const handleUpdateHotkeys = (hotkeys: Gesture[]) => {
@@ -226,9 +233,16 @@ export const App: React.FC = () => {
           {selectedTab === "gestures" && (
             <GesturesView
               gestures={config.gestureTemplates.filter(
-                (template) => !isKeyboardTemplate(template) && !isScreenTemplate(template),
+                (template) => getTriggerCategory(template) === "gestures",
               )}
               onUpdateGestures={handleUpdateGestures}
+            />
+          )}
+          {selectedTab === "mouseButtons" && (
+            <GesturesView
+              buttonMode
+              gestures={config.gestureTemplates.filter((template) => getTriggerCategory(template) === "mouseButtons")}
+              onUpdateGestures={handleUpdateMouseButtons}
             />
           )}
           {selectedTab === "screen" && (

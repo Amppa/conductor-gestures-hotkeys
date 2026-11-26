@@ -97,10 +97,7 @@ fn validate_enabled_binding_duplicates(config: &AppConfig) -> Result<(), String>
         let mut seen = HashSet::new();
         for binding in target.bindings.iter().filter(|binding| binding.enabled) {
             let mouse_trigger = normalize_trigger(binding.gesture.trigger.trim());
-            if mouse_trigger == "L"
-                || ((mouse_trigger == "M" || mouse_trigger == "R")
-                    && binding.gesture.steps.is_empty())
-            {
+            if !crate::config::supported_mouse_trigger(&mouse_trigger, &binding.gesture.steps) {
                 return Err(format!("Scope「{}」規則「{}」的滑鼠觸發不完整：左鍵不能單獨使用，單獨中鍵或右鍵需加入移動或滾輪操作。", target.name, binding.id));
             }
             let trigger = normalize_trigger(binding.gesture.trigger.trim()).to_ascii_lowercase();
@@ -562,7 +559,11 @@ mod tests {
         target.bindings[0].gesture.trigger = "R+X1".into();
         target.bindings[0].gesture.steps.clear();
         assert!(super::validate_enabled_binding_duplicates(&config).is_ok());
-        let target = config.targets.iter_mut().find(|target| target.kind == "global").unwrap();
+        let target = config
+            .targets
+            .iter_mut()
+            .find(|target| target.kind == "global")
+            .unwrap();
         let mut duplicate = target.bindings[0].clone();
         duplicate.id = "chord-copy".into();
         duplicate.gesture.trigger = "X1+R".into();

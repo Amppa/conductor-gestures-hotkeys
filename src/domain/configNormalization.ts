@@ -6,6 +6,15 @@ import {
 } from "./defaults";
 import { AppConfig, EngineConfig } from "./types";
 import { normalizeConfigTriggers } from "./triggerNormalization";
+import { isMouseTrigger, mouseTriggerKind } from "./triggerTypes";
+
+export function removeUnsupportedMouseTriggers(config: AppConfig): AppConfig {
+  const supported = (gesture: AppConfig["gestureTemplates"][number]) => !isMouseTrigger(gesture.trigger) || mouseTriggerKind(gesture) !== null;
+  return { ...config,
+    gestureTemplates: config.gestureTemplates.filter(supported),
+    targets: config.targets.map((target) => ({ ...target, bindings: target.bindings.filter((binding) => supported(binding.gesture)) })),
+  };
+}
 
 type LegacyEngineConfig = Partial<EngineConfig> & { osdFontSizePt?: number };
 
@@ -57,9 +66,9 @@ function mergeFactoryGlobalBindings(config: AppConfig): AppConfig {
  * Migration used when loading a persisted configuration at startup.
  */
 export function migrateConfig(rawConfig: AppConfig): AppConfig {
-  return normalizeConfigTriggers(
+  return removeUnsupportedMouseTriggers(normalizeConfigTriggers(
     mergeFactoryGlobalBindings(mergeActionTemplates(rawConfig)),
-  );
+  ));
 }
 
 function normalizeEngine(engine?: LegacyEngineConfig): EngineConfig {
@@ -86,9 +95,9 @@ function normalizeEngine(engine?: LegacyEngineConfig): EngineConfig {
  * Normalization used for backups created by older builds.
  */
 export function normalizeImportedConfig(rawConfig: AppConfig): AppConfig {
-  return normalizeConfigTriggers({
+  return removeUnsupportedMouseTriggers(normalizeConfigTriggers({
     ...rawConfig,
     engine: normalizeEngine(rawConfig.engine as LegacyEngineConfig | undefined),
     keyRemaps: rawConfig.keyRemaps ?? [],
-  });
+  }));
 }

@@ -1,4 +1,4 @@
-export const TRIGGER_INPUT_ERRORS = ["invalidStroke", "leftOnlyUnsupported", "singleClickUnsupported"] as const;
+export const TRIGGER_INPUT_ERRORS = ["invalidStroke", "leftOnlyUnsupported", "singleClickUnsupported", "unsupportedMouseGesture", "wrongMousePage"] as const;
 export type TriggerInputError = typeof TRIGGER_INPUT_ERRORS[number];
 
 export interface StrokeInput {

@@ -120,7 +120,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
     setCreationCategory(category);
     setEditingGesture({ targetId, binding: { ...binding, gesture: {
       id: createId("gesture"),
-      trigger: category === "screen" ? "EdgeTop" : category === "hotkeys" ? "" : "R",
+      trigger: category === "screen" ? "EdgeTop" : category === "hotkeys" ? "" : category === "mouseButtons" ? "X1" : "R",
       steps: category === "screen" ? ["WU"] : [],
     } } });
   };
@@ -381,6 +381,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
       )}
       {editingGesture && creationCategory !== "hotkeys" && (
         <EditGestureDialog
+          buttonMode={creationCategory === "mouseButtons"}
           screenMode={creationCategory === "screen" || (!creationCategory && isScreenTemplate(editingGesture.binding.gesture))}
           open={!!editingGesture}
           gesture={editingGesture.binding.gesture}

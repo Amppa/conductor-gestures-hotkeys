@@ -22,6 +22,7 @@ import {
   formatGestureLabel,
 } from "./gestureSymbols";
 import { parseGestureInput } from "../../domain/triggers/gestureInput";
+import { mouseTriggerKind } from "../../domain/triggerTypes";
 import { MousePreview } from "./MousePreview";
 import { GestureRecorderCanvas } from "./GestureRecorderCanvas";
 
@@ -96,6 +97,7 @@ const useStyles = makeStyles({
 export type GestureDialogTab = "standard" | "record";
 
 interface EditGestureDialogProps {
+  buttonMode?: boolean;
   screenMode?: boolean;
   open: boolean;
   gesture: Gesture;
@@ -124,6 +126,7 @@ function buildCommandString(
 }
 
 export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
+  buttonMode = false,
   screenMode = false,
   open,
   gesture,
@@ -154,6 +157,11 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
 
   // Click mouse SVG button to change trigger
   const handleSelectTrigger = (newTrigger: GestureTrigger) => {
+    if (!buttonMode) {
+      setTrigger(newTrigger);
+      setCommandText(buildCommandString(newTrigger, steps, t));
+      return;
+    }
     const selected = trigger.split("+");
     const next = ["L", "M", "R", "X1", "X2"].filter((key) =>
       key === newTrigger ? !selected.includes(key) : selected.includes(key),
@@ -179,8 +187,10 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
 
   const handleSave = () => {
     const parsed = parseGestureInput(commandText, trigger);
-    setError(parsed.error);
-    if (parsed.error) return;
+    const kind = mouseTriggerKind(parsed);
+    const validation = parsed.error ?? (!screenMode && (buttonMode ? kind !== "buttons" : kind !== "direction" && kind !== "wheel") ? "wrongMousePage" : null);
+    setError(validation);
+    if (validation) return;
     onSave({
       ...gesture,
       trigger: parsed.trigger || trigger,
@@ -192,7 +202,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
     <Dialog open={open} onOpenChange={(_, data) => !data.open && onCancel()}>
       <DialogSurface className={styles.surface}>
         <DialogBody>
-          <DialogTitle>{gesture.id ? t("dialogs.editGesture") : t("gestures.add")}</DialogTitle>
+          <DialogTitle>{t(buttonMode ? "gestures.editButton" : "dialogs.editGesture")}</DialogTitle>
 
           <DialogContent className={styles.content}>
             {/* Command */}
@@ -219,7 +229,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
                 setSteps([data.value]); setCommandText(buildCommandString(trigger, [data.value], t));
               }}><option value="WU">{t("triggers.wheelUp")}</option><option value="WD">{t("triggers.wheelDown")}</option></Select>}
             </>}
-            {!screenMode && <TabList
+            {!screenMode && !buttonMode && <TabList
               selectedValue={activeTab}
               onTabSelect={(_, data) => setActiveTab(data.value as GestureDialogTab)}
               className={styles.tabList}
@@ -235,24 +245,27 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
             {/* Standard Mode: Mouse SVG on the left, 3x3 Arrow Grid on the right */}
             {!screenMode && activeTab === "standard" && (
               <>
-              <div style={{ whiteSpace: "pre-line" }}>{t("gestures.inputDescription")}</div>
+              <div style={{ whiteSpace: "pre-line" }}>{t(buttonMode ? "gestures.buttonDescription" : "gestures.inputDescription")}</div>
               <div className={styles.standardContentRow}>
                 <div className={styles.mouseCol}>
                   <MousePreview
+                    allowLeft={buttonMode}
+                    allowMiddle={buttonMode}
+                    hideLeftMiddleLabels={!buttonMode}
                     selectedTrigger={trigger}
                     onSelectTrigger={handleSelectTrigger}
                   />
                 </div>
-                <div aria-hidden="true" style={{ alignSelf: "stretch", width: 1, backgroundColor: tokens.colorNeutralStroke2 }} />
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                {!buttonMode && <div aria-hidden="true" style={{ alignSelf: "stretch", width: 1, backgroundColor: tokens.colorNeutralStroke2 }} />}
+                {!buttonMode && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                   <Button onClick={() => handleAddArrow("WU")}>{t("triggers.wheelUp")}</Button>
                   <svg width="64" height="88" viewBox="0 0 64 88" aria-hidden="true">
                     <rect x="12" y="2" width="40" height="84" rx="20" fill={tokens.colorNeutralBackground4} stroke={tokens.colorNeutralStroke1} strokeWidth="1.2" />
                     {[22, 33, 44, 55, 66].map((y) => <path key={y} d={`M20 ${y} H44`} stroke={tokens.colorNeutralStroke2} strokeWidth="1.2" />)}
                   </svg>
                   <Button onClick={() => handleAddArrow("WD")}>{t("triggers.wheelDown")}</Button>
-                </div>
-                <div className={styles.gridCol}>
+                </div>}
+                {!buttonMode && <div className={styles.gridCol}>
                   <div className={styles.arrowGrid}>
                     {DIRECTION_BUTTONS.map((btn, idx) => (
                       <Button
@@ -266,13 +279,13 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
                       </Button>
                     ))}
                   </div>
-                </div>
+                </div>}
               </div>
               </>
             )}
 
             {/* Record Mode: Interactive Canvas */}
-            {!screenMode && activeTab === "record" && (
+            {!screenMode && !buttonMode && activeTab === "record" && (
               <div className={styles.recordContent}>
                 <GestureRecorderCanvas
                   initialTrigger={trigger}

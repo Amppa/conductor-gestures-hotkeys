@@ -95,11 +95,17 @@ const useStyles = makeStyles({
 });
 
 interface MousePreviewProps {
+  allowLeft?: boolean;
+  allowMiddle?: boolean;
+  hideLeftMiddleLabels?: boolean;
   selectedTrigger: GestureTrigger;
   onSelectTrigger: (trigger: GestureTrigger) => void;
 }
 
 export const MousePreview: React.FC<MousePreviewProps> = ({
+  allowLeft = true,
+  allowMiddle = true,
+  hideLeftMiddleLabels = false,
   selectedTrigger,
   onSelectTrigger,
 }) => {
@@ -158,11 +164,13 @@ export const MousePreview: React.FC<MousePreviewProps> = ({
         <path
           d="M 16 42 A 34 34 0 0 1 48 8.1 L 48 52 L 16 52 Z"
           className={`${styles.button} ${isL ? styles.buttonActive : ""}`}
-          onClick={() => onSelectTrigger("L")}
+          style={allowLeft ? undefined : { opacity: 0.35, cursor: "not-allowed" }}
+          aria-disabled={!allowLeft}
+          onClick={() => allowLeft && onSelectTrigger("L")}
         />
-        <text x="32" y="32" className={isL ? styles.btnTextActive : styles.btnText}>
+        {!hideLeftMiddleLabels && <text x="32" y="32" className={isL ? styles.btnTextActive : styles.btnText}>
           L
-        </text>
+        </text>}
 
         {/* Right Click Button (R - Top Right Arc) */}
         <path
@@ -182,14 +190,16 @@ export const MousePreview: React.FC<MousePreviewProps> = ({
           height="26"
           rx="4"
           className={`${styles.wheel} ${isM ? styles.wheelActive : ""}`}
-          onClick={() => onSelectTrigger("M")}
+          style={allowMiddle ? undefined : { opacity: 0.35, cursor: "not-allowed" }}
+          aria-disabled={!allowMiddle}
+          onClick={() => allowMiddle && onSelectTrigger("M")}
         />
         <line x1="47" y1="27" x2="53" y2="27" stroke="#ffffff" strokeWidth="0.8" opacity="0.6" />
         <line x1="47" y1="33" x2="53" y2="33" stroke="#ffffff" strokeWidth="0.8" opacity="0.6" />
         <line x1="47" y1="39" x2="53" y2="39" stroke="#ffffff" strokeWidth="0.8" opacity="0.6" />
-        <text x="50" y="58" className={isM ? styles.btnTextActive : styles.btnText}>
+        {!hideLeftMiddleLabels && <text x="50" y="58" className={isM ? styles.btnTextActive : styles.btnText}>
           M
-        </text>
+        </text>}
       </svg>
     </div>
   );

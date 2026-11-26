@@ -1,4 +1,5 @@
 import React from "react";
+import { MouseWirelessIcon } from "../shared/icons/MouseWirelessIcon";
 import { useTranslation } from "react-i18next";
 import {
   TabList,
@@ -24,6 +25,7 @@ export type NavTabId =
   | "targets"
   | "excluded"
   | "gestures"
+  | "mouseButtons"
   | "screen"
   | "hotkeys"
   | "actions"
@@ -123,6 +125,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <Tab value="gestures" icon={<HandDraw24Regular />}>
             {t("nav.gestures")}
+          </Tab>
+          <Tab value="mouseButtons" icon={<MouseWirelessIcon />}>
+            {t("nav.mouseButtons")}
           </Tab>
           <Tab value="screen" icon={<Desktop24Regular />}>
             {t("nav.screen")}

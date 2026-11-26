@@ -253,10 +253,14 @@ fn default_gesture_templates() -> Vec<GestureTemplate> {
         gesture_template("r-right", "Right", "R", &["R"]),
         gesture_template("r-up", "Up", "R", &["U"]),
         gesture_template("r-down", "Down", "R", &["D"]),
-        gesture_template("r-down-right", "Down-Right", "R", &["D", "R"]),
-        gesture_template("r-up-left", "Up-Left", "R", &["U", "L"]),
+        gesture_template("r-right-down", "Right-Down", "R", &["R", "D"]),
+        gesture_template("r-right-up", "Right-Up", "R", &["R", "U"]),
+        gesture_template("r-left-down", "Left-Down", "R", &["L", "D"]),
+        gesture_template("r-left-up", "Left-Up", "R", &["L", "U"]),
         gesture_template("x1-click", "X1 Click", "X1", &[]),
         gesture_template("x2-click", "X2 Click", "X2", &[]),
+        gesture_template("r-x2-click", "R+X2", "R+X2", &[]),
+        gesture_template("r-x1-click", "R+X1", "R+X1", &[]),
         gesture_template("r-wu", "R + Wheel Up", "R", &["WU"]),
         gesture_template("r-wd", "R + Wheel Down", "R", &["WD"]),
         gesture_template("corner-br", "Bottom-Right Corner", "CornerBR", &[]),
@@ -511,6 +515,31 @@ pub(crate) fn normalize_trigger(trigger: &str) -> String {
     }
 }
 
+pub(crate) fn supported_mouse_trigger(trigger: &str, steps: &[String]) -> bool {
+    let keys = trigger.split('+').collect::<Vec<_>>();
+    if !keys
+        .iter()
+        .all(|key| ["L", "M", "R", "X1", "X2"].contains(key))
+    {
+        return true;
+    }
+    if trigger == "L" {
+        return false;
+    }
+    if steps.is_empty() {
+        return keys.len() > 1 || ["X1", "X2"].contains(&trigger);
+    }
+    if keys.len() > 1 || trigger == "M" {
+        return false;
+    }
+    if steps.len() == 1 && ["WU", "WD"].contains(&steps[0].as_str()) {
+        return true;
+    }
+    steps
+        .iter()
+        .all(|step| ["U", "D", "L", "R", "UL", "UR", "DL", "DR"].contains(&step.as_str()))
+}
+
 /// Normalizes every persisted trigger without changing template or rule identity.
 pub(crate) fn normalize_config_triggers(config: &mut AppConfig) {
     for template in &mut config.gesture_templates {
@@ -520,11 +549,50 @@ pub(crate) fn normalize_config_triggers(config: &mut AppConfig) {
         for binding in &mut target.bindings {
             binding.gesture.trigger = normalize_trigger(&binding.gesture.trigger);
         }
+        target.bindings.retain(|binding| {
+            supported_mouse_trigger(&binding.gesture.trigger, &binding.gesture.steps)
+        });
     }
+    config
+        .gesture_templates
+        .retain(|template| supported_mouse_trigger(&template.trigger, &template.steps));
 }
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn removes_obsolete_mouse_combinations_and_mixed_wheel_rules() {
+        let mut config = default_app_config();
+        config
+            .gesture_templates
+            .push(gesture_template("mixed", "", "R", &["D", "WU"]));
+        config
+            .gesture_templates
+            .push(gesture_template("chord", "", "R+X1", &["D"]));
+        let group = config
+            .targets
+            .iter_mut()
+            .find(|target| target.kind == "global")
+            .unwrap();
+        let mut invalid = group.bindings[0].clone();
+        invalid.id = "obsolete".into();
+        invalid.gesture.trigger = "R+X1".into();
+        group.bindings.push(invalid);
+        normalize_config_triggers(&mut config);
+        assert!(!config
+            .gesture_templates
+            .iter()
+            .any(|template| ["mixed", "chord"].contains(&template.id.as_str())));
+        assert!(!config
+            .targets
+            .iter()
+            .flat_map(|target| &target.bindings)
+            .any(|binding| binding.id == "obsolete"));
+        assert!(supported_mouse_trigger("R+X1", &[]));
+        assert!(!supported_mouse_trigger("M", &["WU".into()]));
+        assert!(supported_mouse_trigger("M+R", &[]));
+        assert!(!supported_mouse_trigger("R", &["WU".into(), "WD".into()]));
+    }
     use super::*;
 
     #[test]
@@ -558,10 +626,14 @@ mod tests {
                 "r-right",
                 "r-up",
                 "r-down",
-                "r-down-right",
-                "r-up-left",
+                "r-right-down",
+                "r-right-up",
+                "r-left-down",
+                "r-left-up",
                 "x1-click",
                 "x2-click",
+                "r-x2-click",
+                "r-x1-click",
                 "r-wu",
                 "r-wd",
                 "corner-br",

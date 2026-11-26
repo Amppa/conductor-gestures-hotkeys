@@ -4,8 +4,8 @@ import { parseScreenInput, SCREEN_ZONES } from "./screen";
 import { parseMouseInput } from "./mouse";
 
 describe("gesture input boundaries", () => {
-  it.each(["R,🡣,滾輪↑", "R, 🡣, 滾輪↑", "R🡣Wheel↑"])("accepts equivalent spacing: %s", (raw) => {
-    expect(parseMouseInput(raw)).toEqual({ trigger: "R", steps: ["D", "WU"], error: null });
+  it.each(["R,🡣,🡢", "R, 🡣, 🡢", "R🡣🡢"])("accepts equivalent spacing: %s", (raw) => {
+    expect(parseMouseInput(raw)).toEqual({ trigger: "R", steps: ["D", "R"], error: null });
   });
 
   it("keeps adjacent arrows separate from a diagonal code", () => {
