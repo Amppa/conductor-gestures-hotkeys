@@ -18,6 +18,16 @@ const MODIFIER_KEYS: Record<string, string> = {
 };
 
 const NAMED_KEYS: Record<string, string> = {
+  Minus: "-",
+  Equal: "=",
+  BracketLeft: "[",
+  BracketRight: "]",
+  Backslash: "\\",
+  Semicolon: ";",
+  Quote: "'",
+  Comma: ",",
+  Period: ".",
+  Slash: "/",
   Escape: "Esc",
   Enter: "Enter",
   Space: "Space",

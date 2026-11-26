@@ -908,6 +908,20 @@ mod tests {
         use std::time::{SystemTime, UNIX_EPOCH};
 
         let mut cfg = default_app_config();
+        for target in cfg
+            .targets
+            .iter_mut()
+            .filter(|target| target.kind == "global")
+        {
+            for key in ["-", "=", "[", "]", "\\", ";", "'", ",", ".", "/"] {
+                for prefix in ["", "^+"] {
+                    let trigger = format!("{prefix}{key}");
+                    target
+                        .bindings
+                        .push(keyboard_binding(&trigger, &trigger, "noop", ""));
+                }
+            }
+        }
         if let Some(group) = cfg.targets.iter_mut().find(|t| t.kind == "group") {
             group.bindings.push(keyboard_binding(
                 "group-insert",
