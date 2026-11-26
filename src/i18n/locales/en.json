@@ -101,7 +101,16 @@
     "addNewGesture": "Set Trigger...",
     "addNewAction": "Set Command..."
   },
+  "screenEditor": {"corners":"Screen corners","edges":"Screen edges","halves":"Half screen edges"},
   "screenLabels": {
+    "EdgeTopLeftHalf": "Edge T-L",
+    "EdgeTopRightHalf": "Edge T-R",
+    "EdgeBottomLeftHalf": "Edge B-L",
+    "EdgeBottomRightHalf": "Edge B-R",
+    "EdgeLeftTopHalf": "Edge L-T",
+    "EdgeLeftBottomHalf": "Edge L-B",
+    "EdgeRightTopHalf": "Edge R-T",
+    "EdgeRightBottomHalf": "Edge R-B",
     "EdgeTop": "Edge T", "EdgeBottom": "Edge B", "EdgeLeft": "Edge L", "EdgeRight": "Edge R",
     "CornerTL": "Corner TL", "CornerBL": "Corner BL", "CornerBR": "Corner BR", "CornerTR": "Corner TR"
   },
@@ -223,6 +232,14 @@
     "emptyTemplates": "No gesture templates available"
   },
   "triggers": {
+    "EdgeTopLeftHalf": "Edge T-L",
+    "EdgeTopRightHalf": "Edge T-R",
+    "EdgeBottomLeftHalf": "Edge B-L",
+    "EdgeBottomRightHalf": "Edge B-R",
+    "EdgeLeftTopHalf": "Edge L-T",
+    "EdgeLeftBottomHalf": "Edge L-B",
+    "EdgeRightTopHalf": "Edge R-T",
+    "EdgeRightBottomHalf": "Edge R-B",
     "R": "R (Right Click)",
     "M": "M (Middle Click)",
     "L": "L (Left Click)",

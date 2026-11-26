@@ -1,4 +1,5 @@
 import { Gesture, GestureTrigger } from "./types";
+import { SCREEN_ZONES } from "./triggers/screen";
 
 export const MOUSE_BUTTONS = ["L", "M", "R", "X1", "X2"] as const;
 export const TRIGGER_CATEGORIES = ["gestures", "mouseButtons", "screen", "hotkeys"] as const;
@@ -46,7 +47,7 @@ const MOUSE_OR_SPATIAL_TRIGGERS = new Set<string>([
 ]);
 
 export function isKeyboardTrigger(trigger: GestureTrigger): boolean {
-  return !MOUSE_OR_SPATIAL_TRIGGERS.has(trigger) && !isMouseTrigger(trigger);
+  return !MOUSE_OR_SPATIAL_TRIGGERS.has(trigger) && !(trigger in SCREEN_ZONES) && !isMouseTrigger(trigger);
 }
 
 export function isMouseTrigger(trigger: string): boolean {
@@ -58,5 +59,5 @@ export function isKeyboardTemplate(template: Gesture): boolean {
 }
 
 export function isScreenTemplate(template: Gesture): boolean {
-  return /^(Edge(Top|Bottom|Left|Right|TopL|TopR)|Corner(TL|TR|BL|BR))$/.test(template.trigger);
+  return template.trigger in SCREEN_ZONES || ["EdgeTopL", "EdgeTopR"].includes(template.trigger);
 }

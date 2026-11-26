@@ -79,6 +79,14 @@ const MOUSE_OR_SPATIAL_TRIGGERS: &[&str] = &[
     "EdgeBottom",
     "EdgeLeft",
     "EdgeRight",
+    "EdgeTopLeftHalf",
+    "EdgeTopRightHalf",
+    "EdgeBottomLeftHalf",
+    "EdgeBottomRightHalf",
+    "EdgeLeftTopHalf",
+    "EdgeLeftBottomHalf",
+    "EdgeRightTopHalf",
+    "EdgeRightBottomHalf",
 ];
 
 const ACTION_NAMES_ZH_TW: &[(&str, &str)] = &[
@@ -395,6 +403,16 @@ fn write_disabled_process_function(script: &mut String, executables: &[String]) 
     script.push_str("}\n\n");
 }
 
+fn ordered_gesture_bindings(target: &Target) -> Vec<&Binding> {
+    let mut bindings = target
+        .bindings
+        .iter()
+        .filter(|binding| is_gesture_binding(binding))
+        .collect::<Vec<_>>();
+    bindings.sort_by_key(|binding| !binding.gesture.trigger.ends_with("Half"));
+    bindings
+}
+
 fn write_dispatch_action(script: &mut String, action: &Action, indent: &str) {
     match action.action_type.as_str() {
         "keys" | "wheel" => {
@@ -432,15 +450,11 @@ fn write_action_dispatcher(
 
         script.push_str(&format!("    ; Group: {}\n", target.name));
         script.push_str(&format!("    if ({}) {{\n", app_condition(&executables)));
-        for binding in target
-            .bindings
-            .iter()
-            .filter(|binding| is_gesture_binding(binding))
-        {
+        for binding in ordered_gesture_bindings(target) {
             let trigger = trigger_to_ahk_name(&binding.gesture.trigger);
             let steps = binding.gesture.steps.join(",");
             script.push_str(&format!(
-                "        if (trigger = \"{}\" && stepStr = \"{}\") {{\n",
+                "        if (GestureTriggerMatches(trigger, \"{}\") && stepStr = \"{}\") {{\n",
                 trigger, steps
             ));
             write_dispatch_action(script, &binding.action, "            ");
@@ -453,15 +467,11 @@ fn write_action_dispatcher(
     // Priority 1: Global
     for target in global_targets {
         script.push_str("    ; Priority 1: Global Fallback\n");
-        for binding in target
-            .bindings
-            .iter()
-            .filter(|binding| is_gesture_binding(binding))
-        {
+        for binding in ordered_gesture_bindings(target) {
             let trigger = trigger_to_ahk_name(&binding.gesture.trigger);
             let steps = binding.gesture.steps.join(",");
             script.push_str(&format!(
-                "    if (trigger = \"{}\" && stepStr = \"{}\") {{\n",
+                "    if (GestureTriggerMatches(trigger, \"{}\") && stepStr = \"{}\") {{\n",
                 trigger, steps
             ));
             write_dispatch_action(script, &binding.action, "        ");
@@ -491,11 +501,7 @@ fn write_action_name_getter(
         }
 
         script.push_str(&format!("    if ({}) {{\n", app_condition(&executables)));
-        for binding in target
-            .bindings
-            .iter()
-            .filter(|binding| is_gesture_binding(binding))
-        {
+        for binding in ordered_gesture_bindings(target) {
             let trigger = trigger_to_ahk_name(&binding.gesture.trigger);
             let steps = binding.gesture.steps.join(",");
             let name = resolve_action_display_name(
@@ -504,7 +510,7 @@ fn write_action_name_getter(
                 &config.language,
             );
             script.push_str(&format!(
-                "        if (trigger = \"{}\" && stepStr = \"{}\")\n",
+                "        if (GestureTriggerMatches(trigger, \"{}\") && stepStr = \"{}\")\n",
                 trigger, steps
             ));
             script.push_str(&format!("            return \"{}\"\n", ahk_quote(&name)));
@@ -513,11 +519,7 @@ fn write_action_name_getter(
     }
 
     for target in global_targets {
-        for binding in target
-            .bindings
-            .iter()
-            .filter(|binding| is_gesture_binding(binding))
-        {
+        for binding in ordered_gesture_bindings(target) {
             let trigger = trigger_to_ahk_name(&binding.gesture.trigger);
             let steps = binding.gesture.steps.join(",");
             let name = resolve_action_display_name(
@@ -526,7 +528,7 @@ fn write_action_name_getter(
                 &config.language,
             );
             script.push_str(&format!(
-                "    if (trigger = \"{}\" && stepStr = \"{}\")\n",
+                "    if (GestureTriggerMatches(trigger, \"{}\") && stepStr = \"{}\")\n",
                 trigger, steps
             ));
             script.push_str(&format!("        return \"{}\"\n", ahk_quote(&name)));
@@ -699,6 +701,30 @@ pub fn generate_ahk_script(config: &AppConfig, revision: u64) -> String {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn half_edges_are_gestures_and_precede_whole_edges_within_each_scope() {
+        let mut config = crate::config::default_app_config();
+        let target = config
+            .targets
+            .iter_mut()
+            .find(|target| target.kind == "group")
+            .unwrap();
+        let mut whole = keyboard_binding("whole", "EdgeTop", "noop", "");
+        whole.gesture.steps = vec!["WU".into()];
+        let mut half = keyboard_binding("half", "EdgeTopLeftHalf", "noop", "");
+        half.gesture.steps = vec!["WU".into()];
+        target.bindings = vec![whole, half];
+        let script = super::generate_ahk_script(&config, 1);
+        let half_pos = script
+            .find("GestureTriggerMatches(trigger, \"EdgeTopLeftHalf\")")
+            .unwrap();
+        let whole_pos = script
+            .find("GestureTriggerMatches(trigger, \"EdgeTop\")")
+            .unwrap();
+        assert!(half_pos < whole_pos);
+        assert!(super::is_mouse_or_spatial_trigger("EdgeRightBottomHalf"));
+        assert!(!script.contains("*EdgeTopLeftHalf::"));
+    }
+    #[test]
     fn mouse_chords_are_canonical_gestures_not_keyboard_hotkeys() {
         let mut config = crate::config::default_app_config();
         let binding = keyboard_binding("chord", "X1+R", "keys", "^w");
@@ -796,7 +822,8 @@ mod tests {
             .find("; Action Name Query")
             .map(|position| position + dispatcher_start)
             .expect("gesture dispatcher should have an end marker");
-        assert!(!script[dispatcher_start..dispatcher_end].contains("trigger = \"Insert\""));
+        assert!(!script[dispatcher_start..dispatcher_end]
+            .contains("GestureTriggerMatches(trigger, \"Insert\")"));
     }
 
     #[test]

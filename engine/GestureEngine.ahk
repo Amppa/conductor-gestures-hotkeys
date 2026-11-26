@@ -311,6 +311,14 @@ FormatTriggerName(trig) {
         case "EdgeBottom": return "螢幕底部邊緣"
         case "EdgeLeft": return "螢幕左側邊緣"
         case "EdgeRight": return "螢幕右側邊緣"
+        case "EdgeTopLeftHalf": return "⬒ 上側左半"
+        case "EdgeTopRightHalf": return "⬒ 上側右半"
+        case "EdgeBottomLeftHalf": return "⬓ 下側左半"
+        case "EdgeBottomRightHalf": return "⬓ 下側右半"
+        case "EdgeLeftTopHalf": return "◧ 左側上半"
+        case "EdgeLeftBottomHalf": return "◧ 左側下半"
+        case "EdgeRightTopHalf": return "◨ 右側上半"
+        case "EdgeRightBottomHalf": return "◨ 右側下半"
         case "CornerTL": return "左上觸控角(TL)"
         case "CornerTR": return "右上觸控角(TR)"
         case "CornerBL": return "左下觸控角(BL)"
@@ -507,6 +515,10 @@ HideGestureOSD() {
 ; ------------------------------------------------------------------------------
 GetSpatialContext(x, y) {
     GetMonitorRectAt(x, y, &mL, &mT, &mR, &mB, &mW, &mH)
+    return SpatialContextInRect(x, y, mL, mT, mR, mB)
+}
+
+SpatialContextInRect(x, y, mL, mT, mR, mB) {
     cTol := 4
 
     ; 1. Hot Corners of current active monitor (Highest Priority)
@@ -521,15 +533,29 @@ GetSpatialContext(x, y) {
 
     ; 2. Screen Edges of current monitor
     if (y <= mT + 1)
-        return "EdgeTop"
+        return x < (mL + mR) / 2 ? "EdgeTopLeftHalf" : "EdgeTopRightHalf"
     if (y >= mB - 2)
-        return "EdgeBottom"
+        return x < (mL + mR) / 2 ? "EdgeBottomLeftHalf" : "EdgeBottomRightHalf"
     if (x <= mL + 1)
-        return "EdgeLeft"
+        return y < (mT + mB) / 2 ? "EdgeLeftTopHalf" : "EdgeLeftBottomHalf"
     if (x >= mR - 2)
-        return "EdgeRight"
+        return y < (mT + mB) / 2 ? "EdgeRightTopHalf" : "EdgeRightBottomHalf"
 
     return ""
+}
+
+SpatialWholeEdge(trigger) {
+    switch trigger {
+        case "EdgeTopLeftHalf", "EdgeTopRightHalf": return "EdgeTop"
+        case "EdgeBottomLeftHalf", "EdgeBottomRightHalf": return "EdgeBottom"
+        case "EdgeLeftTopHalf", "EdgeLeftBottomHalf": return "EdgeLeft"
+        case "EdgeRightTopHalf", "EdgeRightBottomHalf": return "EdgeRight"
+    }
+    return ""
+}
+
+GestureTriggerMatches(trigger, candidate) {
+    return trigger == candidate || (SpatialWholeEdge(trigger) != "" && SpatialWholeEdge(trigger) == candidate)
 }
 
 ; ------------------------------------------------------------------------------
@@ -733,7 +759,7 @@ HandleSpatialWheel(wheelDir) {
         return true
 
     ; Built-in fallback: EdgeTop volume control if no custom binding matched
-    if (spatial == "EdgeTop") {
+    if (spatial == "EdgeTop" || SpatialWholeEdge(spatial) == "EdgeTop") {
         if (wheelDir == "WU")
             SoundSetVolume("+2")
         else if (wheelDir == "WD")

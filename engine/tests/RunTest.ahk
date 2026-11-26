@@ -214,6 +214,28 @@ repeatOK := gDispatchCount == 3 && gLastDispatched.steps == "WD" && gSteps.Lengt
 OnTriggerUp("RButton")
 gTestResults.Push({ name: "Wheel Repeats Per Notch Without Release Dispatch", pass: repeatOK && gDispatchCount == 3, actual: "count=" gDispatchCount })
 
+; Each monitor is divided independently, including negative desktop coordinates.
+spatialCases := [
+    [25, 0, "EdgeTopLeftHalf"], [175, 0, "EdgeTopRightHalf"],
+    [25, 99, "EdgeBottomLeftHalf"], [175, 99, "EdgeBottomRightHalf"],
+    [0, 25, "EdgeLeftTopHalf"], [0, 75, "EdgeLeftBottomHalf"],
+    [199, 25, "EdgeRightTopHalf"], [199, 75, "EdgeRightBottomHalf"]
+]
+spatialOK := true
+for sample in spatialCases {
+    if SpatialContextInRect(sample[1], sample[2], 0, 0, 200, 100) != sample[3]
+        spatialOK := false
+}
+gTestResults.Push({ name: "All Eight Half Edges", pass: spatialOK, actual: "eight-zones" })
+boundaryOK := SpatialContextInRect(100, 0, 0, 0, 200, 100) == "EdgeTopRightHalf"
+boundaryOK := boundaryOK && SpatialContextInRect(-175, -100, -200, -100, 0, 0) == "EdgeTopLeftHalf"
+boundaryOK := boundaryOK && SpatialContextInRect(0, 0, 0, 0, 200, 100) == "CornerTL"
+boundaryOK := boundaryOK && SpatialContextInRect(100, 50, 0, 0, 200, 100) == ""
+gTestResults.Push({ name: "Monitor Midpoint Negative Coordinates And Corner Priority", pass: boundaryOK, actual: "boundaries" })
+fallbackOK := GestureTriggerMatches("EdgeTopLeftHalf", "EdgeTop") && GestureTriggerMatches("EdgeTopLeftHalf", "EdgeTopLeftHalf")
+fallbackOK := fallbackOK && !GestureTriggerMatches("EdgeTopLeftHalf", "EdgeTopRightHalf") && !GestureTriggerMatches("EdgeTopLeftHalf", "EdgeLeft")
+gTestResults.Push({ name: "Half Edge Matches Its Whole Edge Only", pass: fallbackOK, actual: "fallback" })
+
 ; Compile Summary Report to JSON
 allPassed := true
 jsonItems := ""

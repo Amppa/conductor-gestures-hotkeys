@@ -25,7 +25,7 @@ describe("gesture input boundaries", () => {
     for (const [trigger, zone] of Object.entries(SCREEN_ZONES)) {
       const steps = trigger.startsWith("Edge") ? ["WU"] : [];
       const suffix = steps.length ? ", Wheel↑" : "";
-      for (const label of [zone.symbol, `${zone.symbol} ${zone.en}`, `${zone.symbol} ${zone.zh}`, trigger]) {
+      for (const label of [...(!trigger.endsWith("Half") ? [zone.symbol] : []), `${zone.symbol} ${zone.en}`, `${zone.symbol} ${zone.zh}`, trigger]) {
         expect(parseGestureInput(label + suffix)).toEqual({ trigger, steps, error: null });
       }
     }

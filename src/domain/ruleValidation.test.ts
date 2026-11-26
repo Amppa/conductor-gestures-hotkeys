@@ -19,6 +19,25 @@ function createBinding(id: string, enabled: boolean, gesture: Partial<Gesture> =
 }
 
 describe("hasEnabledGestureDuplicate", () => {
+  it.each([
+    ["EdgeTop", "EdgeTopLeftHalf", "EdgeTopRightHalf"],
+    ["EdgeBottom", "EdgeBottomLeftHalf", "EdgeBottomRightHalf"],
+    ["EdgeLeft", "EdgeLeftTopHalf", "EdgeLeftBottomHalf"],
+    ["EdgeRight", "EdgeRightTopHalf", "EdgeRightBottomHalf"],
+  ])("checks occupancy on %s regardless of wheel direction", (whole, first, second) => {
+    const existing = createBinding("existing", true, { trigger: first, steps: ["WU"] });
+    const check = (trigger: string, bindings = [existing]) => hasEnabledGestureDuplicate(
+      bindings, "candidate", { trigger, steps: ["WD"] },
+    );
+    expect(check(first)).toBe(true);
+    expect(check(whole)).toBe(true);
+    expect(check(second)).toBe(false);
+    expect(check(first, [{ ...existing, enabled: false }])).toBe(false);
+    expect(check(first, [{ ...existing, id: "candidate" }])).toBe(false);
+    const full = createBinding("full", true, { trigger: whole, steps: ["WU"] });
+    expect(check(first, [full])).toBe(true);
+    expect(check(whole, [full])).toBe(false);
+  });
   it("rejects enabling a disabled rule that duplicates an enabled gesture", () => {
     const existing = createBinding("existing", true);
     const candidate = createBinding("candidate", false);

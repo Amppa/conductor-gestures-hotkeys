@@ -101,7 +101,16 @@
     "addNewGesture": "設定滑鼠觸發...",
     "addNewAction": "設定執行指令..."
   },
+  "screenEditor": {"corners":"螢幕角落","edges":"螢幕邊緣","halves":"螢幕半邊緣"},
   "screenLabels": {
+    "EdgeTopLeftHalf": "上側左半",
+    "EdgeTopRightHalf": "上側右半",
+    "EdgeBottomLeftHalf": "下側左半",
+    "EdgeBottomRightHalf": "下側右半",
+    "EdgeLeftTopHalf": "左側上半",
+    "EdgeLeftBottomHalf": "左側下半",
+    "EdgeRightTopHalf": "右側上半",
+    "EdgeRightBottomHalf": "右側下半",
     "EdgeTop": "上側", "EdgeBottom": "下側", "EdgeLeft": "左側", "EdgeRight": "右側",
     "CornerTL": "左上角", "CornerBL": "左下角", "CornerBR": "右下角", "CornerTR": "右上角"
   },
@@ -223,6 +232,14 @@
     "emptyTemplates": "目前沒有任何手勢範本"
   },
   "triggers": {
+    "EdgeTopLeftHalf": "上側左半",
+    "EdgeTopRightHalf": "上側右半",
+    "EdgeBottomLeftHalf": "下側左半",
+    "EdgeBottomRightHalf": "下側右半",
+    "EdgeLeftTopHalf": "左側上半",
+    "EdgeLeftBottomHalf": "左側下半",
+    "EdgeRightTopHalf": "右側上半",
+    "EdgeRightBottomHalf": "右側下半",
     "R": "R (右鍵)",
     "M": "M (中鍵)",
     "L": "L (左鍵)",

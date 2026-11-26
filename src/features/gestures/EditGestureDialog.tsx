@@ -10,7 +10,6 @@ import {
   DialogContent,
   Button,
   Input,
-  Select,
   TabList,
   Tab,
   Subtitle2,
@@ -24,6 +23,7 @@ import {
 import { parseGestureInput } from "../../domain/triggers/gestureInput";
 import { mouseTriggerKind } from "../../domain/triggerTypes";
 import { MousePreview } from "./MousePreview";
+import { ScreenZoneEditor } from "./ScreenZoneEditor";
 import { GestureRecorderCanvas } from "./GestureRecorderCanvas";
 
 const useStyles = makeStyles({
@@ -217,18 +217,9 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
             </div>
             {error && <div role="alert">{t(`gestures.${error}`)}</div>}
 
-            {screenMode && <>
-              <Select aria-label={t("targets.tableGesture")} value={trigger} onChange={(_, data) => {
-                const next = data.value as GestureTrigger;
-                const nextSteps = next.startsWith("Corner") ? [] : ["WU"];
-                setTrigger(next); setSteps(nextSteps); setCommandText(buildCommandString(next, nextSteps, t));
-              }}>
-                {["EdgeTop", "EdgeBottom", "EdgeLeft", "EdgeRight", "CornerTL", "CornerTR", "CornerBL", "CornerBR"].map((value) => <option key={value} value={value}>{t(`triggers.${value}`)}</option>)}
-              </Select>
-              {trigger.startsWith("Edge") && <Select aria-label={t("gestures.stroke")} value={steps[0] ?? "WU"} onChange={(_, data) => {
-                setSteps([data.value]); setCommandText(buildCommandString(trigger, [data.value], t));
-              }}><option value="WU">{t("triggers.wheelUp")}</option><option value="WD">{t("triggers.wheelDown")}</option></Select>}
-            </>}
+            {screenMode && <ScreenZoneEditor trigger={trigger} steps={steps} onChange={(next, nextSteps) => {
+              setTrigger(next); setSteps(nextSteps); setCommandText(buildCommandString(next, nextSteps, t));
+            }} />}
             {!screenMode && !buttonMode && <TabList
               selectedValue={activeTab}
               onTabSelect={(_, data) => setActiveTab(data.value as GestureDialogTab)}

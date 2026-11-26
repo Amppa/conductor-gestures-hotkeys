@@ -92,11 +92,45 @@ pub fn gesture_engine_template_path(app: &tauri::AppHandle) -> Result<PathBuf, S
     Err("隨附的 GestureEngine.ahk 不存在".into())
 }
 
+fn screen_edge_slots(trigger: &str) -> u8 {
+    match trigger {
+        "EdgeTop" => 3,
+        "EdgeTopLeftHalf" => 1,
+        "EdgeTopRightHalf" => 2,
+        "EdgeBottom" => 12,
+        "EdgeBottomLeftHalf" => 4,
+        "EdgeBottomRightHalf" => 8,
+        "EdgeLeft" => 48,
+        "EdgeLeftTopHalf" => 16,
+        "EdgeLeftBottomHalf" => 32,
+        "EdgeRight" => 192,
+        "EdgeRightTopHalf" => 64,
+        "EdgeRightBottomHalf" => 128,
+        _ => 0,
+    }
+}
+
 fn validate_enabled_binding_duplicates(config: &AppConfig) -> Result<(), String> {
     for target in &config.targets {
         let mut seen = HashSet::new();
+        let mut occupied = 0u8;
+        let mut half_occupied = 0u8;
         for binding in target.bindings.iter().filter(|binding| binding.enabled) {
             let mouse_trigger = normalize_trigger(binding.gesture.trigger.trim());
+            let slots = screen_edge_slots(&mouse_trigger);
+            if (if mouse_trigger.ends_with("Half") {
+                occupied
+            } else {
+                half_occupied
+            }) & slots
+                != 0
+            {
+                return Err(format!("無法套用設定：Scope「{}」的螢幕邊緣「{}」已被其他啟用規則佔用。請先停用或修改衝突規則。", target.name, mouse_trigger));
+            }
+            occupied |= slots;
+            if mouse_trigger.ends_with("Half") {
+                half_occupied |= slots;
+            }
             if !crate::config::supported_mouse_trigger(&mouse_trigger, &binding.gesture.steps) {
                 return Err(format!("Scope「{}」規則「{}」的滑鼠觸發不完整：左鍵不能單獨使用，單獨中鍵或右鍵需加入移動或滾輪操作。", target.name, binding.id));
             }
@@ -778,6 +812,52 @@ mod tests {
         target.bindings.push(duplicate);
 
         assert!(validate_enabled_binding_duplicates(&config).is_ok());
+    }
+
+    #[test]
+    fn screen_edge_occupancy_ignores_wheel_direction_and_disabled_rules() {
+        for (whole, first, second) in [
+            ("EdgeTop", "EdgeTopLeftHalf", "EdgeTopRightHalf"),
+            ("EdgeBottom", "EdgeBottomLeftHalf", "EdgeBottomRightHalf"),
+            ("EdgeLeft", "EdgeLeftTopHalf", "EdgeLeftBottomHalf"),
+            ("EdgeRight", "EdgeRightTopHalf", "EdgeRightBottomHalf"),
+        ] {
+            for (a, b, conflict) in [
+                (first, first, true),
+                (first, second, false),
+                (whole, first, true),
+                (first, whole, true),
+                (whole, whole, false),
+            ] {
+                let mut config = default_app_config();
+                for target in &mut config.targets {
+                    target.bindings.clear();
+                }
+                let target = &mut config.targets[0];
+                let mut binding = default_app_config()
+                    .targets
+                    .iter()
+                    .flat_map(|target| &target.bindings)
+                    .next()
+                    .unwrap()
+                    .clone();
+                binding.enabled = true;
+                binding.gesture.trigger = a.into();
+                binding.gesture.steps = vec!["WU".into()];
+                let mut other = binding.clone();
+                other.id = "other".into();
+                other.gesture.trigger = b.into();
+                other.gesture.steps = vec!["WD".into()];
+                target.bindings = vec![binding, other];
+                assert_eq!(
+                    validate_enabled_binding_duplicates(&config).is_err(),
+                    conflict,
+                    "{a}, {b}"
+                );
+                config.targets[0].bindings[1].enabled = false;
+                assert!(validate_enabled_binding_duplicates(&config).is_ok());
+            }
+        }
     }
 
     #[test]
