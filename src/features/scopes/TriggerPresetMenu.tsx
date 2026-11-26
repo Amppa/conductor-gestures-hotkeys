@@ -6,6 +6,7 @@ import type { Gesture } from "../../domain/types";
 import { getTriggerCategory, TRIGGER_CATEGORIES, type TriggerCategory } from "../../domain/triggerTypes";
 import { formatGestureLabel } from "../gestures/gestureSymbols";
 import { formatHotkeyTrigger } from "../hotkeys/hotkeyTrigger";
+import { compareScreenTriggers } from "../../domain/triggers/screen";
 
 interface TriggerPresetMenuProps {
   templates: Gesture[];
@@ -17,6 +18,7 @@ interface TriggerPresetMenuProps {
 
 export function TriggerPresetMenu({ templates, menuClassName, children, onSelect, onCreate }: TriggerPresetMenuProps) {
   const { t } = useTranslation();
+  const screenTemplates = templates.filter((template) => getTriggerCategory(template) === "screen").sort(compareScreenTriggers);
   return (
     <Menu>
       <MenuTrigger disableButtonEnhancement>{children}</MenuTrigger>
@@ -29,7 +31,7 @@ export function TriggerPresetMenu({ templates, menuClassName, children, onSelect
               </MenuTrigger>
               <MenuPopover>
                 <MenuList className={menuClassName}>
-                  {templates.filter((template) => getTriggerCategory(template) === category).map((template) => (
+                  {(category === "screen" ? screenTemplates : templates.filter((template) => getTriggerCategory(template) === category)).map((template) => (
                     <MenuItem key={template.id} onClick={() => onSelect(template)}>
                       {category === "hotkeys"
                         ? formatHotkeyTrigger(template.trigger)

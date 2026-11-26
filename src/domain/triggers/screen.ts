@@ -1,4 +1,5 @@
 import { parseSteps, StrokeInput } from "./stroke";
+import type { Gesture } from "../types";
 
 export const SCREEN_ZONES = {
   CornerTL: { symbol: "◰", en: "Corner TL", zh: "左上角" },
@@ -18,6 +19,24 @@ export const SCREEN_ZONES = {
   EdgeRightTopHalf: { symbol: "◨", en: "Edge R-T", zh: "右側上半" },
   EdgeRightBottomHalf: { symbol: "◨", en: "Edge R-B", zh: "右側下半" },
 } as const;
+
+const SCREEN_TRIGGER_ORDER: string[] = [
+  "CornerTL", "CornerBL", "CornerBR", "CornerTR",
+  "EdgeTop", "EdgeBottom", "EdgeLeft", "EdgeRight",
+  "EdgeTopLeftHalf", "EdgeTopRightHalf",
+  "EdgeBottomLeftHalf", "EdgeBottomRightHalf",
+  "EdgeLeftTopHalf", "EdgeLeftBottomHalf",
+  "EdgeRightTopHalf", "EdgeRightBottomHalf",
+];
+
+export function compareScreenTriggers(a: Pick<Gesture, "trigger" | "steps">, b: Pick<Gesture, "trigger" | "steps">): number {
+  const rank = (trigger: string) => {
+    const index = SCREEN_TRIGGER_ORDER.indexOf(trigger);
+    return index < 0 ? SCREEN_TRIGGER_ORDER.length : index;
+  };
+  const stepRank = (steps: string[]) => steps[0] === "WU" ? 0 : steps[0] === "WD" ? 1 : 2;
+  return rank(a.trigger) - rank(b.trigger) || stepRank(a.steps) - stepRank(b.steps);
+}
 
 export function screenEdgeSlots(trigger: string): number {
   const slots: Record<string, number> = {

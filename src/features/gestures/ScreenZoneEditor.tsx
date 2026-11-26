@@ -2,7 +2,6 @@ import { useId } from "react";
 import { Button, makeStyles, tokens } from "@fluentui/react-components";
 import { useTranslation } from "react-i18next";
 import { SCREEN_ZONES } from "../../domain/triggers/screen";
-import { formatGestureLabel } from "./gestureSymbols";
 
 type Zone = keyof typeof SCREEN_ZONES;
 type Mode = "corners" | "edges" | "halves";
@@ -98,7 +97,6 @@ export function ScreenZoneEditor({ trigger, steps, onChange }: ScreenZoneEditorP
           </div>
         </div>
       ))}
-      <output aria-live="polite" style={{ color: tokens.colorBrandForeground1, fontWeight: 600 }}>{formatGestureLabel(trigger, steps, t)}</output>
     </div>
   );
 }

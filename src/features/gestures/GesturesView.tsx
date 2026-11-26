@@ -4,6 +4,7 @@ import { makeStyles, tokens, Card, Button } from "@fluentui/react-components";
 import { Add16Regular, Delete16Regular } from "@fluentui/react-icons";
 import { Gesture } from "../../domain/types";
 import { normalizeTrigger } from "../../domain/triggerNormalization";
+import { compareScreenTriggers } from "../../domain/triggers/screen";
 import {
   formatGestureLabel,
 } from "./gestureSymbols";
@@ -43,6 +44,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
   const page = usePageStyles();
   const styles = useStyles();
   const { t } = useTranslation();
+  const visibleGestures = screenMode ? [...gestures].sort(compareScreenTriggers) : gestures;
   const [editingGesture, setEditingGesture] = useState<Gesture | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -100,7 +102,7 @@ export const GesturesView: React.FC<GesturesViewProps> = ({
             </tr>
           </thead>
           <tbody>
-            {gestures.map((gesture) => {
+            {visibleGestures.map((gesture) => {
               const strokeText = formatGestureLabel(gesture.trigger, gesture.steps, t);
               return (
                 <tr
