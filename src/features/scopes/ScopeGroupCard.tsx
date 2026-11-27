@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import type { Target } from "../../domain/types";
 import type { useRuleDragDrop } from "./useRuleDragDrop";
 import { usePageStyles } from "../../shared/pageStyles";
+import { formatScopeName } from "../../shared/displayNames";
 
 const useStyles = makeStyles({
   groupHeader: {
@@ -64,10 +65,7 @@ export function ScopeGroupCard({
     onStart: handleStartRename, onChange: setTempGroupName,
     onSave: handleSaveRename, onCancel: handleCancelRename,
   } = rename;
-          const groupDisplayName =
-            group.name !== "Browsers" && group.name !== "Group 01"
-              ? group.name
-              : t(`targets.${group.id}Title`, { defaultValue: group.name });
+  const groupDisplayName = formatScopeName(t, group);
   return (
             <Tooltip content={t("targets.moveTo", { name: groupDisplayName })} relationship="description" visible={isDropTarget}>
             <Card className={page.card} {...dropProps}>

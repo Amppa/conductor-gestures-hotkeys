@@ -27,10 +27,11 @@ export function isGestureIncomplete(
 
   const { trigger } = gesture;
   if (isMouseTrigger(trigger)) return mouseTriggerKind({ trigger, steps: gesture.steps ?? [] }) === null;
+  const requiresSteps = trigger.startsWith("Edge") || STEP_REQUIRED_TRIGGERS.has(trigger);
   const allowsEmptySteps =
     trigger.startsWith("Corner") ||
     EMPTY_STEP_ALLOWED_TRIGGERS.has(trigger) ||
-    !STEP_REQUIRED_TRIGGERS.has(trigger);
+    !requiresSteps;
 
   if (allowsEmptySteps) {
     return false;

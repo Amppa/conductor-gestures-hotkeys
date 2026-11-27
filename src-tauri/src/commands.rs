@@ -1,3 +1,5 @@
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 use std::{
     collections::HashSet,
     env, fs,
@@ -6,6 +8,14 @@ use std::{
     sync::atomic::Ordering,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+fn hide_console_window(cmd: &mut Command) {
+    #[cfg(windows)]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+}
 use tauri::{Manager, State};
 use tauri_plugin_autostart::ManagerExt;
 
@@ -111,7 +121,11 @@ fn screen_edge_slots(trigger: &str) -> u8 {
 }
 
 fn validate_enabled_binding_duplicates(config: &AppConfig) -> Result<(), String> {
-    for target in &config.targets {
+    for target in config
+        .targets
+        .iter()
+        .filter(|target| target.enabled && target.kind != "disabled")
+    {
         let mut seen = HashSet::new();
         let mut occupied = 0u8;
         let mut half_occupied = 0u8;
@@ -131,17 +145,17 @@ fn validate_enabled_binding_duplicates(config: &AppConfig) -> Result<(), String>
             if mouse_trigger.ends_with("Half") {
                 half_occupied |= slots;
             }
-            if !crate::config::supported_mouse_trigger(&mouse_trigger, &binding.gesture.steps) {
-                return Err(format!("Scope「{}」規則「{}」的滑鼠觸發不完整：左鍵不能單獨使用，單獨中鍵或右鍵需加入移動或滾輪操作。", target.name, binding.id));
-            }
-            let trigger = mouse_trigger.to_ascii_lowercase();
-            let steps = binding
+            let normalized_steps = binding
                 .gesture
                 .steps
                 .iter()
                 .map(|step| step.trim().to_ascii_uppercase())
-                .collect::<Vec<_>>()
-                .join(",");
+                .collect::<Vec<_>>();
+            if !crate::config::supported_mouse_trigger(&mouse_trigger, &normalized_steps) {
+                return Err(format!("Scope「{}」規則「{}」的滑鼠觸發不完整：左鍵或中鍵不能單獨使用，單獨右鍵需加入移動或滾輪操作。", target.name, binding.id));
+            }
+            let trigger = mouse_trigger.to_ascii_lowercase();
+            let steps = normalized_steps.join(",");
             let signature = format!("{trigger}:{steps}");
             if !seen.insert(signature.clone()) {
                 return Err(format!(
@@ -154,7 +168,7 @@ fn validate_enabled_binding_duplicates(config: &AppConfig) -> Result<(), String>
     Ok(())
 }
 
-fn stop_active_engine(state: &AppState) -> Result<(), String> {
+pub(crate) fn stop_active_engine(state: &AppState) -> Result<(), String> {
     let mut active_engine = state
         .engine_process
         .lock()
@@ -258,7 +272,9 @@ fn restore_runtime_pair(runtime_dir: &Path) -> Result<bool, String> {
 }
 
 fn start_engine(ahk_exe: &Path, runtime_dir: &Path, script_path: &Path) -> Result<Child, String> {
-    let mut process = Command::new(ahk_exe)
+    let mut cmd = Command::new(ahk_exe);
+    hide_console_window(&mut cmd);
+    let mut process = cmd
         .current_dir(runtime_dir)
         .arg(script_path)
         .spawn()
@@ -335,9 +351,22 @@ pub fn save_config(app: tauri::AppHandle, config: AppConfig) -> Result<(), Strin
     replace_file(&prepared, &path)
 }
 
+fn restore_config_file(app: &tauri::AppHandle, had_prev_config: bool) -> Result<(), String> {
+    let path = config_file_path(app)?;
+    let backup = path.with_extension("json.bak");
+    if had_prev_config && backup.exists() {
+        fs::copy(&backup, &path).map_err(|e| format!("無法還原 config.json: {e}"))?;
+    } else if !had_prev_config && path.exists() {
+        fs::remove_file(&path).map_err(|e| format!("無法清除新建立的 config.json: {e}"))?;
+    }
+    Ok(())
+}
+
 /// Runs AutoHotkey in validation mode and reports any syntax diagnostics.
 fn validate_script(ahk_exe: &Path, script_path: &Path) -> Result<(), String> {
-    let output = Command::new(ahk_exe)
+    let mut cmd = Command::new(ahk_exe);
+    hide_console_window(&mut cmd);
+    let output = cmd
         .arg("/ErrorStdOut")
         .arg("/validate")
         .arg(script_path)
@@ -411,39 +440,45 @@ pub fn apply_config(
     stage_and_validate_script(&ahk_exe, &source_engine_path, &script_content, revision)?;
 
     // 3. Persist the configuration only after the staged pair validates.
+    let had_prev_config = config_file_path(&app)?.exists();
     save_config(app.clone(), config.clone())?;
 
-    // 4. Deploy the validated pair, keeping the previous files as backups.
+    // 4. Stop the active engine before swapping runtime files to avoid Windows file locks.
     let runtime_dir = runtime_dir_path(&app)?;
     let script_path = runtime_dir.join(RUNTIME_SCRIPT_NAME);
+    if let Err(stop_error) = stop_active_engine(&state) {
+        let _ = restore_config_file(&app, had_prev_config);
+        return Err(stop_error);
+    }
+
+    // 5. Deploy the validated pair, keeping the previous files as backups.
     if let Err(deploy_error) =
         deploy_runtime_pair(&runtime_dir, &source_engine_path, &script_content)
     {
-        let restored = restore_runtime_pair(&runtime_dir)
-            .map_err(|error| format!("{deploy_error} 回滾失敗：{error}"))?;
-        let outcome = if restored {
-            "已還原上一版引擎與腳本。"
-        } else {
-            "沒有可還原的上一版檔案。"
+        let _ = restore_config_file(&app, had_prev_config);
+        let rollback = restore_runtime_pair(&runtime_dir).and_then(|restored| {
+            if !restored {
+                return Ok(false);
+            }
+            let process = start_engine(&ahk_exe, &runtime_dir, &script_path)?;
+            *state
+                .engine_process
+                .lock()
+                .map_err(|_| "無法記錄手勢引擎行程".to_string())? = Some(process);
+            Ok(true)
+        });
+        let outcome = match rollback {
+            Ok(true) => "已還原上一版設定與引擎並重新啟動。".to_string(),
+            Ok(false) => "沒有可還原的上一版檔案。".to_string(),
+            Err(error) => format!("回滾失敗：{error}"),
         };
         return Err(format!("{deploy_error} {outcome}"));
-    }
-
-    // 5. Swap the running engine; any failure here rolls the runtime files back.
-    if let Err(stop_error) = stop_active_engine(&state) {
-        let restored = restore_runtime_pair(&runtime_dir)
-            .map_err(|error| format!("{stop_error} 回滾失敗：{error}"))?;
-        let outcome = if restored {
-            "已還原上一版引擎與腳本。"
-        } else {
-            "沒有可還原的上一版檔案。"
-        };
-        return Err(format!("{stop_error} {outcome}"));
     }
 
     let engine_process = match start_engine(&ahk_exe, &runtime_dir, &script_path) {
         Ok(process) => process,
         Err(start_error) => {
+            let _ = restore_config_file(&app, had_prev_config);
             let rollback = restore_runtime_pair(&runtime_dir).and_then(|restored| {
                 if !restored {
                     return Err("沒有完整的上一版引擎可重新啟動".into());
@@ -456,7 +491,7 @@ pub fn apply_config(
                         .engine_process
                         .lock()
                         .map_err(|_| "無法記錄手勢引擎行程".to_string())? = Some(process);
-                    "已還原上一版引擎與腳本並重新啟動。".to_string()
+                    "已還原上一版設定與引擎並重新啟動。".to_string()
                 }
                 Err(rollback_error) => format!("無法還原並重新啟動：{rollback_error}"),
             };
@@ -481,9 +516,9 @@ pub fn get_running_processes() -> Vec<ProcessItem> {
     let mut items = Vec::new();
     let mut seen = HashSet::new();
 
-    let output = Command::new("tasklist")
-        .args(["/fo", "csv", "/nh"])
-        .output();
+    let mut cmd = Command::new("tasklist");
+    hide_console_window(&mut cmd);
+    let output = cmd.args(["/fo", "csv", "/nh"]).output();
 
     if let Ok(out) = output {
         let text = String::from_utf8_lossy(&out.stdout);
@@ -507,18 +542,38 @@ pub fn get_running_processes() -> Vec<ProcessItem> {
 }
 
 #[tauri::command]
-pub fn get_runtime_status(app: tauri::AppHandle) -> RuntimeStatus {
-    match autohotkey_exe_path(&app) {
-        Ok(_) => RuntimeStatus {
-            state: "running".into(),
-            applied_revision: None,
-            msg: "AutoHotkey v2 隨附引擎就緒".into(),
-        },
-        Err(e) => RuntimeStatus {
+pub fn get_runtime_status(app: tauri::AppHandle, state: State<'_, AppState>) -> RuntimeStatus {
+    if let Err(e) = autohotkey_exe_path(&app) {
+        return RuntimeStatus {
             state: "error".into(),
             applied_revision: None,
             msg: e,
-        },
+        };
+    }
+
+    let is_running = state
+        .engine_process
+        .lock()
+        .ok()
+        .and_then(|mut guard| {
+            guard
+                .as_mut()
+                .map(|child| child.try_wait().ok().flatten().is_none())
+        })
+        .unwrap_or(false);
+
+    if is_running {
+        RuntimeStatus {
+            state: "running".into(),
+            applied_revision: None,
+            msg: "AutoHotkey v2 手勢引擎運作中".into(),
+        }
+    } else {
+        RuntimeStatus {
+            state: "stopped".into(),
+            applied_revision: None,
+            msg: "AutoHotkey v2 手勢引擎尚未啟動".into(),
+        }
     }
 }
 
@@ -845,7 +900,11 @@ mod tests {
                 for target in &mut config.targets {
                     target.bindings.clear();
                 }
-                let target = &mut config.targets[0];
+                let target = config
+                    .targets
+                    .iter_mut()
+                    .find(|target| target.kind == "global")
+                    .expect("global target should exist");
                 let mut binding = default_app_config()
                     .targets
                     .iter()
@@ -866,7 +925,13 @@ mod tests {
                     conflict,
                     "{a}, {b}"
                 );
-                config.targets[0].bindings[1].enabled = false;
+                config
+                    .targets
+                    .iter_mut()
+                    .find(|target| target.kind == "global")
+                    .expect("global target should exist")
+                    .bindings[1]
+                    .enabled = false;
                 assert!(validate_enabled_binding_duplicates(&config).is_ok());
             }
         }
@@ -954,5 +1019,35 @@ mod tests {
         let error = validate_imported_config(value.to_string()).unwrap_err();
 
         assert!(error.contains("版本"));
+    }
+
+    #[test]
+    fn disabled_scope_does_not_block_duplicate_validation() {
+        let mut config = default_app_config();
+        let group = config
+            .targets
+            .iter_mut()
+            .find(|target| target.kind == "group")
+            .expect("group target should exist");
+        group.enabled = false;
+        let duplicate = group.bindings[0].clone();
+        group.bindings.push(duplicate);
+
+        assert!(validate_enabled_binding_duplicates(&config).is_ok());
+    }
+
+    #[test]
+    fn mouse_validation_normalizes_lowercase_steps() {
+        let mut config = default_app_config();
+        let global = config
+            .targets
+            .iter_mut()
+            .find(|target| target.kind == "global")
+            .expect("global target should exist");
+        global.bindings.retain(|binding| binding.enabled);
+        global.bindings[0].gesture.trigger = "R".into();
+        global.bindings[0].gesture.steps = vec![" l ".into()];
+
+        assert!(validate_enabled_binding_duplicates(&config).is_ok());
     }
 }

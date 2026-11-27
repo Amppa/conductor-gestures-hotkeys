@@ -152,7 +152,11 @@ pub fn is_mouse_or_spatial_trigger(trig: &str) -> bool {
 }
 
 pub fn ahk_quote(s: &str) -> String {
-    s.replace('"', "\"\"")
+    // AutoHotkey v2 uses backtick as the escape character inside double-quoted strings.
+    s.replace('`', "``")
+        .replace('"', "`\"")
+        .replace('\r', "`r")
+        .replace('\n', "`n")
 }
 
 fn is_keyboard_binding(binding: &Binding) -> bool {
@@ -618,6 +622,14 @@ fn write_keyboard_rules(
     script.push_str("#HotIf WinActive(\"ahk_group GeneratedDisabledApps\")\n");
     for trigger in &keyboard_triggers {
         script.push_str(&format!("~*{}::return\n", trigger));
+        if remap_trigger_keys.contains(&trigger.to_ascii_lowercase()) {
+            // Pass native key-up through to disabled apps while still releasing any active remap.
+            script.push_str(&format!(
+                "~*{} up::GeneratedRemapKeyUp(\"{}\")\n",
+                trigger,
+                ahk_quote(trigger)
+            ));
+        }
     }
 
     for (index, target) in group_targets.iter().enumerate() {
@@ -805,8 +817,12 @@ mod tests {
         assert!(script.contains("*LAlt up::GeneratedRemapKeyUp(\"LAlt\")"));
         assert!(script.contains("*LWin::GeneratedRemapKeyDown(\"LWin\", \"LAlt\")"));
         assert!(script.contains("*LWin up::GeneratedRemapKeyUp(\"LWin\")"));
-        assert!(!script.contains("~*LAlt up::"));
-        assert!(!script.contains("~*LWin up::"));
+        let global_section = script
+            .split("\n#HotIf\n")
+            .nth(1)
+            .expect("global HotIf section should exist");
+        assert!(!global_section.contains("~*LAlt up::"));
+        assert!(!global_section.contains("~*LWin up::"));
         assert!(!script.contains("~*Insert up::"));
 
         let dispatcher_start = script
@@ -971,5 +987,50 @@ mod tests {
             output.status.success() && stdout.trim().is_empty() && stderr.trim().is_empty(),
             "generated AHK validation failed:\nstdout: {stdout}\nstderr: {stderr}"
         );
+    }
+
+    #[test]
+    fn ahk_quote_uses_ahk_v2_escape_sequences() {
+        assert_eq!(ahk_quote("a\"b`c\r\nd"), "a`\"b``c`r`nd");
+    }
+
+    #[test]
+    fn disabled_apps_pass_through_remap_key_up_events() {
+        let mut cfg = default_app_config();
+        let global = cfg
+            .targets
+            .iter_mut()
+            .find(|target| target.kind == "global")
+            .expect("global target should exist");
+        global.bindings.push(Binding {
+            id: "remap-lalt".to_string(),
+            enabled: true,
+            gesture: Gesture {
+                id: "g-lalt".to_string(),
+                name: String::new(),
+                trigger: "LAlt".to_string(),
+                steps: vec![],
+            },
+            action: Action {
+                id: "a-lwin".to_string(),
+                name: "Remap LWin".to_string(),
+                action_type: "remap".to_string(),
+                value: "LWin".to_string(),
+            },
+        });
+
+        let script = generate_ahk_script(&cfg, 7);
+        let disabled_idx = script
+            .find("#HotIf WinActive(\"ahk_group GeneratedDisabledApps\")")
+            .expect("disabled apps HotIf block should exist");
+        let disabled_section = &script[disabled_idx..];
+        let next_hotif = disabled_section[6..]
+            .find("#HotIf")
+            .map(|offset| offset + 6)
+            .unwrap_or(disabled_section.len());
+        let disabled_block = &disabled_section[..next_hotif];
+
+        assert!(disabled_block.contains("~*LAlt::return\n"));
+        assert!(disabled_block.contains("~*LAlt up::GeneratedRemapKeyUp(\"LAlt\")\n"));
     }
 }

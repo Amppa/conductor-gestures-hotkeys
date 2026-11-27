@@ -236,6 +236,15 @@ fallbackOK := GestureTriggerMatches("EdgeTopLeftHalf", "EdgeTop") && GestureTrig
 fallbackOK := fallbackOK && !GestureTriggerMatches("EdgeTopLeftHalf", "EdgeTopRightHalf") && !GestureTriggerMatches("EdgeTopLeftHalf", "EdgeLeft")
 gTestResults.Push({ name: "Half Edge Matches Its Whole Edge Only", pass: fallbackOK, actual: "fallback" })
 
+; Spatial wheel is never captured when no binding matches or edge scroll is disabled.
+gFnGetGestureActionName := (trigger, steps, proc) => ""
+gEdgeScrollEnabled := true
+unboundWheelCaptured := ShouldCaptureSpatialWheel("WU")
+gEdgeScrollEnabled := false
+disabledWheelCaptured := ShouldCaptureSpatialWheel("WU")
+gEdgeScrollEnabled := true
+gTestResults.Push({ name: "Unbound Or Disabled Spatial Wheel Is Not Captured", pass: !unboundWheelCaptured && !disabledWheelCaptured, actual: "pass-through" })
+
 ; Compile Summary Report to JSON
 allPassed := true
 jsonItems := ""

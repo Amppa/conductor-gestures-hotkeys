@@ -42,7 +42,7 @@ import { EditCommandDialog } from "../commands/EditCommandDialog";
 import type { CommandCategory } from "../../domain/commandCategories";
 import { AddProcessDialog } from "./AddProcessDialog";
 import { PageHeader, usePageStyles } from "../../shared/pageStyles";
-import { formatActionName } from "../../shared/displayNames";
+import { formatActionName, formatScopeName } from "../../shared/displayNames";
 import { createId } from "../../shared/ids";
 
 const useStyles = makeStyles({
@@ -76,7 +76,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
 }) => {
   const page = usePageStyles();
   const styles = useStyles();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [editingGesture, setEditingGesture] = useState<{
     targetId: string;
@@ -172,7 +172,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
     handleSaveActionDirect(targetId, bindingId, {
       ...template,
       id: createId("action"),
-      name: t(`actionNames.${template.id}`, { defaultValue: template.name }),
+      name: formatActionName(t, template),
     });
   };
 
@@ -256,7 +256,6 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
   };
 
   const globalTarget = targets.find((target) => target.kind === "global");
-  const { i18n } = useTranslation();
   const sortRules = () => {
     const english = i18n.getFixedT("en");
     const label = (binding: Binding) => (isKeyboardTemplate(binding.gesture)
@@ -405,18 +404,17 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
         />
       )}
 
-      {addProcessTargetId && (
-        <AddProcessDialog
-          open={!!addProcessTargetId}
-          targetName={t(`targets.${addProcessTargetId}Title`, {
-            defaultValue:
-              targets.find((target) => target.id === addProcessTargetId)?.name ||
-              "Target List",
-          })}
-          onAdd={handleAddProcessExe}
-          onCancel={() => setAddProcessTargetId(null)}
-        />
-      )}
+      {addProcessTargetId && (() => {
+        const selectedTarget = targets.find((target) => target.id === addProcessTargetId);
+        return (
+          <AddProcessDialog
+            open={!!addProcessTargetId}
+            targetName={selectedTarget ? formatScopeName(t, selectedTarget) : "Target List"}
+            onAdd={handleAddProcessExe}
+            onCancel={() => setAddProcessTargetId(null)}
+          />
+        );
+      })()}
 
       <Dialog
         open={!!pendingDeleteGroupId}

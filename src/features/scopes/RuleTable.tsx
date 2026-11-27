@@ -4,9 +4,10 @@ import type { CommandCategory } from "../../domain/commandCategories";
 import { CommandPresetMenu } from "./CommandPresetMenu";
 import { useTranslation } from "react-i18next";
 import type { Target, Gesture, Action } from "../../domain/types";
-import type { TriggerCategory } from "../../domain/triggerTypes";
+import { isKeyboardTemplate, type TriggerCategory } from "../../domain/triggerTypes";
 import { isActionIncomplete, isBindingInvalid, isDuplicateGesture, isGestureIncomplete } from "../../domain/bindingRules";
 import { formatGestureLabel } from "../gestures/gestureSymbols";
+import { formatHotkeyTrigger } from "../hotkeys/hotkeyTrigger";
 import { TriggerPresetMenu } from "./TriggerPresetMenu";
 import type { useRuleDragDrop } from "./useRuleDragDrop";
 import { usePageStyles } from "../../shared/pageStyles";
@@ -157,11 +158,13 @@ export function RuleTable({
                       ) : (
                         <div className={styles.gestureValue}>
                           <span>
-                            {formatGestureLabel(
-                              binding.gesture.trigger,
-                              binding.gesture.steps,
-                              t,
-                            )}
+                            {isKeyboardTemplate(binding.gesture)
+                              ? formatHotkeyTrigger(binding.gesture.trigger)
+                              : formatGestureLabel(
+                                  binding.gesture.trigger,
+                                  binding.gesture.steps,
+                                  t,
+                                )}
                           </span>
                           {duplicate && (
                             <Badge appearance="tint" color="danger" size="small">

@@ -21,7 +21,7 @@ import {
   formatGestureLabel,
 } from "./gestureSymbols";
 import { parseGestureInput } from "../../domain/triggers/gestureInput";
-import { mouseTriggerKind } from "../../domain/triggerTypes";
+import { MOUSE_BUTTONS, mouseTriggerKind } from "../../domain/triggerTypes";
 import { MousePreview } from "./MousePreview";
 import { ScreenZoneEditor } from "./ScreenZoneEditor";
 import { GestureRecorderCanvas } from "./GestureRecorderCanvas";
@@ -165,7 +165,7 @@ export const EditGestureDialog: React.FC<EditGestureDialogProps> = ({
       return;
     }
     const selected = trigger.split("+");
-    const next = ["L", "M", "R", "X1", "X2"].filter((key) =>
+    const next = MOUSE_BUTTONS.filter((key) =>
       key === newTrigger ? !selected.includes(key) : selected.includes(key),
     ).join("+");
     setTrigger(next);

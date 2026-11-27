@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { makeStyles, tokens } from "@fluentui/react-components";
 import { useTranslation } from "react-i18next";
 import { Sidebar, NavTabId } from "./Sidebar";
@@ -61,7 +61,10 @@ export const App: React.FC = () => {
   const [isApplying, setIsApplying] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
 
-  const isDirty = JSON.stringify(config) !== JSON.stringify(savedConfig);
+  const isDirty = useMemo(
+    () => JSON.stringify(config) !== JSON.stringify(savedConfig),
+    [config, savedConfig],
+  );
 
   const configRef = useRef(config);
   const applySeqRef = useRef(0);
@@ -131,7 +134,10 @@ export const App: React.FC = () => {
 
   const handleToggleAutostart = async (enabled: boolean) => {
     setAutostartEnabled(enabled);
-    await writeAutostartEnabled(enabled);
+    const ok = await writeAutostartEnabled(enabled);
+    if (!ok) {
+      setAutostartEnabled(!enabled);
+    }
   };
 
   const handleReload = () => {

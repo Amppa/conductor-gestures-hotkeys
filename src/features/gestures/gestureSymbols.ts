@@ -2,8 +2,9 @@ import type { TFunction } from "i18next";
 import { normalizeTrigger } from "../../domain/triggerNormalization";
 import { parseGestureInput } from "../../domain/triggers/gestureInput";
 import { SCREEN_ZONES } from "../../domain/triggers/screen";
+import { MOUSE_BUTTONS } from "../../domain/triggerTypes";
 
-const MOUSE_TRIGGERS = ["R", "M", "L", "X1", "X2"];
+const MOUSE_TRIGGER_SET = new Set<string>(MOUSE_BUTTONS);
 
 export function formatStepSymbol(step: string, t?: TFunction): string {
   switch (step.toUpperCase()) {
@@ -67,7 +68,7 @@ export function formatGestureLabel(
   t?: TFunction,
 ): string {
   const normalized = normalizeTrigger(trigger);
-  let label = MOUSE_TRIGGERS.includes(normalized)
+  let label = MOUSE_TRIGGER_SET.has(normalized)
     ? normalized
     : formatTriggerSymbol(normalized);
   if (/^(Edge|Corner)/.test(normalized) && t) {

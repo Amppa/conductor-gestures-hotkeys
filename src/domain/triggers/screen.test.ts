@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareScreenTriggers, SCREEN_ZONES } from "./screen";
+import { compareScreenTriggers, parseScreenInput, SCREEN_ZONES } from "./screen";
 
 describe("screen trigger ordering", () => {
   it("places corners before whole edges and then half edges", () => {
@@ -26,5 +26,18 @@ describe("screen trigger ordering", () => {
         ["EdgeTopLeftHalf", "WU"], ["EdgeTopLeftHalf", "WD"],
         ["EdgeTopRightHalf", "WU"], ["EdgeTopRightHalf", "WD"],
       ]);
+  });
+});
+
+describe("parseScreenInput validation", () => {
+  it("accepts a single wheel step for edges and empty steps for corners", () => {
+    expect(parseScreenInput("EdgeTopLeftHalf, WU", "EdgeTop").error).toBeNull();
+    expect(parseScreenInput("CornerTL", "EdgeTop").error).toBeNull();
+  });
+
+  it("rejects directional steps on edges, multiple wheel steps, and steps on corners", () => {
+    expect(parseScreenInput("R, U", "EdgeTop").error).toBe("invalidStroke");
+    expect(parseScreenInput("EdgeTop, WU, WD", "EdgeTop").error).toBe("invalidStroke");
+    expect(parseScreenInput("CornerTL, WU", "EdgeTop").error).toBe("invalidStroke");
   });
 });
