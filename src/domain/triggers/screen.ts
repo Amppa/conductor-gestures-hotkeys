@@ -65,7 +65,14 @@ export function parseScreenInput(raw: string, fallback: string): StrokeInput {
     (candidate.text === candidate.key || candidate.text.length === 1 || /^(\s|,|$)/.test(text.slice(candidate.text.length))));
   if (source) { trigger = source.key; text = text.slice(source.text.length); }
   const parsed = parseSteps(text);
-  const error = !raw.trim() || !(trigger in SCREEN_ZONES) || (trigger.startsWith("Edge") && !parsed.steps.length)
+  const isEdge = trigger.startsWith("Edge");
+  const isCorner = trigger.startsWith("Corner");
+  const validSteps = isEdge
+    ? parsed.steps.length === 1 && (parsed.steps[0] === "WU" || parsed.steps[0] === "WD")
+    : isCorner
+      ? parsed.steps.length === 0
+      : false;
+  const error = !raw.trim() || !(trigger in SCREEN_ZONES) || !validSteps
     ? "invalidStroke" : parsed.error;
   return { trigger, steps: parsed.steps, error };
 }

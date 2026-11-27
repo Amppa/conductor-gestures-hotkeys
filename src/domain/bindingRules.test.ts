@@ -38,6 +38,13 @@ describe("isGestureIncomplete", () => {
     expect(isGestureIncomplete({ trigger: "^c", steps: [] })).toBe(false);
   });
 
+  it("requires wheel steps for whole and half screen edges", () => {
+    expect(isGestureIncomplete({ trigger: "EdgeTop", steps: [] })).toBe(true);
+    expect(isGestureIncomplete({ trigger: "EdgeTopLeftHalf", steps: [] })).toBe(true);
+    expect(isGestureIncomplete({ trigger: "EdgeRightBottomHalf", steps: [] })).toBe(true);
+    expect(isGestureIncomplete({ trigger: "EdgeTopLeftHalf", steps: ["WU"] })).toBe(false);
+  });
+
   it("treats a missing trigger as incomplete", () => {
     expect(isGestureIncomplete(undefined)).toBe(true);
     expect(isGestureIncomplete({ trigger: "", steps: [] })).toBe(true);
