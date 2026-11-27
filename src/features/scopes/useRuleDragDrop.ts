@@ -3,6 +3,7 @@ import { tokens } from "@fluentui/react-components";
 import { useTranslation } from "react-i18next";
 import type { Target } from "../../domain/types";
 import { moveBinding } from "../../domain/targetMutations";
+import { formatScopeName } from "../../shared/displayNames";
 
 interface DragSource {
   targetId: string;
@@ -16,9 +17,7 @@ export function useRuleDragDrop(targets: Target[], onUpdateTargets: (targets: Ta
   const [hoverScope, setHoverScope] = useState<string | null>(null);
   const [moveNotice, setMoveNotice] = useState("");
 
-  const scopeName = (target: Target) => target.kind === "global"
-    ? t("targets.globalTitle", { defaultValue: target.name })
-    : t(`targets.${target.id}Title`, { defaultValue: target.name });
+  const scopeName = (target: Target) => formatScopeName(t, target);
 
   const resetDrag = () => {
     setDragging(null);

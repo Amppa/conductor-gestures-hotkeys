@@ -53,6 +53,16 @@ interface EditCommandDialogProps {
   onCancel: () => void;
 }
 
+function resolveInitialCommandMode(action: Action, category: CommandCategory): CommandMode {
+  if (action.type === "remap") return "remap";
+  if (category === "scriptCommands") return action.type === "ahk" ? "script" : "other";
+  if (action.type === "keys") {
+    const isPreset = !action.value || COMMON_HOTKEYS.some((preset) => preset.keys === action.value);
+    return isPreset ? "common" : "keys";
+  }
+  return action.type === "ahk" ? "script" : "other";
+}
+
 export const EditCommandDialog: React.FC<EditCommandDialogProps> = ({
   open,
   action,
@@ -65,9 +75,7 @@ export const EditCommandDialog: React.FC<EditCommandDialogProps> = ({
   const [name, setName] = useState(action.name);
   const [type, setType] = useState<ActionType>(action.type);
   const [value, setValue] = useState(action.value);
-  const [mode, setMode] = useState<CommandMode>(action.type === "remap" ? "remap" : category === "scriptCommands" ? (action.type === "ahk" ? "script" : "other") : action.type === "keys"
-    ? (!action.value || COMMON_HOTKEYS.some((preset) => preset.keys === action.value) ? "common" : "keys")
-    : action.type === "ahk" ? "script" : "other");
+  const [mode, setMode] = useState<CommandMode>(() => resolveInitialCommandMode(action, category));
   const [recording, setRecording] = useState(false);
   const drafts = useRef<Partial<Record<ActionType, string>>>({ [action.type]: action.value });
 

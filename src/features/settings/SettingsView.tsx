@@ -89,52 +89,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     });
   };
 
-  const handleThresholdChange = (val: number) => {
+  const updateEngine = (patch: Partial<AppConfig["engine"]>) => {
     onUpdateConfig({
       ...config,
       engine: {
         ...config.engine,
-        thresholdPx: val,
-      },
-    });
-  };
-
-  const handleOsdDurationChange = (val: number) => {
-    onUpdateConfig({
-      ...config,
-      engine: {
-        ...config.engine,
-        osdDurationMs: val,
-      },
-    });
-  };
-
-  const handleOsdFontSizeChange = (val: number) => {
-    onUpdateConfig({
-      ...config,
-      engine: {
-        ...config.engine,
-        osdFontSizePx: val,
-      },
-    });
-  };
-
-  const handleOsdOpacityChange = (val: number) => {
-    onUpdateConfig({
-      ...config,
-      engine: {
-        ...config.engine,
-        osdOpacityPct: val,
-      },
-    });
-  };
-
-  const handleDebugLogChange = (enabled: boolean) => {
-    onUpdateConfig({
-      ...config,
-      engine: {
-        ...config.engine,
-        debug: enabled,
+        ...patch,
       },
     });
   };
@@ -166,7 +126,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               max={30}
               step={5}
               value={config.engine.thresholdPx}
-              onChange={(_, data) => handleThresholdChange(data.value)}
+              onChange={(_, data) => updateEngine({ thresholdPx: data.value })}
             />
             <span className={styles.valueLabel}>{config.engine.thresholdPx} px</span>
           </div>
@@ -182,7 +142,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               max={2000}
               step={500}
               value={config.engine.osdDurationMs}
-              onChange={(_, data) => handleOsdDurationChange(data.value)}
+              onChange={(_, data) => updateEngine({ osdDurationMs: data.value })}
             />
             <span className={styles.valueLabel}>
               {config.engine.osdDurationMs === 0
@@ -204,7 +164,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               max={25}
               step={5}
               value={config.engine.osdFontSizePx}
-              onChange={(_, data) => handleOsdFontSizeChange(data.value)}
+              onChange={(_, data) => updateEngine({ osdFontSizePx: data.value })}
             />
             <span className={styles.valueLabel}>{config.engine.osdFontSizePx} px</span>
           </div>
@@ -222,7 +182,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               max={100}
               step={10}
               value={config.engine.osdOpacityPct}
-              onChange={(_, data) => handleOsdOpacityChange(data.value)}
+              onChange={(_, data) => updateEngine({ osdOpacityPct: data.value })}
             />
             <span className={styles.valueLabel}>
               {config.engine.osdOpacityPct}%
@@ -236,7 +196,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className={styles.switch}
             aria-label={t("settings.debugTitle")}
             checked={config.engine.debug}
-            onChange={(_, data) => handleDebugLogChange(data.checked)}
+            onChange={(_, data) => updateEngine({ debug: data.checked })}
           />
         </div>
 
