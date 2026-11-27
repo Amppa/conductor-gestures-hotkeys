@@ -80,6 +80,24 @@ describe("migrateConfig", () => {
     expect(globalTarget(migrated).bindings[0].gesture.trigger).toBe("X1");
     expect(legacy.gestureTemplates[0].trigger).toBe("RB");
   });
+
+  it("normalizes legacy engine OSD settings on startup", () => {
+    const legacy = {
+      ...DEFAULT_CONFIG,
+      engine: {
+        ...DEFAULT_CONFIG.engine,
+        osdDurationMs: 300,
+        osdFontSizePx: undefined,
+        osdFontSizePt: 24,
+        osdOpacityPct: 51,
+      },
+    } as unknown as AppConfig;
+
+    const migrated = migrateConfig(legacy);
+    expect(migrated.engine.osdDurationMs).toBe(500);
+    expect(migrated.engine.osdFontSizePx).toBe(25);
+    expect(migrated.engine.osdOpacityPct).toBe(50);
+  });
 });
 
 describe("normalizeImportedConfig", () => {

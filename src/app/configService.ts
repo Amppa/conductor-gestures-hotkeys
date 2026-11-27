@@ -38,10 +38,15 @@ export async function readAutostartEnabled(): Promise<boolean | null> {
   }
 }
 
-export async function writeAutostartEnabled(enabled: boolean): Promise<void> {
+export async function writeAutostartEnabled(enabled: boolean): Promise<boolean> {
+  if (!("__TAURI_INTERNALS__" in window)) {
+    return true;
+  }
   try {
     await invokeTauri("set_autostart", { enabled });
-  } catch {
-    // Browser fallback: autostart is a native-only capability.
+    return true;
+  } catch (error) {
+    console.error("Failed to update autostart:", error);
+    return false;
   }
 }

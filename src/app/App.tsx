@@ -131,7 +131,10 @@ export const App: React.FC = () => {
 
   const handleToggleAutostart = async (enabled: boolean) => {
     setAutostartEnabled(enabled);
-    await writeAutostartEnabled(enabled);
+    const ok = await writeAutostartEnabled(enabled);
+    if (!ok) {
+      setAutostartEnabled(!enabled);
+    }
   };
 
   const handleReload = () => {

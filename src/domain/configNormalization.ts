@@ -66,9 +66,12 @@ function mergeFactoryGlobalBindings(config: AppConfig): AppConfig {
  * Migration used when loading a persisted configuration at startup.
  */
 export function migrateConfig(rawConfig: AppConfig): AppConfig {
-  return removeUnsupportedMouseTriggers(normalizeConfigTriggers(
-    mergeFactoryGlobalBindings(mergeActionTemplates(rawConfig)),
-  ));
+  const migrated = mergeFactoryGlobalBindings(mergeActionTemplates(rawConfig));
+  return removeUnsupportedMouseTriggers(normalizeConfigTriggers({
+    ...migrated,
+    engine: normalizeEngine(migrated.engine as LegacyEngineConfig | undefined),
+    keyRemaps: migrated.keyRemaps ?? [],
+  }));
 }
 
 function normalizeEngine(engine?: LegacyEngineConfig): EngineConfig {

@@ -96,7 +96,7 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
   onUpdateConfig,
 }) => {
   const styles = useStyles();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Status feedback
@@ -129,22 +129,27 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
     const jsonStr = JSON.stringify(backupData, null, 2);
 
     // 1. Priority: Tauri native system save dialog
-    try {
-      const savedPath = await invokeTauri<string | null>("export_config_dialog", {
-        content: jsonStr,
-        defaultFileName: fileName,
-      });
+    if ("__TAURI_INTERNALS__" in window) {
+      try {
+        const savedPath = await invokeTauri<string | null>("export_config_dialog", {
+          content: jsonStr,
+          defaultFileName: fileName,
+        });
 
-      if (savedPath) {
+        if (savedPath) {
+          setFeedback({
+            isError: false,
+            msg: t("backup.exportSuccess", { fileName: savedPath }),
+          });
+        }
+        // A null path means the native dialog was cancelled.
+      } catch (error) {
         setFeedback({
-          isError: false,
-          msg: t("backup.exportSuccess", { fileName: savedPath }),
+          isError: true,
+          msg: typeof error === "string" ? error : String(error),
         });
       }
-      // A null path means the native dialog was cancelled.
       return;
-    } catch {
-      // Fallback for browser environment
     }
 
     // 2. Browser fallback: modern showSaveFilePicker
@@ -249,6 +254,7 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
         reportInvalidImport();
       }
     };
+    reader.onerror = () => reportInvalidImport();
     reader.readAsText(file);
   };
 
@@ -258,6 +264,9 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
 
     const normalized = normalizeImportedConfig(pendingConfig);
     onUpdateConfig(normalized);
+    if (normalized.language) {
+      i18n.changeLanguage(normalized.language);
+    }
 
     setIsImportWarningOpen(false);
     setPendingConfig(null);
@@ -267,6 +276,7 @@ export const BackupSection: React.FC<BackupSectionProps> = ({
   // 3. Confirm reset
   const handleConfirmReset = () => {
     onUpdateConfig(DEFAULT_CONFIG);
+    i18n.changeLanguage(DEFAULT_CONFIG.language);
     setIsResetConfirmOpen(false);
     setFeedback({ isError: false, msg: t("backup.resetSuccess") });
   };

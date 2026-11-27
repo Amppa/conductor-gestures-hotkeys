@@ -98,20 +98,27 @@ export const AddProcessDialog: React.FC<AddProcessDialogProps> = ({
 
   useEffect(() => {
     if (!open) return;
+    let cancelled = false;
+    setManualInput("");
+    setFilterText("");
     const fetchProcesses = async () => {
       try {
         const procs = await invokeTauri<ProcessItem[]>("get_running_processes");
-        if (procs && procs.length > 0) {
+        if (!cancelled && procs && procs.length > 0) {
           setRunningProcesses(procs);
           return;
         }
       } catch {
         // Fallback for browser testing
       }
-      // Fallback preset list
-      setRunningProcesses(COMMON_PRESET_EXES.map((exe) => ({ name: exe, exe })));
+      if (!cancelled) {
+        setRunningProcesses(COMMON_PRESET_EXES.map((exe) => ({ name: exe, exe })));
+      }
     };
-    fetchProcesses();
+    void fetchProcesses();
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
   const handleManualAdd = () => {
