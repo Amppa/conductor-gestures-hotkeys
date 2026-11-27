@@ -20,3 +20,9 @@ rfd = "0.15"
 tauri = { version = "2.10.0", features = ["tray-icon"] }
 tauri-plugin-autostart = "2.7.0"
 tauri-plugin-opener = "2.5.0"
+
+# Enable incremental compilation and lighter optimization to speed up local release rebuilds.
+[profile.release]
+opt-level = 1
+incremental = true
+codegen-units = 256
