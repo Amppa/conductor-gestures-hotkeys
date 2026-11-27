@@ -10,10 +10,6 @@ export const SYSTEM_COMMANDS: { label: string; type: Action["type"]; value: stri
   { label: "presetPlayPause", type: "keys", value: "{Media_Play_Pause}" },
   { label: "presetMediaNext", type: "keys", value: "{Media_Next}" },
   { label: "presetMediaPrevious", type: "keys", value: "{Media_Prev}" },
-  { label: "presetShowDesktop", type: "keys", value: "#d" },
-  { label: "presetMinimize", type: "ahk", value: "WinMinimize('A')" },
-  { label: "presetMaximize", type: "ahk", value: "WinMaximize('A')" },
-  { label: "presetRestore", type: "ahk", value: "WinRestore('A')" },
 ];
 
 export function getCommandCategory(action: Pick<Action, "type" | "value">): CommandCategory {

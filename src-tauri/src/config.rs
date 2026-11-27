@@ -323,8 +323,20 @@ fn default_action_templates() -> Vec<ActionTemplate> {
         action_template("act-prev-tab", "Previous Tab", "keys", "^{PgUp}"),
         action_template("act-next-tab", "Next Tab", "keys", "^{PgDn}"),
         action_template("act-noop", "No-op (Mute)", "noop", ""),
-        action_template("act-lwin", "Trigger Win", "remap", "LWin"),
-        action_template("act-lalt", "Trigger Alt", "remap", "LAlt"),
+        action_template("act-paste-plain", "Paste Plain Text", "keys", "^+v"),
+        action_template("act-select-line", "Select Line", "ahk", "Send('{Home}+{End}')"),
+        action_template("act-delete-confirm", "Delete & Confirm", "ahk", "Send('{Delete}')\nSleep(150)\nSend('y')"),
+        action_template("act-page-top", "Go to Top", "keys", "^{Home}"),
+        action_template("act-page-bottom", "Go to Bottom", "keys", "^{End}"),
+        action_template("act-mute", "Toggle Mute", "keys", "{Volume_Mute}"),
+        action_template("act-play-pause", "Play / Pause", "keys", "{Media_Play_Pause}"),
+        action_template("act-media-prev", "Previous Track", "keys", "{Media_Prev}"),
+        action_template("act-media-next", "Next Track", "keys", "{Media_Next}"),
+        action_template("act-screenshot-region", "Region Screenshot", "keys", "#+s"),
+        action_template("act-switch-ime", "Switch Input Method", "keys", "#{Space}"),
+        action_template("act-toggle-ime", "Toggle IME (Ctrl+Space)", "keys", "^{Space}"),
+        action_template("act-open-calc", "Open Calculator", "run", "calc.exe"),
+        action_template("act-open-notepad", "Open Notepad", "run", "notepad.exe"),
     ]
 }
 
