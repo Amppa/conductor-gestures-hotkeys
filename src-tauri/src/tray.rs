@@ -61,7 +61,12 @@ pub fn setup_tray(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Erro
                     let _ = manager.enable();
                 }
             }
-            "quit" => app.exit(0),
+            "quit" => {
+                if let Err(error) = crate::commands::stop_active_engine(&app.state::<AppState>()) {
+                    eprintln!("Failed to stop gesture engine on quit: {error}");
+                }
+                app.exit(0);
+            }
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {

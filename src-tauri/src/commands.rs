@@ -154,7 +154,7 @@ fn validate_enabled_binding_duplicates(config: &AppConfig) -> Result<(), String>
     Ok(())
 }
 
-fn stop_active_engine(state: &AppState) -> Result<(), String> {
+pub(crate) fn stop_active_engine(state: &AppState) -> Result<(), String> {
     let mut active_engine = state
         .engine_process
         .lock()
