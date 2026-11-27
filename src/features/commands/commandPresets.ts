@@ -1,20 +1,5 @@
 import type { ActionType } from "../../domain/types";
 
-export interface PresetItem {
-  key: string;
-  keys: string;
-}
-
-export const COMMON_HOTKEYS: PresetItem[] = [
-  { key: "presetCloseTab", keys: "^w" },
-  { key: "presetReopenTab", keys: "^+t" },
-  { key: "presetPrevPage", keys: "!{Left}" },
-  { key: "presetNextPage", keys: "!{Right}" },
-  { key: "presetRefresh", keys: "{F5}" },
-  { key: "presetCopy", keys: "^c" },
-  { key: "presetPaste", keys: "^v" },
-];
-
 export const ACTION_TYPE_LABEL_KEYS: Record<ActionType, string> = {
   keys: "dialogs.typeKeys",
   ahk: "dialogs.typeAhk",

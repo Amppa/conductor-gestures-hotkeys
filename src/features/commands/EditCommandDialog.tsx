@@ -1,4 +1,4 @@
-import { COMMON_HOTKEYS, ACTION_TYPE_LABEL_KEYS, type PresetItem } from "./commandPresets";
+import { ACTION_TYPE_LABEL_KEYS } from "./commandPresets";
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -21,10 +21,15 @@ import {
 } from "@fluentui/react-components";
 import { Action, ActionType } from "../../domain/types";
 import { fromAhkKey } from "../../shared/keyMap";
-import { captureCommandShortcut } from "./commandShortcut";
+import {
+  captureCommandShortcut,
+  hasShortcutBaseKey,
+  normalizeShortcutValue,
+  SPECIAL_SHORTCUT_KEYS,
+} from "./commandShortcut";
 import { getCommandCategory, SYSTEM_COMMANDS, type CommandCategory } from "../../domain/commandCategories";
 
-type CommandMode = "common" | "keys" | "remap" | "script" | "other";
+type ScriptMode = "script" | "other";
 
 const useStyles = makeStyles({
   content: {
@@ -43,6 +48,17 @@ const useStyles = makeStyles({
     gap: "6px",
     marginTop: "4px",
   },
+  shortcutRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  shortcutInput: {
+    flex: 1,
+  },
+  specialKeyDropdown: {
+    flex: 1,
+  },
 });
 
 interface EditCommandDialogProps {
@@ -51,16 +67,6 @@ interface EditCommandDialogProps {
   category?: CommandCategory;
   onSave: (updated: Action) => void;
   onCancel: () => void;
-}
-
-function resolveInitialCommandMode(action: Action, category: CommandCategory): CommandMode {
-  if (action.type === "remap") return "remap";
-  if (category === "scriptCommands") return action.type === "ahk" ? "script" : "other";
-  if (action.type === "keys") {
-    const isPreset = !action.value || COMMON_HOTKEYS.some((preset) => preset.keys === action.value);
-    return isPreset ? "common" : "keys";
-  }
-  return action.type === "ahk" ? "script" : "other";
 }
 
 export const EditCommandDialog: React.FC<EditCommandDialogProps> = ({
@@ -72,12 +78,31 @@ export const EditCommandDialog: React.FC<EditCommandDialogProps> = ({
 }) => {
   const styles = useStyles();
   const { t } = useTranslation();
+  const initialType: ActionType = category === "keyboardCommands" ? "keys" : action.type;
+  const initialValue = category === "keyboardCommands" ? normalizeShortcutValue(action.value) : action.value;
+
   const [name, setName] = useState(action.name);
-  const [type, setType] = useState<ActionType>(action.type);
-  const [value, setValue] = useState(action.value);
-  const [mode, setMode] = useState<CommandMode>(() => resolveInitialCommandMode(action, category));
+  const [type, setType] = useState<ActionType>(initialType);
+  const [value, setValue] = useState(initialValue);
+  const [scriptMode, setScriptMode] = useState<ScriptMode>(initialType === "ahk" ? "script" : "other");
   const [recording, setRecording] = useState(false);
-  const drafts = useRef<Partial<Record<ActionType, string>>>({ [action.type]: action.value });
+  const shortcutInputRef = useRef<HTMLInputElement>(null);
+  const autoNameEnabled = useRef(
+    !action.name.trim() ||
+      action.name === t("actions.newActionName") ||
+      action.name === t("dialogs.unnamedAction"),
+  );
+  const drafts = useRef<Partial<Record<ActionType, string>>>({ [initialType]: initialValue });
+
+  const formatShortcutDisplay = (ahkValue: string) =>
+    ahkValue ? fromAhkKey(ahkValue).replace(/\+/g, " + ") : "";
+
+  const applyShortcut = (nextValue: string, labelOverride?: string) => {
+    setValue(nextValue);
+    if (autoNameEnabled.current) {
+      setName(labelOverride ?? formatShortcutDisplay(nextValue));
+    }
+  };
 
   const switchType = (next: ActionType) => {
     drafts.current[type] = value;
@@ -85,27 +110,24 @@ export const EditCommandDialog: React.FC<EditCommandDialogProps> = ({
     setValue(drafts.current[next] ?? "");
     setRecording(false);
   };
-  const switchMode = (next: CommandMode) => {
-    setMode(next);
-    switchType(next === "script" ? "ahk" : next === "other" ? "run" : next === "remap" ? "remap" : "keys");
+
+  const switchScriptMode = (next: ScriptMode) => {
+    setScriptMode(next);
+    switchType(next === "script" ? "ahk" : "run");
   };
 
-  const handleHotkeyKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (!recording) return;
+  const handleShortcutKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.repeat) return;
     const captured = captureCommandShortcut(e);
     if (!captured) return;
-    setValue(captured);
-    setRecording(false);
+    applyShortcut(captured);
   };
 
-  const handleSelectPreset = (preset: PresetItem) => {
-    const localized = t("dialogs." + preset.key);
-    setName(localized.split(" (")[0]);
-    setType("keys");
-    setValue(preset.keys);
+  const handleFinishRecording = () => {
+    setRecording(false);
+    shortcutInputRef.current?.blur();
   };
 
   const handleSave = () => {
@@ -116,6 +138,12 @@ export const EditCommandDialog: React.FC<EditCommandDialogProps> = ({
       value: type === "noop" ? "" : value.trim(),
     });
   };
+
+  const selectedSpecial = SPECIAL_SHORTCUT_KEYS.find((item) => item.value === value);
+  const displayShortcut = formatShortcutDisplay(value);
+  const canSave = category === "keyboardCommands"
+    ? hasShortcutBaseKey(value)
+    : !recording && (type === "noop" || Boolean(value.trim()));
 
   return (
     <Dialog open={open} onOpenChange={(_, data) => !data.open && onCancel()}>
@@ -128,44 +156,51 @@ export const EditCommandDialog: React.FC<EditCommandDialogProps> = ({
               <Subtitle2>{t("actions.name")}：</Subtitle2>
               <Input
                 value={name}
-                onChange={(_, data) => setName(data.value)}
+                onChange={(_, data) => {
+                  autoNameEnabled.current = !data.value.trim();
+                  setName(data.value);
+                }}
                 placeholder={t("dialogs.actionNamePlaceholder")}
               />
             </div>
 
-            {category !== "systemCommands" && <TabList selectedValue={mode} onTabSelect={(_, data) => switchMode(data.value as CommandMode)}>
-              {category === "keyboardCommands" ? <>
-                <Tab value="common">{t("dialogs.commandCommon")}</Tab>
-                <Tab value="keys">{t("dialogs.commandShortcut")}</Tab>
-                <Tab value="remap">{t("dialogs.typeRemap")}</Tab>
-              </> : <>
+            {category === "scriptCommands" && (
+              <TabList selectedValue={scriptMode} onTabSelect={(_, data) => switchScriptMode(data.value as ScriptMode)}>
                 <Tab value="script">{t("dialogs.commandScript")}</Tab>
                 <Tab value="other">{t("dialogs.commandOther")}</Tab>
-              </>}
-            </TabList>}
-            {category === "systemCommands" && <div className={styles.presetRow}>
-              {SYSTEM_COMMANDS.map((preset) => <Button key={preset.label}
-                appearance={type === preset.type && value === preset.value ? "primary" : "outline"}
-                onClick={() => { setName(t("dialogs." + preset.label).split(" (")[0]); setType(preset.type); setValue(preset.value); }}>
-                {t("dialogs." + preset.label)}
-              </Button>)}
-            </div>}
-            {category === "keyboardCommands" && mode === "common" && <div className={styles.presetRow}>
-              {COMMON_HOTKEYS.filter((preset) => getCommandCategory({ type: "keys", value: preset.keys }) === "keyboardCommands").map((preset) => <Button key={preset.keys}
-                appearance={value === preset.keys ? "primary" : "outline"}
-                onClick={() => handleSelectPreset(preset)}>{t("dialogs." + preset.key)}</Button>)}
-            </div>}
-            {category === "scriptCommands" && mode === "other" &&
-            <div className={styles.section}>
-              <Subtitle2>{t("dialogs.commandOperation")}：</Subtitle2>
-              <Dropdown
-                value={t(ACTION_TYPE_LABEL_KEYS[type])}
-                onOptionSelect={(_, data) => switchType(data.optionValue as ActionType)}
-              >
-                <Option value="run">{t("dialogs.typeRun")}</Option>
-                <Option value="noop">{t("dialogs.typeNoop")}</Option>
-              </Dropdown>
-            </div>}
+              </TabList>
+            )}
+
+            {category === "systemCommands" && (
+              <div className={styles.presetRow}>
+                {SYSTEM_COMMANDS.map((preset) => (
+                  <Button
+                    key={preset.label}
+                    appearance={type === preset.type && value === preset.value ? "primary" : "outline"}
+                    onClick={() => {
+                      setName(t("dialogs." + preset.label).split(" (")[0]);
+                      setType(preset.type);
+                      setValue(preset.value);
+                    }}
+                  >
+                    {t("dialogs." + preset.label)}
+                  </Button>
+                ))}
+              </div>
+            )}
+
+            {category === "scriptCommands" && scriptMode === "other" && (
+              <div className={styles.section}>
+                <Subtitle2>{t("dialogs.commandOperation")}：</Subtitle2>
+                <Dropdown
+                  value={t(ACTION_TYPE_LABEL_KEYS[type])}
+                  onOptionSelect={(_, data) => switchType(data.optionValue as ActionType)}
+                >
+                  <Option value="run">{t("dialogs.typeRun")}</Option>
+                  <Option value="noop">{t("dialogs.typeNoop")}</Option>
+                </Dropdown>
+              </div>
+            )}
 
             {/* Type: No-op */}
             {type === "noop" && (
@@ -174,31 +209,50 @@ export const EditCommandDialog: React.FC<EditCommandDialogProps> = ({
               </div>
             )}
 
-            {/* Type: Remap */}
-            {type === "remap" && (
-              <div className={styles.section}>
-                <Subtitle2>{t("dialogs.remapHint")}</Subtitle2>
-                <Input
-                  value={value}
-                  onChange={(_, data) => setValue(data.value)}
-                  placeholder="LWin"
-                />
-              </div>
-            )}
-
-            {/* Type: Keys */}
-            {category === "keyboardCommands" && mode === "keys" && (
-              <div className={styles.section}>
-                <div aria-live="polite">
-                  {value ? fromAhkKey(value).split("+").map((key, index) => <kbd key={index} style={{ display: "inline-block", padding: "4px 8px", marginRight: "4px", border: "1px solid currentColor", borderRadius: "4px" }}>{key}</kbd>) : t("dialogs.shortcutEmpty")}
+            {/* Keyboard Commands: Focus-to-record input + inline special key dropdown */}
+            {category === "keyboardCommands" && (
+              <>
+                <div className={styles.section}>
+                  <Subtitle2>{t("dialogs.commandShortcut")}：</Subtitle2>
+                  <div className={styles.shortcutRow}>
+                    <Input
+                      ref={shortcutInputRef}
+                      className={styles.shortcutInput}
+                      readOnly
+                      value={displayShortcut}
+                      placeholder={t("dialogs.shortcutStartRecord")}
+                      onFocus={() => setRecording(true)}
+                      onBlur={() => setRecording(false)}
+                      onKeyDown={handleShortcutKeyDown}
+                    />
+                    <Button
+                      appearance={recording ? "primary" : "secondary"}
+                      onClick={handleFinishRecording}
+                    >
+                      {t("dialogs.shortcutDone")}
+                    </Button>
+                  </div>
                 </div>
-                <Button appearance={recording ? "primary" : "secondary"}
-                  onClick={() => setRecording(!recording)} onKeyDown={handleHotkeyKeyDown}
-                  onBlur={() => setRecording(false)}>
-                  {t(recording ? "dialogs.shortcutStop" : "dialogs.shortcutRecord")}
-                </Button>
-                <Caption1>{t(recording ? "dialogs.shortcutListening" : "dialogs.shortcutHint")}</Caption1>
-              </div>
+
+                <div className={styles.shortcutRow}>
+                  <Subtitle2>{t("dialogs.shortcutSpecialKey")}：</Subtitle2>
+                  <Dropdown
+                    className={styles.specialKeyDropdown}
+                    placeholder={t("dialogs.shortcutSpecialKey")}
+                    value={selectedSpecial?.label ?? ""}
+                    selectedOptions={selectedSpecial ? [selectedSpecial.value] : []}
+                    onOptionSelect={(_, data) => {
+                      if (data.optionValue) {
+                        applyShortcut(data.optionValue as string, data.optionText);
+                      }
+                    }}
+                  >
+                    {SPECIAL_SHORTCUT_KEYS.map((item) => (
+                      <Option key={item.value} value={item.value}>{item.label}</Option>
+                    ))}
+                  </Dropdown>
+                </div>
+              </>
             )}
 
             {/* Type: AHK Script */}
@@ -231,7 +285,7 @@ export const EditCommandDialog: React.FC<EditCommandDialogProps> = ({
             <Button appearance="secondary" onClick={onCancel}>
               {t("dialogs.cancel")}
             </Button>
-            <Button appearance="primary" disabled={recording || (type !== "noop" && !value.trim())} onClick={handleSave}>
+            <Button appearance="primary" disabled={!canSave} onClick={handleSave}>
               {t("dialogs.save")}
             </Button>
           </DialogActions>

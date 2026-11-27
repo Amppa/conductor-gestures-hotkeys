@@ -6,7 +6,7 @@ import { DEFAULT_CONFIG } from "../domain/defaults";
 import { MOUSE_BUTTONS, TRIGGER_CATEGORIES } from "../domain/triggerTypes";
 import { SCREEN_ZONES } from "../domain/triggers/screen";
 import { TRIGGER_INPUT_ERRORS } from "../domain/triggers/stroke";
-import { COMMON_HOTKEYS, ACTION_TYPE_LABEL_KEYS } from "../features/commands/commandPresets";
+import { ACTION_TYPE_LABEL_KEYS } from "../features/commands/commandPresets";
 import { COMMAND_CATEGORIES, SYSTEM_COMMANDS } from "../domain/commandCategories";
 
 const sourceTexts = Object.values(
@@ -52,9 +52,8 @@ describe.each(Object.entries({ en, "zh-TW": zhTW }))("dynamic i18n contracts: %s
     for (const action of DEFAULT_CONFIG.actionTemplates) requireText(locale, `actionNames.${action.id}`);
   });
 
-  it("covers command type labels and the actual common preset catalog", () => {
+  it("covers command type labels and the actual system preset catalog", () => {
     for (const key of Object.values(ACTION_TYPE_LABEL_KEYS)) requireText(locale, key);
-    for (const preset of COMMON_HOTKEYS) requireText(locale, `dialogs.${preset.key}`);
     for (const category of COMMAND_CATEGORIES) requireText(locale, `nav.${category}`);
     for (const preset of SYSTEM_COMMANDS) requireText(locale, `dialogs.${preset.label}`);
   });
@@ -80,7 +79,6 @@ describe.each(Object.entries({ en, "zh-TW": zhTW }))("dynamic i18n contracts: %s
     for (const trigger of MOUSE_BUTTONS) used.add(`triggers.${trigger}`);
     for (const action of DEFAULT_CONFIG.actionTemplates) used.add(`actionNames.${action.id}`);
     for (const key of Object.values(ACTION_TYPE_LABEL_KEYS)) used.add(key);
-    for (const preset of COMMON_HOTKEYS) used.add(`dialogs.${preset.key}`);
     for (const preset of SYSTEM_COMMANDS) used.add(`dialogs.${preset.label}`);
     for (const error of TRIGGER_INPUT_ERRORS) used.add(`gestures.${error}`);
     for (const target of DEFAULT_CONFIG.targets) used.add(`targets.${target.id}Title`);
