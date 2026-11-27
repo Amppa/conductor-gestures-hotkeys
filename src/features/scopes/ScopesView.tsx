@@ -31,7 +31,7 @@ import {
   setBindingEnabled,
 } from "../../domain/targetMutations";
 import { formatGestureLabel } from "../gestures/gestureSymbols";
-import { isKeyboardTemplate, isScreenTemplate, type TriggerCategory } from "../../domain/triggerTypes";
+import { isKeyboardTemplate, type TriggerCategory } from "../../domain/triggerTypes";
 import { RuleTable } from "./RuleTable";
 import { ScopeGroupCard } from "./ScopeGroupCard";
 import { useRuleDragDrop } from "./useRuleDragDrop";
@@ -176,7 +176,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
     });
   };
 
-  const handleSaveGesture = (updatedGesture: Gesture, addToTemplates?: boolean) => {
+  const handleSaveGesture = (updatedGesture: Gesture) => {
     if (!editingGesture) {
       return;
     }
@@ -186,7 +186,7 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
       updatedGesture,
     );
 
-    if ((addToTemplates || creationCategory) && onAddGestureTemplate) {
+    if (creationCategory && onAddGestureTemplate) {
       onAddGestureTemplate({
         ...updatedGesture,
         id: createId("gesture"),
@@ -385,9 +385,9 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
       )}
       {editingGesture && creationCategory !== "hotkeys" && (
         <EditGestureDialog
-          isCreating={creationCategory !== null}
+          isCreating
           buttonMode={creationCategory === "mouseButtons"}
-          screenMode={creationCategory === "screen" || (!creationCategory && isScreenTemplate(editingGesture.binding.gesture))}
+          screenMode={creationCategory === "screen"}
           open={!!editingGesture}
           gesture={editingGesture.binding.gesture}
           onSave={handleSaveGesture}

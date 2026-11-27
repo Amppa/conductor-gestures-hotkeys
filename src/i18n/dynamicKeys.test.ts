@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { describe, expect, it } from "vitest";
 import en from "./locales/en.json";
 import zhTW from "./locales/zh-TW.json";
@@ -7,6 +8,24 @@ import { SCREEN_ZONES } from "../domain/triggers/screen";
 import { TRIGGER_INPUT_ERRORS } from "../domain/triggers/stroke";
 import { COMMON_HOTKEYS, ACTION_TYPE_LABEL_KEYS } from "../features/commands/commandPresets";
 import { COMMAND_CATEGORIES, SYSTEM_COMMANDS } from "../domain/commandCategories";
+
+const sourceTexts = Object.values(
+  import.meta.glob<string>(["../**/*.ts", "../**/*.tsx", "!../**/*.test.ts"], {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }),
+);
+
+function flattenKeys(value: unknown, prefix = "", output: string[] = []): string[] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return output;
+  for (const [key, child] of Object.entries(value)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (typeof child === "string") output.push(path);
+    else flattenKeys(child, path, output);
+  }
+  return output;
+}
 
 function requireText(locale: object, path: string): void {
   let value: unknown = locale;
@@ -43,5 +62,30 @@ describe.each(Object.entries({ en, "zh-TW": zhTW }))("dynamic i18n contracts: %s
   it("covers all parser errors and built-in scope titles", () => {
     for (const error of TRIGGER_INPUT_ERRORS) requireText(locale, `gestures.${error}`);
     for (const target of DEFAULT_CONFIG.targets) requireText(locale, `targets.${target.id}Title`);
+  });
+
+  it("contains no orphan translation keys outside static and dynamic usages", () => {
+    const used = new Set<string>();
+    const literalKeyPattern = /(["'`])([a-zA-Z]+\.[a-zA-Z0-9_-]+)\1/g;
+    for (const content of sourceTexts) {
+      for (const match of content.matchAll(literalKeyPattern)) used.add(match[2]);
+    }
+    for (const section of ["corners", "edges", "halves"]) used.add(`screenEditor.${section}`);
+    for (const category of TRIGGER_CATEGORIES) used.add(`nav.${category}`);
+    for (const category of COMMAND_CATEGORIES) used.add(`nav.${category}`);
+    for (const trigger of Object.keys(SCREEN_ZONES)) {
+      used.add(`screenLabels.${trigger}`);
+      used.add(`triggers.${trigger}`);
+    }
+    for (const trigger of MOUSE_BUTTONS) used.add(`triggers.${trigger}`);
+    for (const action of DEFAULT_CONFIG.actionTemplates) used.add(`actionNames.${action.id}`);
+    for (const key of Object.values(ACTION_TYPE_LABEL_KEYS)) used.add(key);
+    for (const preset of COMMON_HOTKEYS) used.add(`dialogs.${preset.key}`);
+    for (const preset of SYSTEM_COMMANDS) used.add(`dialogs.${preset.label}`);
+    for (const error of TRIGGER_INPUT_ERRORS) used.add(`gestures.${error}`);
+    for (const target of DEFAULT_CONFIG.targets) used.add(`targets.${target.id}Title`);
+
+    const orphans = flattenKeys(locale).filter((key) => !used.has(key));
+    expect(orphans).toEqual([]);
   });
 });

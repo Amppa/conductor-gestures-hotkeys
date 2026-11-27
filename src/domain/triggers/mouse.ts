@@ -12,7 +12,7 @@ export function parseMouseInput(raw: string, fallback = "R"): StrokeInput {
   else if (source && new Set(source.split("+")).size !== source.split("+").length) error = "invalidStroke";
   else if (trigger === "L") error = "leftOnlyUnsupported";
   else if (trigger === "M") error = "unsupportedMouseGesture";
-  else if (!error && !parsed.steps.length && ["R", "M"].includes(trigger)) error = "singleClickUnsupported";
+  else if (!error && !parsed.steps.length && trigger === "R") error = "singleClickUnsupported";
   else if (!error && !mouseTriggerKind({ trigger, steps: parsed.steps })) error = "unsupportedMouseGesture";
   return { trigger, steps: parsed.steps, error };
 }

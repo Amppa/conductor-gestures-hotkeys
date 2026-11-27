@@ -1,6 +1,6 @@
-// Two-way key mapping between user-friendly hotkey strings and AHK Send syntax
+// Maps AHK Send syntax to user-friendly hotkey labels
 
-export const SPECIAL_KEYS_MAP: Record<string, string> = {
+const SPECIAL_KEYS_MAP: Record<string, string> = {
   enter: "{Enter}",
   esc: "{Escape}",
   escape: "{Escape}",
@@ -27,45 +27,6 @@ export const SPECIAL_KEYS_MAP: Record<string, string> = {
   medianext: "{Media_Next}",
   mediaprev: "{Media_Prev}",
 };
-
-// Converts user-friendly format (e.g. "Ctrl+Shift+T") to AHK format ("^+t")
-export function toAhkKey(hotkeyStr: string): string {
-  if (!hotkeyStr) return "";
-  const parts = hotkeyStr.split("+").map((p) => p.trim());
-  let ahkPrefix = "";
-  let baseKey = "";
-
-  for (const part of parts) {
-    switch (part.toLowerCase()) {
-      case "ctrl":
-      case "control":
-        ahkPrefix += "^";
-        break;
-      case "alt":
-        ahkPrefix += "!";
-        break;
-      case "shift":
-        ahkPrefix += "+";
-        break;
-      case "win":
-      case "windows":
-      case "meta":
-        ahkPrefix += "#";
-        break;
-      default:
-        baseKey = part;
-        break;
-    }
-  }
-
-  const special = SPECIAL_KEYS_MAP[baseKey.toLowerCase()];
-  if (special) {
-    return `${ahkPrefix}${special}`;
-  }
-
-  // Normal letters or digits
-  return `${ahkPrefix}${baseKey.toLowerCase()}`;
-}
 
 // Converts AHK syntax back to friendly format (e.g. "^+t" -> "Ctrl+Shift+T")
 export function fromAhkKey(ahkStr: string): string {

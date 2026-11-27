@@ -88,12 +88,6 @@ export interface AppConfig {
   targets: Target[];
 }
 
-export interface RuntimeStatus {
-  state: "stopped" | "running" | "error";
-  appliedRevision: number | null;
-  msg: string;
-}
-
 export interface BackupHeader {
   app: string;
   schemaVersion: number;

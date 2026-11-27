@@ -13,9 +13,6 @@ export const COMMON_HOTKEYS: PresetItem[] = [
   { key: "presetRefresh", keys: "{F5}" },
   { key: "presetCopy", keys: "^c" },
   { key: "presetPaste", keys: "^v" },
-  { key: "presetShowDesktop", keys: "#d" },
-  { key: "presetVolUp", keys: "{Volume_Up}" },
-  { key: "presetVolDown", keys: "{Volume_Down}" },
 ];
 
 export const ACTION_TYPE_LABEL_KEYS: Record<ActionType, string> = {
