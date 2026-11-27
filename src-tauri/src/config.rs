@@ -121,7 +121,7 @@ pub struct GestureTemplate {
 pub struct ActionTemplate {
     pub id: String,
     pub name: String,
-    #[serde(alias = "type", rename = "type")]
+    #[serde(rename = "type")]
     pub action_type: String,
     pub value: String,
 }
@@ -161,7 +161,7 @@ pub struct Gesture {
 pub struct Action {
     pub id: String,
     pub name: String,
-    #[serde(alias = "type", rename = "type")]
+    #[serde(rename = "type")]
     pub action_type: String,
     pub value: String,
 }

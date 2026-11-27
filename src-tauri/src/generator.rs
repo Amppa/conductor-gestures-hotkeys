@@ -382,24 +382,18 @@ fn collect_disabled_executables(config: &AppConfig) -> Vec<String> {
 fn write_disabled_process_function(script: &mut String, executables: &[String]) {
     script.push_str("; Priority 3: Blacklist (Disabled apps)\n");
     script.push_str("GeneratedIsProcessDisabled(procName) {\n");
-
-    if executables.is_empty() {
-        script.push_str("    return false\n");
-    } else {
-        script.push_str("    switch StrLower(procName) {\n");
-        let cases = executables
-            .iter()
-            .map(|executable| format!("\"{}\"", ahk_quote(executable)))
-            .collect::<Vec<_>>()
-            .join(", ");
-        script.push_str(&format!(
-            "        case {}:\n            return true\n",
-            cases
-        ));
-        script.push_str("        default:\n            return false\n");
-        script.push_str("    }\n");
-    }
-
+    script.push_str("    switch StrLower(procName) {\n");
+    let cases = executables
+        .iter()
+        .map(|executable| format!("\"{}\"", ahk_quote(executable)))
+        .collect::<Vec<_>>()
+        .join(", ");
+    script.push_str(&format!(
+        "        case {}:\n            return true\n",
+        cases
+    ));
+    script.push_str("        default:\n            return false\n");
+    script.push_str("    }\n");
     script.push_str("}\n\n");
 }
 

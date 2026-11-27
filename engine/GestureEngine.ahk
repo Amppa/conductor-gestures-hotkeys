@@ -20,7 +20,6 @@ global gLastX := 0
 global gLastY := 0
 global gTrailPrevX := 0
 global gTrailPrevY := 0
-global gStartWin := 0
 global gStartProcess := ""
 global gSteps := []
 global gThreshold := 10
@@ -141,9 +140,6 @@ ShouldCaptureMouse(button) {
         if gFnIsProcessDisabled(WinGetProcessName(hwnd))
             return false
     }
-    held := HeldMouseButtons()
-    held[button] := true
-    trigger := MouseTriggerForHeld(held)
     for candidate in gMouseTriggers {
         if InStr("+" candidate "+", "+" button "+")
             return true
@@ -600,7 +596,7 @@ SetTimer(PollHotCorner, 50)
 ; ------------------------------------------------------------------------------
 OnTriggerDown(btnName) {
     global gState, gTrigger, gStartX, gStartY, gLastX, gLastY, gTrailPrevX, gTrailPrevY
-    global gStartWin, gStartProcess, gSteps, gIsPaused, gFnIsProcessDisabled
+    global gStartProcess, gSteps, gIsPaused, gFnIsProcessDisabled
     global gChordWheelTriggered
 
     if (gIsPaused) {
@@ -629,7 +625,6 @@ OnTriggerDown(btnName) {
     gLastY := curY
     gTrailPrevX := curX
     gTrailPrevY := curY
-    gStartWin := winHwnd
     gStartProcess := procName
     gSteps := []
     gChordWheelTriggered := false

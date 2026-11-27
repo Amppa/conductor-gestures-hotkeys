@@ -3,6 +3,8 @@ param(
     [string]$OutputDirectory
 )
 
+$ErrorActionPreference = "Stop"
+
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 if ([string]::IsNullOrEmpty($OutputDirectory)) {
     $OutputDirectory = Join-Path $projectRoot "release\Conductor-portable"

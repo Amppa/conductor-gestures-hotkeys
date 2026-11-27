@@ -134,7 +134,7 @@ fn validate_enabled_binding_duplicates(config: &AppConfig) -> Result<(), String>
             if !crate::config::supported_mouse_trigger(&mouse_trigger, &binding.gesture.steps) {
                 return Err(format!("Scope「{}」規則「{}」的滑鼠觸發不完整：左鍵不能單獨使用，單獨中鍵或右鍵需加入移動或滾輪操作。", target.name, binding.id));
             }
-            let trigger = normalize_trigger(binding.gesture.trigger.trim()).to_ascii_lowercase();
+            let trigger = mouse_trigger.to_ascii_lowercase();
             let steps = binding
                 .gesture
                 .steps
@@ -398,9 +398,6 @@ pub fn apply_config(
 
     // 1. Pre-flight check: ensure AutoHotkey executable exists
     let ahk_exe = autohotkey_exe_path(&app)?;
-    if !ahk_exe.exists() {
-        return Err(format!("找不到 AutoHotkey 執行檔: {}", ahk_exe.display()));
-    }
 
     // 2. Generate the script once and validate a staged engine + script pair.
     let revision = SystemTime::now()
@@ -419,11 +416,6 @@ pub fn apply_config(
     // 4. Deploy the validated pair, keeping the previous files as backups.
     let runtime_dir = runtime_dir_path(&app)?;
     let script_path = runtime_dir.join(RUNTIME_SCRIPT_NAME);
-    // A previous transaction must never supply rollback metadata for this apply.
-    let manifest = runtime_dir.join("rollback.json");
-    if manifest.exists() {
-        fs::remove_file(&manifest).map_err(|e| format!("無法準備回滾資料：{e}"))?;
-    }
     if let Err(deploy_error) =
         deploy_runtime_pair(&runtime_dir, &source_engine_path, &script_content)
     {
@@ -570,6 +562,26 @@ pub fn set_engine_paused(
         .map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+#[tauri::command]
+pub async fn export_config_dialog(
+    content: String,
+    default_file_name: String,
+) -> Result<Option<String>, String> {
+    let file = rfd::AsyncFileDialog::new()
+        .set_file_name(&default_file_name)
+        .add_filter("JSON 設定檔 (*.json)", &["json"])
+        .save_file()
+        .await;
+
+    if let Some(handle) = file {
+        let path = handle.path().to_path_buf();
+        fs::write(&path, content).map_err(|e| e.to_string())?;
+        Ok(Some(path.to_string_lossy().to_string()))
+    } else {
+        Ok(None)
+    }
 }
 
 #[cfg(test)]
@@ -942,25 +954,5 @@ mod tests {
         let error = validate_imported_config(value.to_string()).unwrap_err();
 
         assert!(error.contains("版本"));
-    }
-}
-
-#[tauri::command]
-pub async fn export_config_dialog(
-    content: String,
-    default_file_name: String,
-) -> Result<Option<String>, String> {
-    let file = rfd::AsyncFileDialog::new()
-        .set_file_name(&default_file_name)
-        .add_filter("JSON 設定檔 (*.json)", &["json"])
-        .save_file()
-        .await;
-
-    if let Some(handle) = file {
-        let path = handle.path().to_path_buf();
-        fs::write(&path, content).map_err(|e| e.to_string())?;
-        Ok(Some(path.to_string_lossy().to_string()))
-    } else {
-        Ok(None)
     }
 }
