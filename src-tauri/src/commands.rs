@@ -127,24 +127,10 @@ fn validate_enabled_binding_duplicates(config: &AppConfig) -> Result<(), String>
         .filter(|target| target.enabled && target.kind != "disabled")
     {
         let mut seen = HashSet::new();
-        let mut occupied = 0u8;
-        let mut half_occupied = 0u8;
+        let mut occupied_by_steps: std::collections::HashMap<String, u8> =
+            std::collections::HashMap::new();
         for binding in target.bindings.iter().filter(|binding| binding.enabled) {
             let mouse_trigger = normalize_trigger(binding.gesture.trigger.trim());
-            let slots = screen_edge_slots(&mouse_trigger);
-            if (if mouse_trigger.ends_with("Half") {
-                occupied
-            } else {
-                half_occupied
-            }) & slots
-                != 0
-            {
-                return Err(format!("無法套用設定：Scope「{}」的螢幕邊緣「{}」已被其他啟用規則佔用。請先停用或修改衝突規則。", target.name, mouse_trigger));
-            }
-            occupied |= slots;
-            if mouse_trigger.ends_with("Half") {
-                half_occupied |= slots;
-            }
             let normalized_steps = binding
                 .gesture
                 .steps
@@ -154,8 +140,16 @@ fn validate_enabled_binding_duplicates(config: &AppConfig) -> Result<(), String>
             if !crate::config::supported_mouse_trigger(&mouse_trigger, &normalized_steps) {
                 return Err(format!("Scope「{}」規則「{}」的滑鼠觸發不完整：左鍵或中鍵不能單獨使用，單獨右鍵需加入移動或滾輪操作。", target.name, binding.id));
             }
-            let trigger = mouse_trigger.to_ascii_lowercase();
             let steps = normalized_steps.join(",");
+            let slots = screen_edge_slots(&mouse_trigger);
+            if slots != 0 {
+                let occupied = occupied_by_steps.get(&steps).copied().unwrap_or(0);
+                if (occupied & slots) != 0 {
+                    return Err(format!("無法套用設定：Scope「{}」的螢幕邊緣「{}」已被其他啟用規則佔用。請先停用或修改衝突規則。", target.name, mouse_trigger));
+                }
+                *occupied_by_steps.entry(steps.clone()).or_insert(0) |= slots;
+            }
+            let trigger = mouse_trigger.to_ascii_lowercase();
             let signature = format!("{trigger}:{steps}");
             if !seen.insert(signature.clone()) {
                 return Err(format!(
@@ -882,19 +876,21 @@ mod tests {
     }
 
     #[test]
-    fn screen_edge_occupancy_ignores_wheel_direction_and_disabled_rules() {
+    fn screen_edge_occupancy_checks_per_wheel_direction_and_ignores_disabled_rules() {
         for (whole, first, second) in [
             ("EdgeTop", "EdgeTopLeftHalf", "EdgeTopRightHalf"),
             ("EdgeBottom", "EdgeBottomLeftHalf", "EdgeBottomRightHalf"),
             ("EdgeLeft", "EdgeLeftTopHalf", "EdgeLeftBottomHalf"),
             ("EdgeRight", "EdgeRightTopHalf", "EdgeRightBottomHalf"),
         ] {
-            for (a, b, conflict) in [
-                (first, first, true),
-                (first, second, false),
-                (whole, first, true),
-                (first, whole, true),
-                (whole, whole, false),
+            for (a, step_a, b, step_b, conflict) in [
+                (first, "WU", first, "WU", true),
+                (first, "WU", first, "WD", false),
+                (first, "WU", second, "WU", false),
+                (whole, "WU", first, "WU", true),
+                (first, "WU", whole, "WU", true),
+                (whole, "WU", first, "WD", false),
+                (whole, "WU", whole, "WD", false),
             ] {
                 let mut config = default_app_config();
                 for target in &mut config.targets {
@@ -914,16 +910,16 @@ mod tests {
                     .clone();
                 binding.enabled = true;
                 binding.gesture.trigger = a.into();
-                binding.gesture.steps = vec!["WU".into()];
+                binding.gesture.steps = vec![step_a.into()];
                 let mut other = binding.clone();
                 other.id = "other".into();
                 other.gesture.trigger = b.into();
-                other.gesture.steps = vec!["WD".into()];
+                other.gesture.steps = vec![step_b.into()];
                 target.bindings = vec![binding, other];
                 assert_eq!(
                     validate_enabled_binding_duplicates(&config).is_err(),
                     conflict,
-                    "{a}, {b}"
+                    "{a}:{step_a}, {b}:{step_b}"
                 );
                 config
                     .targets

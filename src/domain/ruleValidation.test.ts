@@ -24,19 +24,21 @@ describe("hasEnabledGestureDuplicate", () => {
     ["EdgeBottom", "EdgeBottomLeftHalf", "EdgeBottomRightHalf"],
     ["EdgeLeft", "EdgeLeftTopHalf", "EdgeLeftBottomHalf"],
     ["EdgeRight", "EdgeRightTopHalf", "EdgeRightBottomHalf"],
-  ])("checks occupancy on %s regardless of wheel direction", (whole, first, second) => {
+  ])("checks occupancy on %s per wheel direction", (whole, first, second) => {
     const existing = createBinding("existing", true, { trigger: first, steps: ["WU"] });
-    const check = (trigger: string, bindings = [existing]) => hasEnabledGestureDuplicate(
-      bindings, "candidate", { trigger, steps: ["WD"] },
-    );
-    expect(check(first)).toBe(true);
-    expect(check(whole)).toBe(true);
-    expect(check(second)).toBe(false);
-    expect(check(first, [{ ...existing, enabled: false }])).toBe(false);
-    expect(check(first, [{ ...existing, id: "candidate" }])).toBe(false);
+    const check = (trigger: string, steps: string[] = ["WU"], bindings = [existing]) =>
+      hasEnabledGestureDuplicate(bindings, "candidate", { trigger, steps });
+    expect(check(first, ["WU"])).toBe(true);
+    expect(check(first, ["WD"])).toBe(false);
+    expect(check(whole, ["WU"])).toBe(true);
+    expect(check(whole, ["WD"])).toBe(false);
+    expect(check(second, ["WU"])).toBe(false);
+    expect(check(first, ["WU"], [{ ...existing, enabled: false }])).toBe(false);
+    expect(check(first, ["WU"], [{ ...existing, id: "candidate" }])).toBe(false);
     const full = createBinding("full", true, { trigger: whole, steps: ["WU"] });
-    expect(check(first, [full])).toBe(true);
-    expect(check(whole, [full])).toBe(false);
+    expect(check(first, ["WU"], [full])).toBe(true);
+    expect(check(first, ["WD"], [full])).toBe(false);
+    expect(check(whole, ["WD"], [full])).toBe(false);
   });
   it("rejects enabling a disabled rule that duplicates an enabled gesture", () => {
     const existing = createBinding("existing", true);
