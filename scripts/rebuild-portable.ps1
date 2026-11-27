@@ -2,7 +2,8 @@
 [CmdletBinding()]
 param(
     [string]$ConfigPath,
-    [switch]$EnableStartup
+    [switch]$EnableStartup,
+    [switch]$EngineOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -11,10 +12,20 @@ $release = (New-Item -ItemType Directory -Force -Path (Join-Path $root "release"
 $portable = Join-Path $release "Conductor-portable"
 $exe = Join-Path $portable "Conductor.exe"
 $activeScript = Join-Path $portable "data\runtime\ActiveGestures.ahk"
+$engineSource = Join-Path $root "engine\GestureEngine.ahk"
 $runId = [guid]::NewGuid().ToString("N")
 $stage = Join-Path $release "staging-$runId"
 $candidate = Join-Path $stage "Conductor-portable"
 $backup = Join-Path $release "previous-$runId"
+
+if ($EngineOnly) {
+    if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
+        throw "Portable executable not found at $exe. Run a full rebuild first."
+    }
+    if (-not (Test-Path -LiteralPath $engineSource -PathType Leaf)) {
+        throw "Engine script not found at $engineSource."
+    }
+}
 
 if ($ConfigPath) {
     $ConfigPath = (Resolve-Path -LiteralPath $ConfigPath).Path
@@ -44,39 +55,56 @@ try {
         }
     }
 
-    Push-Location -LiteralPath $root
-    try {
-        & npm.cmd run tauri -- build --no-bundle
-        if ($LASTEXITCODE -ne 0) { throw "Conductor build failed." }
-    } finally {
-        Pop-Location
-    }
+    if ($EngineOnly) {
+        # Update bundled and runtime engine copies directly without rebuilding Rust or frontend.
+        $resEngineDir = Join-Path $portable "resources\engine"
+        New-Item -ItemType Directory -Force -Path $resEngineDir | Out-Null
+        Copy-Item -LiteralPath $engineSource -Destination (Join-Path $resEngineDir "GestureEngine.ahk") -Force
 
-    New-Item -ItemType Directory -Path $stage | Out-Null
-    & (Join-Path $PSScriptRoot "package-portable.ps1") -OutputDirectory $candidate
-    $oldData = Join-Path $portable "data"
-    $newData = Join-Path $candidate "data"
-    if (Test-Path -LiteralPath $oldData -PathType Container) {
-        Get-ChildItem -LiteralPath $oldData -Force | ForEach-Object {
-            Copy-Item -LiteralPath $_.FullName -Destination $newData -Recurse -Force
+        $runtimeDir = Join-Path $portable "data\runtime"
+        if (Test-Path -LiteralPath $runtimeDir -PathType Container) {
+            Copy-Item -LiteralPath $engineSource -Destination (Join-Path $runtimeDir "GestureEngine.ahk") -Force
         }
-    }
-    if ($ConfigPath) {
-        Copy-Item -LiteralPath $ConfigPath -Destination (Join-Path $newData "config.json") -Force
-    }
+        if ($ConfigPath) {
+            $dataDir = Join-Path $portable "data"
+            New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
+            Copy-Item -LiteralPath $ConfigPath -Destination (Join-Path $dataDir "config.json") -Force
+        }
+    } else {
+        Push-Location -LiteralPath $root
+        try {
+            & npm.cmd run tauri -- build --no-bundle
+            if ($LASTEXITCODE -ne 0) { throw "Conductor build failed." }
+        } finally {
+            Pop-Location
+        }
 
-    if (Test-Path -LiteralPath $portable) {
-        Move-Item -LiteralPath $portable -Destination $backup
-    }
-    try {
-        Move-Item -LiteralPath $candidate -Destination $portable
-    } catch {
-        if (Test-Path -LiteralPath $backup) {
-            Move-Item -LiteralPath $backup -Destination $portable
+        New-Item -ItemType Directory -Path $stage | Out-Null
+        & (Join-Path $PSScriptRoot "package-portable.ps1") -OutputDirectory $candidate
+        $oldData = Join-Path $portable "data"
+        $newData = Join-Path $candidate "data"
+        if (Test-Path -LiteralPath $oldData -PathType Container) {
+            Get-ChildItem -LiteralPath $oldData -Force | ForEach-Object {
+                Copy-Item -LiteralPath $_.FullName -Destination $newData -Recurse -Force
+            }
         }
-        throw
+        if ($ConfigPath) {
+            Copy-Item -LiteralPath $ConfigPath -Destination (Join-Path $newData "config.json") -Force
+        }
+
+        if (Test-Path -LiteralPath $portable) {
+            Move-Item -LiteralPath $portable -Destination $backup
+        }
+        try {
+            Move-Item -LiteralPath $candidate -Destination $portable
+        } catch {
+            if (Test-Path -LiteralPath $backup) {
+                Move-Item -LiteralPath $backup -Destination $portable
+            }
+            throw
+        }
+        Copy-Item -LiteralPath "$candidate.zip" -Destination "$portable.zip" -Force
     }
-    Copy-Item -LiteralPath "$candidate.zip" -Destination "$portable.zip" -Force
 } catch {
     if (($runningApp.Count -or $runningEngine.Count) -and (Test-Path -LiteralPath $exe)) {
         Start-Process -FilePath $exe -WorkingDirectory $portable

@@ -46,6 +46,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rebuild-portable.ps1
 
 加上 `-EnableStartup` 可建立目前使用者的 Windows 登入啟動捷徑。
 加上 `-ConfigPath "D:\backup\config.json"` 可指定要帶入新版的設定檔。
+加上 `-EngineOnly` 可在只修改 `engine/GestureEngine.ahk` 時跳過前端與 Rust 建置，直接更新引擎並重啟。
 
 在專案根目錄執行以下指令，即可使用目前的程式碼和版本建置 `release\Conductor-portable.zip`。
 
