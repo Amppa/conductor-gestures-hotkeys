@@ -560,7 +560,7 @@ GestureTriggerMatches(trigger, candidate) {
 ; ------------------------------------------------------------------------------
 global gLastCorner := ""
 PollHotCorner() {
-    global gIsPaused, gLastCorner, gFnDispatchGestureAction, gFnIsProcessDisabled
+    global gIsPaused, gLastCorner, gFnDispatchGestureAction, gFnGetGestureActionName, gFnIsProcessDisabled
 
     if (gIsPaused)
         return
@@ -575,7 +575,7 @@ PollHotCorner() {
             try {
                 procName := WinGetProcessName(winHwnd)
             }
-            if (!gFnIsProcessDisabled(procName)) {
+            if (!gFnIsProcessDisabled(procName) && gFnGetGestureActionName(spatial, "", procName) != "") {
                 LogGesture("HotCorner Triggered: " . spatial . " Process: " . procName)
                 UpdateGestureOSD(spatial, [], procName)
                 ScheduleHideGestureOSD()
@@ -599,8 +599,11 @@ OnTriggerDown(btnName) {
     global gStartProcess, gSteps, gIsPaused, gFnIsProcessDisabled
     global gChordWheelTriggered
 
+    isChord := InStr(btnName, "+") > 0
+
     if (gIsPaused) {
-        SendEvent("{" btnName " Down}")
+        if (!isChord)
+            SendEvent("{" btnName " Down}")
         return
     }
 
@@ -613,7 +616,8 @@ OnTriggerDown(btnName) {
     ; Priority 3: Check blacklist (disabled apps)
     if (gFnIsProcessDisabled(procName)) {
         LogGesture("App disabled (blacklist): " . procName . " - Passing through " . btnName)
-        SendEvent("{" btnName " Down}")
+        if (!isChord)
+            SendEvent("{" btnName " Down}")
         return
     }
 
@@ -629,7 +633,9 @@ OnTriggerDown(btnName) {
     gSteps := []
     gChordWheelTriggered := false
 
-    SetTimer(TrackGesture, 10)
+    ; Chords are click-only triggers; skip stroke tracking so hand jitter does not cancel them.
+    if (!isChord)
+        SetTimer(TrackGesture, 10)
 }
 
 TrackGesture() {
@@ -725,8 +731,29 @@ OnTriggerUp(btnName) {
 ; ------------------------------------------------------------------------------
 ; Spatial Wheel Handler: Checks Top Edge Split (L/R) and Hot Corners
 ; ------------------------------------------------------------------------------
+ShouldCaptureSpatialWheel(wheelDir) {
+    global gIsPaused, gEdgeScrollEnabled, gFnIsProcessDisabled, gFnGetGestureActionName
+
+    if (gIsPaused || !gEdgeScrollEnabled)
+        return false
+
+    MouseGetPos(&cx, &cy, &winHwnd)
+    spatial := GetSpatialContext(cx, cy)
+    if (spatial == "")
+        return false
+
+    procName := ""
+    try {
+        procName := WinGetProcessName(winHwnd)
+    }
+    if (gFnIsProcessDisabled(procName))
+        return false
+
+    return gFnGetGestureActionName(spatial, wheelDir, procName) != ""
+}
+
 HandleSpatialWheel(wheelDir) {
-    global gIsPaused, gEdgeScrollEnabled, gFnDispatchGestureAction, gFnIsProcessDisabled
+    global gIsPaused, gEdgeScrollEnabled, gFnDispatchGestureAction, gFnGetGestureActionName, gFnIsProcessDisabled
 
     if (gIsPaused || !gEdgeScrollEnabled)
         return false
@@ -744,25 +771,14 @@ HandleSpatialWheel(wheelDir) {
     if (gFnIsProcessDisabled(procName))
         return false
 
+    if (gFnGetGestureActionName(spatial, wheelDir, procName) == "")
+        return false
+
     LogGesture("Spatial Wheel: " . spatial . " Wheel=" . wheelDir . " Process=" . procName)
     UpdateGestureOSD(spatial, [wheelDir], procName)
     ScheduleHideGestureOSD()
 
-    ; Try dispatching to spatial binding (e.g. EdgeTopR + WU)
-    dispatched := gFnDispatchGestureAction(spatial, wheelDir, procName)
-    if (dispatched)
-        return true
-
-    ; Built-in fallback: EdgeTop volume control if no custom binding matched
-    if (spatial == "EdgeTop" || SpatialWholeEdge(spatial) == "EdgeTop") {
-        if (wheelDir == "WU")
-            SoundSetVolume("+2")
-        else if (wheelDir == "WD")
-            SoundSetVolume("-2")
-        return true
-    }
-
-    return false
+    return gFnDispatchGestureAction(spatial, wheelDir, procName)
 }
 
 ; ------------------------------------------------------------------------------
@@ -823,7 +839,8 @@ HandleChordWheel(wheelDir) {
 *WheelDown::HandleChordWheel("WD")
 #HotIf
 
-#HotIf (GetSpatialContext((MouseGetPos(&_x, &_y), _x), _y) != "")
+#HotIf ShouldCaptureSpatialWheel("WU")
 *WheelUp::HandleSpatialWheel("WU")
+#HotIf ShouldCaptureSpatialWheel("WD")
 *WheelDown::HandleSpatialWheel("WD")
 #HotIf
