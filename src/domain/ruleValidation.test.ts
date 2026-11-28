@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_CONFIG } from "./defaults";
 import { Binding, Gesture } from "./types";
-import { hasEnabledGestureDuplicate } from "./ruleValidation";
+import { findConflictingBindings, hasEnabledGestureDuplicate } from "./ruleValidation";
 
 function createBinding(id: string, enabled: boolean, gesture: Partial<Gesture> = {}): Binding {
   return {
@@ -45,6 +45,18 @@ describe("hasEnabledGestureDuplicate", () => {
     const candidate = createBinding("candidate", false);
 
     expect(hasEnabledGestureDuplicate([existing], candidate.id, candidate.gesture)).toBe(true);
+    expect(findConflictingBindings([existing], candidate.id, candidate.gesture)).toEqual([existing]);
+  });
+
+  it("returns overlapping edge rules when whole and half edges conflict", () => {
+    const leftHalf = createBinding("left", true, { trigger: "EdgeTopLeftHalf", steps: ["WU"] });
+    const rightHalf = createBinding("right", true, { trigger: "EdgeTopRightHalf", steps: ["WU"] });
+    const wholeEdge = createBinding("whole", false, { trigger: "EdgeTop", steps: ["WU"] });
+
+    expect(findConflictingBindings([leftHalf, rightHalf, wholeEdge], wholeEdge.id, wholeEdge.gesture)).toEqual([
+      leftHalf,
+      rightHalf,
+    ]);
   });
 
   it("allows a duplicate gesture when the other rule is disabled", () => {

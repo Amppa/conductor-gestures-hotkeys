@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import { makeStyles, tokens, Badge, Button, Checkbox } from "@fluentui/react-components";
 import { Delete16Regular, ChevronDown16Regular } from "@fluentui/react-icons";
 import type { CommandCategory } from "../../domain/commandCategories";
@@ -12,6 +13,12 @@ import { TriggerPresetMenu } from "./TriggerPresetMenu";
 import type { useRuleDragDrop } from "./useRuleDragDrop";
 import { usePageStyles } from "../../shared/pageStyles";
 import { formatActionName } from "../../shared/displayNames";
+
+export function formatBindingTrigger(t: TFunction, gesture: Gesture): string {
+  return isKeyboardTemplate(gesture)
+    ? formatHotkeyTrigger(gesture.trigger)
+    : formatGestureLabel(gesture.trigger, gesture.steps, t);
+}
 
 const useStyles = makeStyles({
   scopesRow: {
@@ -157,15 +164,7 @@ export function RuleTable({
                         </span>
                       ) : (
                         <div className={styles.gestureValue}>
-                          <span>
-                            {isKeyboardTemplate(binding.gesture)
-                              ? formatHotkeyTrigger(binding.gesture.trigger)
-                              : formatGestureLabel(
-                                  binding.gesture.trigger,
-                                  binding.gesture.steps,
-                                  t,
-                                )}
-                          </span>
+                          <span>{formatBindingTrigger(t, binding.gesture)}</span>
                           {duplicate && (
                             <Badge appearance="tint" color="danger" size="small">
                               {t("targets.duplicateGesture")}

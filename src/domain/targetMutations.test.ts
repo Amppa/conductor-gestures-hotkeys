@@ -9,6 +9,7 @@ import {
   renameTarget,
   replaceBindingAction,
   replaceBindingGesture,
+  replaceConflictingBindings,
   setBindingEnabled,
 } from "./targetMutations";
 import { Action, Binding, Gesture, Target } from "./types";
@@ -94,6 +95,41 @@ describe("binding mutations", () => {
     const updated = setBindingEnabled(original, "global", "b2", true);
 
     expect(updated[0].bindings[1].enabled).toBe(false);
+  });
+
+  it("disables conflicting enabled rules and enables the chosen binding", () => {
+    const leftHalf = binding(
+      "left-half",
+      true,
+      { id: "g-tl", name: "TL", trigger: "EdgeTopLeftHalf", steps: ["WU"] },
+      keysAction,
+    );
+    const rightHalf = binding(
+      "right-half",
+      true,
+      { id: "g-tr", name: "TR", trigger: "EdgeTopRightHalf", steps: ["WU"] },
+      keysAction,
+    );
+    const whole = binding(
+      "whole",
+      false,
+      { id: "g-t", name: "Top", trigger: "EdgeTop", steps: ["WU"] },
+      noopAction,
+    );
+    const unrelated = binding("other", true, rightGesture, keysAction);
+
+    const updated = replaceConflictingBindings(
+      targets([leftHalf, rightHalf, whole, unrelated]),
+      "global",
+      "whole",
+    );
+
+    expect(updated[0].bindings.map((item) => [item.id, item.enabled])).toEqual([
+      ["left-half", false],
+      ["right-half", false],
+      ["whole", true],
+      ["other", true],
+    ]);
   });
 
   it("adds and removes bindings without mutating the input", () => {

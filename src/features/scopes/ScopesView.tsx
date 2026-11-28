@@ -19,6 +19,7 @@ import {
   Add16Regular,
 } from "@fluentui/react-icons";
 import { Target, Binding, Gesture, Action } from "../../domain/types";
+import { findConflictingBindings } from "../../domain/ruleValidation";
 import {
   addBinding,
   addExecutable,
@@ -28,11 +29,12 @@ import {
   renameTarget,
   replaceBindingAction,
   replaceBindingGesture,
+  replaceConflictingBindings,
   setBindingEnabled,
 } from "../../domain/targetMutations";
 import { formatGestureLabel } from "../gestures/gestureSymbols";
 import { isKeyboardTemplate, type TriggerCategory } from "../../domain/triggerTypes";
-import { RuleTable } from "./RuleTable";
+import { formatBindingTrigger, RuleTable } from "./RuleTable";
 import { ScopeGroupCard } from "./ScopeGroupCard";
 import { useRuleDragDrop } from "./useRuleDragDrop";
 import { formatHotkeyTrigger } from "../hotkeys/hotkeyTrigger";
@@ -91,6 +93,11 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
   const [pendingDeleteGroupId, setPendingDeleteGroupId] = useState<string | null>(null);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [tempGroupName, setTempGroupName] = useState("");
+  const [pendingConflict, setPendingConflict] = useState<{
+    targetId: string;
+    binding: Binding;
+    conflicts: Binding[];
+  } | null>(null);
 
   const findBinding = (targetId: string, bindingId: string): Binding | null => {
     const target = targets.find((item) => item.id === targetId);
@@ -213,7 +220,31 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
     bindingId: string,
     checked: boolean,
   ) => {
+    if (checked) {
+      const target = targets.find((item) => item.id === targetId);
+      const binding = target?.bindings.find((item) => item.id === bindingId);
+      const conflicts =
+        target && binding
+          ? findConflictingBindings(target.bindings, bindingId, binding.gesture)
+          : [];
+      if (binding && conflicts.length > 0) {
+        setPendingConflict({ targetId, binding, conflicts });
+        return;
+      }
+    }
     onUpdateTargets(setBindingEnabled(targets, targetId, bindingId, checked));
+  };
+
+  const handleConfirmReplaceConflict = () => {
+    if (!pendingConflict) return;
+    onUpdateTargets(
+      replaceConflictingBindings(
+        targets,
+        pendingConflict.targetId,
+        pendingConflict.binding.id,
+      ),
+    );
+    setPendingConflict(null);
   };
 
   const handleDeleteBinding = (targetId: string, bindingId: string) => {
@@ -441,6 +472,54 @@ export const ScopesView: React.FC<ScopesViewProps> = ({
                 {t("targets.deleteGroupConfirm")}
               </Button>
             </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+
+      <Dialog
+        open={!!pendingConflict}
+        onOpenChange={(_, data) => !data.open && setPendingConflict(null)}
+      >
+        <DialogSurface style={{ maxWidth: "520px" }}>
+          <DialogBody>
+            <DialogTitle>{t("targets.conflictReplaceTitle")}</DialogTitle>
+            {pendingConflict && (() => {
+              const formatRuleSummary = (item: Binding) =>
+                `${formatBindingTrigger(t, item.gesture)} → ${formatActionName(t, item.action)}`;
+              const activeSummary = pendingConflict.conflicts
+                .map(formatRuleSummary)
+                .join(" / ");
+              const pendingSummary = formatRuleSummary(pendingConflict.binding);
+              return (
+                <>
+                  <DialogContent
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "6px",
+                      paddingTop: "8px",
+                    }}
+                  >
+                    <div>{t("targets.conflictActiveLine", { summary: activeSummary })}</div>
+                    <div>{t("targets.conflictPendingLine", { summary: pendingSummary })}</div>
+                  </DialogContent>
+                  <DialogActions style={{ paddingTop: "12px" }}>
+                    <Button
+                      appearance="secondary"
+                      onClick={() => setPendingConflict(null)}
+                    >
+                      {t("targets.conflictKeepBtn")}
+                    </Button>
+                    <Button
+                      appearance="primary"
+                      onClick={handleConfirmReplaceConflict}
+                    >
+                      {t("targets.conflictSwitchBtn")}
+                    </Button>
+                  </DialogActions>
+                </>
+              );
+            })()}
           </DialogBody>
         </DialogSurface>
       </Dialog>

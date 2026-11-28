@@ -9,24 +9,30 @@ function stepSignature(steps: string[] = []): string {
 }
 
 /**
- * Reports duplicate gestures or overlapping edge slots for the same step
- * signature (e.g. "WU" vs "WD" do not conflict) within a scope.
- * Triggers and steps are normalized first so legacy aliases (e.g. "RB") are
- * compared against their canonical form, matching the Rust validator.
+ * Finds all enabled rules in the same scope whose trigger or screen-edge
+ * slot conflicts with the candidate gesture for the same step signature.
  */
-export function hasEnabledGestureDuplicate(
+export function findConflictingBindings(
   bindings: Binding[],
   bindingId: string,
   gesture: GestureShape
-): boolean {
+): Binding[] {
   const trigger = normalizeTrigger(gesture.trigger);
   const steps = stepSignature(gesture.steps);
   const slots = screenEdgeSlots(trigger);
 
-  return bindings.some((other) => {
+  return bindings.filter((other) => {
     if (other.id === bindingId || !other.enabled) return false;
     const otherTrigger = normalizeTrigger(other.gesture.trigger);
     if (stepSignature(other.gesture.steps) !== steps) return false;
     return otherTrigger === trigger || (slots & screenEdgeSlots(otherTrigger)) !== 0;
   });
+}
+
+export function hasEnabledGestureDuplicate(
+  bindings: Binding[],
+  bindingId: string,
+  gesture: GestureShape
+): boolean {
+  return findConflictingBindings(bindings, bindingId, gesture).length > 0;
 }

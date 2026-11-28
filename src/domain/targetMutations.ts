@@ -1,5 +1,5 @@
-import { hasEnabledGestureDuplicate } from "./ruleValidation";
-import { shouldEnableBinding } from "./bindingRules";
+import { findConflictingBindings, hasEnabledGestureDuplicate } from "./ruleValidation";
+import { isActionIncomplete, isGestureIncomplete, shouldEnableBinding } from "./bindingRules";
 import { createId } from "../shared/ids";
 import { Action, Binding, Gesture, Target } from "./types";
 
@@ -94,6 +94,39 @@ export function setBindingEnabled(
       binding.gesture,
     );
     return duplicate ? binding : { ...binding, enabled: true };
+  });
+}
+
+export function replaceConflictingBindings(
+  targets: Target[],
+  targetId: string,
+  bindingId: string,
+): Target[] {
+  return targets.map((target) => {
+    if (target.id !== targetId) {
+      return target;
+    }
+    const candidate = target.bindings.find((item) => item.id === bindingId);
+    if (
+      !candidate ||
+      isGestureIncomplete(candidate.gesture) ||
+      isActionIncomplete(candidate.action)
+    ) {
+      return target;
+    }
+    const conflictIds = new Set(
+      findConflictingBindings(target.bindings, bindingId, candidate.gesture).map(
+        (item) => item.id,
+      ),
+    );
+    return {
+      ...target,
+      bindings: target.bindings.map((item) => {
+        if (item.id === bindingId) return { ...item, enabled: true };
+        if (conflictIds.has(item.id)) return { ...item, enabled: false };
+        return item;
+      }),
+    };
   });
 }
 
