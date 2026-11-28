@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "Conductor",
-    "subtitle": "滑鼠五鍵與手勢管理系統",
+    "subtitle": "手勢與熱鍵指揮家",
     "applyFailed": "套用失敗: {{err}}"
   },
   "common": {
@@ -15,7 +15,7 @@
     "scriptCommands": "腳本指令",
     "popupMenu": "彈出選單",
     "screen": "螢幕邊角觸發",
-    "targets": "應用範圍",
+    "targets": "規則",
     "excluded": "排除程式",
     "gestures": "滑鼠手勢",
     "mouseButtons": "滑鼠按鍵觸發",

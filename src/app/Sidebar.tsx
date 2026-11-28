@@ -16,7 +16,8 @@ import {
   HandDraw24Regular,
   Desktop24Regular,
   Keyboard24Regular,
-  Flash24Regular,
+  KeyboardDock24Regular,
+  Script24Regular,
   List24Regular,
   Settings24Regular,
 } from "@fluentui/react-icons";
@@ -150,9 +151,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onTabSelect={(_, data) => onTabSelect(data.value as NavTabId)}
           className={styles.tabList}
         >
-          <Tab value="keyboardCommands" icon={<Keyboard24Regular />}>{t("nav.keyboardCommands")}</Tab>
+          <Tab value="keyboardCommands" icon={<KeyboardDock24Regular />}>{t("nav.keyboardCommands")}</Tab>
           <Tab value="systemCommands" icon={<Desktop24Regular />}>{t("nav.systemCommands")}</Tab>
-          <Tab value="scriptCommands" icon={<Flash24Regular />}>{t("nav.scriptCommands")}</Tab>
+          <Tab value="scriptCommands" icon={<Script24Regular />}>{t("nav.scriptCommands")}</Tab>
           <Tab value="popup-menu" icon={<List24Regular />}>
             {t("nav.popupMenu")}
           </Tab>

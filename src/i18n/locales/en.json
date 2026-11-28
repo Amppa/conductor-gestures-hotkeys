@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "Conductor",
-    "subtitle": "5-Button Mouse & Gesture Manager",
+    "subtitle": "Gesture & Hotkey Manager",
     "applyFailed": "Apply failed: {{err}}"
   },
   "common": {
@@ -15,7 +15,7 @@
     "scriptCommands": "Script Commands",
     "popupMenu": "Popup Menu",
     "screen": "Screen Edge & Corner Triggers",
-    "targets": "Scope",
+    "targets": "Rules",
     "excluded": "Excluded Apps",
     "gestures": "Mouse Gestures",
     "mouseButtons": "Mouse Button Triggers",
