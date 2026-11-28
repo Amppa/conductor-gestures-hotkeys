@@ -1,6 +1,6 @@
 [package]
 name = "conductor"
-version = "0.1.4"
+version = "0.1.5"
 description = "A Windows gesture and hotkey conductor"
 authors = ["Conductor contributors"]
 edition = "2021"
