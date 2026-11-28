@@ -9,6 +9,9 @@ export const normalizeOsdFontSizePx = (value: number): number =>
 export const normalizeOsdOpacityPct = (value: number): number =>
   Math.round(Math.min(Math.max(value, 0), 100) / 10) * 10;
 
+export const normalizeDoubleTapMs = (value: number): number =>
+  Math.round((Math.min(Math.max(value, 150), 500) - 150) / 50) * 50 + 150;
+
 export const DEFAULT_KEY_REMAPS: KeyRemap[] = [
   {
     id: "remap-disable-insert",
@@ -314,6 +317,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     enabled: true,
     debug: false,
     thresholdPx: 10,
+    doubleTapMs: 300,
     osdDurationMs: 1000,
     osdFontSizePx: 20,
     osdOpacityPct: 90,
@@ -370,6 +374,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     { id: "r-wu", trigger: "R", steps: ["WU"] },
     { id: "r-wd", trigger: "R", steps: ["WD"] },
     { id: "corner-br", trigger: "CornerBR", steps: [] },
+    { id: "key-lctrl-2x", trigger: "LCtrl*2", steps: [] },
     { id: "key-insert", trigger: "Insert", steps: [] },
     { id: "key-numlock", trigger: "NumLock", steps: [] },
     { id: "key-numpad0", trigger: "Numpad0", steps: [] },
@@ -419,6 +424,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     { id: "act-toggle-ime", name: "Toggle IME (Ctrl+Space)", type: "keys", value: "^{Space}" },
     { id: "act-open-calc", name: "Open Calculator", type: "run", value: "calc.exe" },
     { id: "act-open-notepad", name: "Open Notepad", type: "run", value: "notepad.exe" },
+    { id: "act-hello", name: "Show Hello Dialog", type: "ahk", value: "MsgBox('Hello', 'Conductor', 'AlwaysOnTop')" },
   ],
   keyRemaps: DEFAULT_KEY_REMAPS,
   targets: DEFAULT_TARGETS,

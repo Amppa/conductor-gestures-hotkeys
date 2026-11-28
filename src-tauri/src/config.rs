@@ -37,6 +37,11 @@ pub struct EngineConfig {
     pub debug: bool,
     pub threshold_px: i32,
     #[serde(
+        default = "default_double_tap_ms",
+        deserialize_with = "deserialize_double_tap_ms"
+    )]
+    pub double_tap_ms: u32,
+    #[serde(
         default = "default_osd_duration_ms",
         deserialize_with = "deserialize_osd_duration_ms"
     )]
@@ -52,6 +57,21 @@ pub struct EngineConfig {
         deserialize_with = "deserialize_osd_opacity_pct"
     )]
     pub osd_opacity_pct: u32,
+}
+
+fn default_double_tap_ms() -> u32 {
+    300
+}
+
+pub(crate) fn normalize_double_tap_ms(value: u32) -> u32 {
+    ((value.clamp(150, 500) - 150 + 25) / 50) * 50 + 150
+}
+
+fn deserialize_double_tap_ms<'de, D>(deserializer: D) -> Result<u32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    u32::deserialize(deserializer).map(normalize_double_tap_ms)
 }
 
 fn default_osd_duration_ms() -> u32 {
@@ -194,6 +214,7 @@ fn default_engine_config() -> EngineConfig {
         enabled: true,
         debug: false,
         threshold_px: 10,
+        double_tap_ms: default_double_tap_ms(),
         osd_duration_ms: default_osd_duration_ms(),
         osd_font_size_px: default_osd_font_size_px(),
         osd_opacity_pct: default_osd_opacity_pct(),
@@ -280,6 +301,7 @@ fn default_gesture_templates() -> Vec<GestureTemplate> {
         gesture_template("r-wu", "R + Wheel Up", "R", &["WU"]),
         gesture_template("r-wd", "R + Wheel Down", "R", &["WD"]),
         gesture_template("corner-br", "Bottom-Right Corner", "CornerBR", &[]),
+        gesture_template("key-lctrl-2x", "Left Ctrl Double Tap", "LCtrl*2", &[]),
         gesture_template("key-insert", "Insert Key", "Insert", &[]),
         gesture_template("key-numlock", "Num Lock", "NumLock", &[]),
         gesture_template("key-numpad0", "Numpad 0", "Numpad0", &[]),
@@ -341,6 +363,7 @@ fn default_action_templates() -> Vec<ActionTemplate> {
         action_template("act-toggle-ime", "Toggle IME (Ctrl+Space)", "keys", "^{Space}"),
         action_template("act-open-calc", "Open Calculator", "run", "calc.exe"),
         action_template("act-open-notepad", "Open Notepad", "run", "notepad.exe"),
+        action_template("act-hello", "Show Hello Dialog", "ahk", "MsgBox('Hello', 'Conductor', 'AlwaysOnTop')"),
     ]
 }
 
@@ -721,6 +744,7 @@ mod tests {
                 "r-wu",
                 "r-wd",
                 "corner-br",
+                "key-lctrl-2x",
                 "key-insert",
                 "key-numlock",
                 "key-numpad0",
@@ -897,5 +921,30 @@ mod tests {
         let config: AppConfig = serde_json::from_value(value).expect("config should load");
 
         assert_eq!(config.engine.osd_opacity_pct, 50);
+    }
+
+    #[test]
+    fn missing_double_tap_ms_uses_default() {
+        let mut value =
+            serde_json::to_value(default_app_config()).expect("config should serialize");
+        value["engine"]
+            .as_object_mut()
+            .expect("engine should be an object")
+            .remove("doubleTapMs");
+
+        let config: AppConfig = serde_json::from_value(value).expect("legacy config should load");
+
+        assert_eq!(config.engine.double_tap_ms, 300);
+    }
+
+    #[test]
+    fn double_tap_ms_is_normalized_to_supported_steps() {
+        let mut value =
+            serde_json::to_value(default_app_config()).expect("config should serialize");
+        value["engine"]["doubleTapMs"] = serde_json::json!(280);
+
+        let config: AppConfig = serde_json::from_value(value).expect("config should load");
+
+        assert_eq!(config.engine.double_tap_ms, 300);
     }
 }

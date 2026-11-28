@@ -32,6 +32,7 @@
   "settings": {
     "languageTitle": "語言",
     "thresholdTitle": "手勢靈敏度",
+    "doubleTapTitle": "連擊判定時間",
     "osdDurationTitle": "手勢提示時長",
     "osdDurationOff": "不顯示",
     "osdDurationValue": "{{seconds}} 秒",
@@ -133,7 +134,7 @@
     "tableKey": "按鍵",
     "keyLabel": "按鍵",
     "capturePlaceholder": "點擊後按下按鍵",
-    "captureHint": "按下單一按鍵或組合鍵；額外修飾鍵預設允許。",
+    "captureHint": "按下單一按鍵或組合鍵；連按兩下 Ctrl／Shift／Alt 可設為連擊觸發。",
     "duplicate": "這個按鍵已經有鍵盤觸發範本。",
     "empty": "尚未建立鍵盤觸發範本",
     "editTip": "點擊以編輯鍵盤觸發範本",
@@ -248,6 +249,7 @@
     "act-switch-ime": "切換輸入法",
     "act-toggle-ime": "切換中英輸入",
     "act-open-calc": "開啟小算盤",
-    "act-open-notepad": "開啟記事本"
+    "act-open-notepad": "開啟記事本",
+    "act-hello": "顯示 Hello 視窗"
   }
 }

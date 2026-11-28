@@ -1,5 +1,6 @@
 import {
   DEFAULT_CONFIG,
+  normalizeDoubleTapMs,
   normalizeOsdDurationMs,
   normalizeOsdFontSizePx,
   normalizeOsdOpacityPct,
@@ -80,6 +81,9 @@ function normalizeEngine(engine?: LegacyEngineConfig): EngineConfig {
     enabled: engine?.enabled ?? DEFAULT_CONFIG.engine.enabled,
     debug: engine?.debug ?? DEFAULT_CONFIG.engine.debug,
     thresholdPx: engine?.thresholdPx ?? DEFAULT_CONFIG.engine.thresholdPx,
+    doubleTapMs: normalizeDoubleTapMs(
+      engine?.doubleTapMs ?? DEFAULT_CONFIG.engine.doubleTapMs,
+    ),
     osdDurationMs: normalizeOsdDurationMs(
       engine?.osdDurationMs ?? DEFAULT_CONFIG.engine.osdDurationMs,
     ),

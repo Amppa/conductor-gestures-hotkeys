@@ -82,9 +82,34 @@ export function keyboardEventToTrigger(
   return `${prefix}${baseKey}`;
 }
 
+const MODIFIER_VALUES = new Set<string>(Object.values(MODIFIER_KEYS));
+
+export function isModifierTrigger(trigger: string): boolean {
+  return MODIFIER_VALUES.has(trigger);
+}
+
+export function resolveCapturedHotkey(
+  prevTrigger: string,
+  captured: string,
+  elapsedMs: number,
+  windowMs = 500,
+): string {
+  if (
+    isModifierTrigger(captured) &&
+    prevTrigger === captured &&
+    elapsedMs >= 0 &&
+    elapsedMs <= windowMs
+  ) {
+    return `${captured}*2`;
+  }
+  return captured;
+}
+
 export function formatHotkeyTrigger(trigger: string): string {
+  const isDoubleTap = trigger.endsWith("*2");
+  const baseTrigger = isDoubleTap ? trigger.slice(0, -2) : trigger;
   const parts: string[] = [];
-  let remaining = trigger;
+  let remaining = baseTrigger;
 
   while (remaining.length > 0) {
     if (remaining.startsWith("^")) {
@@ -105,5 +130,6 @@ export function formatHotkeyTrigger(trigger: string): string {
   }
 
   if (remaining) parts.push(remaining);
-  return parts.join(" + ");
+  const formatted = parts.join(" + ");
+  return isDoubleTap && formatted ? `${formatted} × 2` : formatted;
 }

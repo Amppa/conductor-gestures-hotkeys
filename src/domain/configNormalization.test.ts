@@ -87,6 +87,7 @@ describe("migrateConfig", () => {
       engine: {
         ...DEFAULT_CONFIG.engine,
         osdDurationMs: 300,
+        doubleTapMs: undefined,
         osdFontSizePx: undefined,
         osdFontSizePt: 24,
         osdOpacityPct: 51,
@@ -94,6 +95,7 @@ describe("migrateConfig", () => {
     } as unknown as AppConfig;
 
     const migrated = migrateConfig(legacy);
+    expect(migrated.engine.doubleTapMs).toBe(300);
     expect(migrated.engine.osdDurationMs).toBe(500);
     expect(migrated.engine.osdFontSizePx).toBe(25);
     expect(migrated.engine.osdOpacityPct).toBe(50);
@@ -119,11 +121,13 @@ describe("normalizeImportedConfig", () => {
       ...DEFAULT_CONFIG,
       engine: {
         ...DEFAULT_CONFIG.engine,
+        doubleTapMs: 280,
         osdDurationMs: 300,
         osdOpacityPct: 51,
       },
     });
 
+    expect(normalized.engine.doubleTapMs).toBe(300);
     expect(normalized.engine.osdDurationMs).toBe(500);
     expect(normalized.engine.osdOpacityPct).toBe(50);
   });

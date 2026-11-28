@@ -32,6 +32,7 @@
   "settings": {
     "languageTitle": "Language",
     "thresholdTitle": "Gesture Sensitivity",
+    "doubleTapTitle": "Double-Tap Threshold",
     "osdDurationTitle": "Gesture Hint Duration",
     "osdDurationOff": "Hidden",
     "osdDurationValue": "{{seconds}} s",
@@ -133,7 +134,7 @@
     "tableKey": "Key",
     "keyLabel": "Key",
     "capturePlaceholder": "Focus and press a key",
-    "captureHint": "Press one key or a key combination; additional modifiers are allowed by default.",
+    "captureHint": "Press one key or key combination; double-tap Ctrl / Shift / Alt to capture a double-tap trigger.",
     "duplicate": "A hotkey trigger template already uses this key.",
     "empty": "No hotkey trigger templates",
     "editTip": "Click to edit the hotkey trigger template",
@@ -248,6 +249,7 @@
     "act-switch-ime": "Switch Input Method",
     "act-toggle-ime": "Toggle IME (Ctrl+Space)",
     "act-open-calc": "Open Calculator",
-    "act-open-notepad": "Open Notepad"
+    "act-open-notepad": "Open Notepad",
+    "act-hello": "Show Hello Dialog"
   }
 }

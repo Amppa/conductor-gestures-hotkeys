@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Button,
   Dialog,
@@ -17,6 +17,7 @@ import { Gesture } from "../../domain/types";
 import {
   formatHotkeyTrigger,
   keyboardEventToTrigger,
+  resolveCapturedHotkey,
 } from "./hotkeyTrigger";
 
 const useStyles = makeStyles({
@@ -54,6 +55,7 @@ export const EditHotkeyDialog: React.FC<EditHotkeyDialogProps> = ({
   const styles = useStyles();
   const { t } = useTranslation();
   const [trigger, setTrigger] = useState(hotkey.trigger);
+  const lastTapAtRef = useRef(0);
 
   const duplicate = existingHotkeys.some(
     (item) =>
@@ -68,7 +70,14 @@ export const EditHotkeyDialog: React.FC<EditHotkeyDialogProps> = ({
     if (event.repeat) return;
     const captured = keyboardEventToTrigger(event);
     if (!captured) return;
-    setTrigger(captured);
+    const now = Date.now();
+    const nextTrigger = resolveCapturedHotkey(
+      trigger,
+      captured,
+      now - lastTapAtRef.current,
+    );
+    lastTapAtRef.current = nextTrigger.endsWith("*2") ? 0 : now;
+    setTrigger(nextTrigger);
   };
 
   const handleSave = () => {

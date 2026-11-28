@@ -23,6 +23,7 @@ global gTrailPrevY := 0
 global gStartProcess := ""
 global gSteps := []
 global gThreshold := 10
+global gDoubleTapMs := 300
 global gStepThreshold := 16
 global gIsPaused := false
 global gEdgeScrollEnabled := true

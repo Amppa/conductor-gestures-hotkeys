@@ -64,6 +64,7 @@ export interface EngineConfig {
   enabled: boolean;
   debug: boolean;
   thresholdPx: number;
+  doubleTapMs: number;
   osdDurationMs: number;
   osdFontSizePx: number;
   osdOpacityPct: number;

@@ -1,17 +1,37 @@
 use std::collections::HashSet;
 
 use crate::config::{
-    normalize_osd_duration_ms, normalize_osd_font_size_px, normalize_osd_opacity_pct, Action,
-    AppConfig, Binding, Target,
+    normalize_double_tap_ms, normalize_osd_duration_ms, normalize_osd_font_size_px,
+    normalize_osd_opacity_pct, Action, AppConfig, Binding, Target,
 };
 
 const KEYBOARD_RUNTIME_HELPERS: &str = r#"global gGeneratedRemapState := Map()
 global gGeneratedRemapDestinationCounts := Map()
+global gGeneratedLastTapTick := Map()
 
 GeneratedSendKeys(keys) {
     previousLevel := SendLevel(0)
     try Send(keys)
     finally SendLevel(previousLevel)
+}
+
+GeneratedCheckDoubleTap(keyName) {
+    global gGeneratedLastTapTick, gDoubleTapMs, gIsPaused
+    if (gIsPaused)
+        return false
+    fullKey := GetKeyName(keyName)
+    if (A_PriorKey != keyName && (fullKey = "" || A_PriorKey != fullKey)) {
+        gGeneratedLastTapTick[keyName] := 0
+        return false
+    }
+    now := A_TickCount
+    prevTick := gGeneratedLastTapTick.Get(keyName, 0)
+    if (prevTick > 0 && (now - prevTick) <= gDoubleTapMs) {
+        gGeneratedLastTapTick[keyName] := 0
+        return true
+    }
+    gGeneratedLastTapTick[keyName] := now
+    return false
 }
 
 GeneratedRemapKeyDown(source, destination) {
@@ -119,6 +139,7 @@ const ACTION_NAMES_ZH_TW: &[(&str, &str)] = &[
     ("act-toggle-ime", "切換中英輸入"),
     ("act-open-calc", "開啟小算盤"),
     ("act-open-notepad", "開啟記事本"),
+    ("act-hello", "顯示 Hello 視窗"),
 ];
 
 const ACTION_NAMES_EN: &[(&str, &str)] = &[
@@ -151,6 +172,7 @@ const ACTION_NAMES_EN: &[(&str, &str)] = &[
     ("act-toggle-ime", "Toggle IME (Ctrl+Space)"),
     ("act-open-calc", "Open Calculator"),
     ("act-open-notepad", "Open Notepad"),
+    ("act-hello", "Show Hello Dialog"),
 ];
 
 pub fn trigger_to_ahk_name(t: &str) -> String {
@@ -216,8 +238,75 @@ fn bool_literal(value: bool) -> &'static str {
     }
 }
 
-fn write_hotkey_action(script: &mut String, binding: &Binding) {
+fn parse_double_tap_key(trigger: &str) -> Option<&str> {
+    trigger
+        .trim()
+        .strip_suffix("*2")
+        .map(str::trim)
+        .filter(|base| !base.is_empty())
+}
+
+fn write_double_tap_hotkey_action(
+    script: &mut String,
+    base_key: &str,
+    action: &Action,
+    has_remap_up: bool,
+) {
+    let prefix = if has_remap_up { "*" } else { "~*" };
+    script.push_str(&format!("{}{} up::\n{{\n", prefix, base_key));
+    if has_remap_up {
+        script.push_str(&format!(
+            "    GeneratedRemapKeyUp(\"{}\")\n",
+            ahk_quote(base_key)
+        ));
+    }
+    if action.action_type == "noop"
+        || action.id == "act-noop"
+        || action.value.eq_ignore_ascii_case("none")
+    {
+        script.push_str("    return\n}\n");
+        return;
+    }
+    script.push_str(&format!(
+        "    if !GeneratedCheckDoubleTap(\"{}\")\n        return\n",
+        ahk_quote(base_key)
+    ));
+    match action.action_type.as_str() {
+        "keys" => script.push_str(&format!(
+            "    GeneratedSendKeys(\"{}\")\n",
+            ahk_quote(&action.value)
+        )),
+        "run" => script.push_str(&format!("    Run(\"{}\")\n", ahk_quote(&action.value))),
+        "remap" => script.push_str(&format!(
+            "    GeneratedSendKeys(\"{{{}}}\")\n",
+            ahk_quote(action.value.trim())
+        )),
+        "ahk" => {
+            script.push_str("    previousLevel := SendLevel(0)\n");
+            script.push_str("    try {\n");
+            for line in action.value.lines() {
+                script.push_str(&format!("        {}\n", line));
+            }
+            script.push_str("    } finally {\n");
+            script.push_str("        SendLevel(previousLevel)\n");
+            script.push_str("    }\n");
+        }
+        _ => {}
+    }
+    script.push_str("}\n");
+}
+
+fn write_hotkey_action(
+    script: &mut String,
+    binding: &Binding,
+    remap_trigger_keys: &HashSet<String>,
+) {
     let trigger = binding.gesture.trigger.trim();
+    if let Some(base_key) = parse_double_tap_key(trigger) {
+        let has_remap_up = remap_trigger_keys.contains(&base_key.to_ascii_lowercase());
+        write_double_tap_hotkey_action(script, base_key, &binding.action, has_remap_up);
+        return;
+    }
     let action = &binding.action;
 
     if action.action_type == "noop"
@@ -265,15 +354,21 @@ fn write_target_hotkeys(
     script: &mut String,
     target: &Target,
     emitted_triggers: &mut HashSet<String>,
+    emitted_up_keys: &mut HashSet<String>,
+    remap_trigger_keys: &HashSet<String>,
 ) {
     for binding in target
         .bindings
         .iter()
         .filter(|binding| is_keyboard_binding(binding))
     {
-        let trigger = binding.gesture.trigger.trim().to_ascii_lowercase();
+        let raw_trigger = binding.gesture.trigger.trim();
+        let trigger = raw_trigger.to_ascii_lowercase();
         if emitted_triggers.insert(trigger) {
-            write_hotkey_action(script, binding);
+            if let Some(base_key) = parse_double_tap_key(raw_trigger) {
+                emitted_up_keys.insert(base_key.to_ascii_lowercase());
+            }
+            write_hotkey_action(script, binding, remap_trigger_keys);
         }
     }
 }
@@ -332,6 +427,10 @@ fn write_header(script: &mut String, config: &AppConfig, revision: u64) {
     script.push_str(&format!(
         "global gThreshold := {}\n",
         config.engine.threshold_px
+    ));
+    script.push_str(&format!(
+        "global gDoubleTapMs := {}\n",
+        normalize_double_tap_ms(config.engine.double_tap_ms)
     ));
     script.push_str(&format!(
         "global gOsdDurationMs := {}\n",
@@ -578,6 +677,8 @@ fn write_keyboard_rules(
 ) {
     let mut keyboard_triggers = Vec::new();
     let mut keyboard_trigger_keys = HashSet::new();
+    let mut double_tap_base_keys = Vec::new();
+    let mut double_tap_key_set = HashSet::new();
     let mut remap_trigger_keys = HashSet::new();
     for target in group_targets.iter().chain(global_targets.iter()) {
         for binding in target
@@ -586,6 +687,12 @@ fn write_keyboard_rules(
             .filter(|binding| is_keyboard_binding(binding))
         {
             let trigger = binding.gesture.trigger.trim();
+            if let Some(base_key) = parse_double_tap_key(trigger) {
+                if double_tap_key_set.insert(base_key.to_ascii_lowercase()) {
+                    double_tap_base_keys.push(base_key.to_string());
+                }
+                continue;
+            }
             let trigger_key = trigger.to_ascii_lowercase();
             if binding.action.action_type == "remap" {
                 remap_trigger_keys.insert(trigger_key.clone());
@@ -610,7 +717,7 @@ fn write_keyboard_rules(
         }
     }
 
-    if keyboard_triggers.is_empty() {
+    if keyboard_triggers.is_empty() && double_tap_base_keys.is_empty() {
         return;
     }
 
@@ -663,6 +770,11 @@ fn write_keyboard_rules(
             ));
         }
     }
+    for base_key in &double_tap_base_keys {
+        if !remap_trigger_keys.contains(&base_key.to_ascii_lowercase()) {
+            script.push_str(&format!("~*{} up::return\n", base_key));
+        }
+    }
 
     for (index, target) in group_targets.iter().enumerate() {
         if !target.bindings.iter().any(is_keyboard_binding) {
@@ -673,13 +785,27 @@ fn write_keyboard_rules(
             index
         ));
         let mut emitted_triggers = HashSet::new();
-        write_target_hotkeys(script, target, &mut emitted_triggers);
+        let mut group_up_keys = HashSet::new();
+        write_target_hotkeys(
+            script,
+            target,
+            &mut emitted_triggers,
+            &mut group_up_keys,
+            &remap_trigger_keys,
+        );
     }
 
     script.push_str("#HotIf\n");
     let mut global_triggers = HashSet::new();
+    let mut global_up_keys = HashSet::new();
     for target in global_targets {
-        write_target_hotkeys(script, target, &mut global_triggers);
+        write_target_hotkeys(
+            script,
+            target,
+            &mut global_triggers,
+            &mut global_up_keys,
+            &remap_trigger_keys,
+        );
     }
 
     for remap in config.key_remaps.iter().filter(|remap| remap.enabled) {
@@ -701,10 +827,10 @@ fn write_keyboard_rules(
         }
     }
 
-    for trigger in keyboard_triggers
-        .iter()
-        .filter(|trigger| remap_trigger_keys.contains(&trigger.to_ascii_lowercase()))
-    {
+    for trigger in keyboard_triggers.iter().filter(|trigger| {
+        let lower = trigger.to_ascii_lowercase();
+        remap_trigger_keys.contains(&lower) && !global_up_keys.contains(&lower)
+    }) {
         script.push_str(&format!(
             "*{} up::GeneratedRemapKeyUp(\"{}\")\n",
             trigger,
@@ -979,6 +1105,12 @@ mod tests {
             global
                 .bindings
                 .push(keyboard_binding("lwin", "LWin", "remap", "LAlt"));
+            global.bindings.push(keyboard_binding(
+                "lctrl-2x",
+                "LCtrl*2",
+                "ahk",
+                "MsgBox('Hello', 'Conductor', 'AlwaysOnTop')",
+            ));
         }
 
         let timestamp = SystemTime::now()
@@ -1013,11 +1145,32 @@ mod tests {
             .expect("AutoHotkey validator should run");
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
+
+        let runtime_test_path = temp_dir.join("RunDoubleTapCheck.ahk");
+        fs::write(
+            &runtime_test_path,
+            "#Requires AutoHotkey v2.0\nSetTimer(() => (GeneratedCheckDoubleTap(\"LCtrl\"), ExitApp(0)), -10)\n#Include \"ActiveGestures.ahk\"\n",
+        )
+        .expect("runtime check script should be written");
+        let runtime_out = Command::new(repo_dir.join("vendor/autohotkey/AutoHotkey64.exe"))
+            .current_dir(&temp_dir)
+            .arg("/ErrorStdOut")
+            .arg(&runtime_test_path)
+            .output()
+            .expect("AutoHotkey runtime check should run");
+        let runtime_stdout = String::from_utf8_lossy(&runtime_out.stdout);
+        let runtime_stderr = String::from_utf8_lossy(&runtime_out.stderr);
         let _ = fs::remove_dir_all(&temp_dir);
 
         assert!(
             output.status.success() && stdout.trim().is_empty() && stderr.trim().is_empty(),
             "generated AHK validation failed:\nstdout: {stdout}\nstderr: {stderr}"
+        );
+        assert!(
+            runtime_out.status.success()
+                && runtime_stdout.trim().is_empty()
+                && runtime_stderr.trim().is_empty(),
+            "generated AHK double-tap runtime check failed:\nstdout: {runtime_stdout}\nstderr: {runtime_stderr}"
         );
     }
 
@@ -1064,5 +1217,52 @@ mod tests {
 
         assert!(disabled_block.contains("~*LAlt::return\n"));
         assert!(disabled_block.contains("~*LAlt up::GeneratedRemapKeyUp(\"LAlt\")\n"));
+    }
+
+    #[test]
+    fn double_tap_hotkeys_are_emitted_only_when_enabled() {
+        let mut cfg = default_app_config();
+        let global = cfg
+            .targets
+            .iter_mut()
+            .find(|target| target.kind == "global")
+            .expect("global target should exist");
+        global.bindings.push(Binding {
+            id: "double-lctrl".to_string(),
+            enabled: false,
+            gesture: Gesture {
+                id: "key-lctrl-2x".to_string(),
+                name: String::new(),
+                trigger: "LCtrl*2".to_string(),
+                steps: vec![],
+            },
+            action: Action {
+                id: "act-hello".to_string(),
+                name: "Show Hello Dialog".to_string(),
+                action_type: "ahk".to_string(),
+                value: "MsgBox('Hello', 'Conductor', 'AlwaysOnTop')".to_string(),
+            },
+        });
+
+        let disabled_script = generate_ahk_script(&cfg, 8);
+        assert!(!disabled_script.contains("LCtrl up::"));
+        assert!(!disabled_script.contains("GeneratedCheckDoubleTap(\"LCtrl\")"));
+
+        cfg.targets
+            .iter_mut()
+            .find(|target| target.kind == "global")
+            .unwrap()
+            .bindings
+            .iter_mut()
+            .find(|binding| binding.id == "double-lctrl")
+            .unwrap()
+            .enabled = true;
+
+        let enabled_script = generate_ahk_script(&cfg, 9);
+        assert!(enabled_script.contains("global gDoubleTapMs := 300\n"));
+        assert!(enabled_script.contains("~*LCtrl up::return\n"));
+        assert!(enabled_script.contains("~*LCtrl up::\n{"));
+        assert!(enabled_script.contains("if !GeneratedCheckDoubleTap(\"LCtrl\")"));
+        assert!(enabled_script.contains("MsgBox('Hello', 'Conductor', 'AlwaysOnTop')"));
     }
 }

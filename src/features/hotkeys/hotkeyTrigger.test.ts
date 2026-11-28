@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { keyboardEventToTrigger, formatHotkeyTrigger } from "./hotkeyTrigger";
+import {
+  keyboardEventToTrigger,
+  formatHotkeyTrigger,
+  resolveCapturedHotkey,
+} from "./hotkeyTrigger";
 
 function keyEvent(code: string): React.KeyboardEvent<HTMLInputElement> {
   return {
@@ -33,5 +37,17 @@ describe("keyboardEventToTrigger", () => {
     ["NumpadEnter", "NumpadEnter"],
   ])("captures %s as the AutoHotkey key %s", (code, trigger) => {
     expect(keyboardEventToTrigger(keyEvent(code))).toBe(trigger);
+  });
+
+  it("upgrades consecutive modifier taps into a double-tap trigger and formats it", () => {
+    const first = resolveCapturedHotkey("", "LCtrl", 999);
+    expect(first).toBe("LCtrl");
+    const second = resolveCapturedHotkey(first, "LCtrl", 220);
+    expect(second).toBe("LCtrl*2");
+    expect(formatHotkeyTrigger(second)).toBe("LCtrl × 2");
+    const third = resolveCapturedHotkey(second, "LCtrl", 180);
+    expect(third).toBe("LCtrl");
+    expect(resolveCapturedHotkey("LCtrl", "LCtrl", 650)).toBe("LCtrl");
+    expect(resolveCapturedHotkey("A", "A", 150)).toBe("A");
   });
 });

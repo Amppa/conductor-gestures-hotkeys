@@ -133,6 +133,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         <div className={styles.row}>
+          <span className={styles.itemLabel}>{t("settings.doubleTapTitle")}</span>
+          <div className={styles.sliderGroup}>
+            <Slider
+              className={styles.slider}
+              aria-label={t("settings.doubleTapTitle")}
+              min={150}
+              max={500}
+              step={50}
+              value={config.engine.doubleTapMs}
+              onChange={(_, data) => updateEngine({ doubleTapMs: data.value })}
+            />
+            <span className={styles.valueLabel}>{config.engine.doubleTapMs} ms</span>
+          </div>
+        </div>
+
+        <div className={styles.row}>
           <span className={styles.itemLabel}>{t("settings.osdDurationTitle")}</span>
           <div className={styles.sliderGroup}>
             <Slider

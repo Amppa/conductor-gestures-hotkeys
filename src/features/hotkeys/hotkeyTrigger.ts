@@ -1,1 +1,6 @@
-export { keyboardEventToTrigger, formatHotkeyTrigger } from "../../domain/triggers/keyboard";
+export {
+  keyboardEventToTrigger,
+  formatHotkeyTrigger,
+  isModifierTrigger,
+  resolveCapturedHotkey,
+} from "../../domain/triggers/keyboard";
